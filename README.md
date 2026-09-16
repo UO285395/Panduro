@@ -98,10 +98,20 @@ Ver `/root/.claude/plans/root-claude-uploads-b1567562-54a4-5158-mossy-breeze.md`
 | 1 | Setup + auth + PWA |
 | 2 | Árbol de lecciones + ejercicios sin cámara + Unidad 1 (Saludos) |
 | 3 | Pipeline MediaPipe Hand Landmarker + `/dev/hand-tracking` |
-| **4** *(actual)* | Reconocimiento de dactilología (k-NN + `SignThis` + `/dev/capture`) |
-| 5 | Repetición espaciada (SM-2) + gamificación (corazones, racha) |
+| 4 | Reconocimiento de dactilología (k-NN + `SignThis` + `/dev/capture`) |
+| **5** *(actual)* | Repetición espaciada (SM-2) + `/review` + regeneración de corazones + racha |
 | 6 | 50 signos + avatar humanoide + pulido |
 | 7 | Traductor/transcriptor en tiempo real (`/translate`) |
+
+## Repaso diario y ciclo de retención
+
+Cada lección completada siembra tarjetas SM-2 para todos los signos y letras que aparecen en ella (`sign:<GLOSS>` o `letter:<X>`). El dashboard muestra un contador de tarjetas vencidas; al pulsar entras en `/review` y respondes con cuatro botones (`No lo sé`, `Difícil`, `Bien`, `Fácil`). El motor SM-2 reprograma cada tarjeta a 1 día, 6 días, y luego `intervalo × ease` — igual que Anki clásico. Un fallo la vuelve a colocar para hoy.
+
+**Corazones**: pierdes uno cuando fallas en un ejercicio (los `sign_this` con cámara están exentos). Se regeneran uno cada 30 min hasta llegar a 5, calculado *lazy* al cargar el snapshot (sin cron ni Edge Function todavía).
+
+**Racha**: sube +1 la primera vez del día que completas una lección o una tarjeta de repaso. Si no aparece nadie durante 2 días o más, se rompe.
+
+Todo esto funciona idénticamente en los tres modos (demo, Docker, cloud).
 
 ## Practicar dactilología (Unidad 2 · Alfabeto LSE)
 

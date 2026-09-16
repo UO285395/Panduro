@@ -65,6 +65,11 @@ export function DashboardView({
         </div>
       </header>
 
+      <ReviewCard
+        pending={snapshot.pendingReviews.length}
+        nextReviewDueAt={snapshot.nextReviewDueAt}
+      />
+
       <div className="space-y-10">
         {level.units.map((unit) => (
           <section key={unit.id} aria-labelledby={`unit-${unit.id}`}>
@@ -201,6 +206,51 @@ function LessonRow({
       className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-400 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
       {body}
+    </Link>
+  );
+}
+
+function ReviewCard({
+  pending,
+  nextReviewDueAt,
+}: {
+  pending: number;
+  nextReviewDueAt: number | null;
+}) {
+  const has = pending > 0;
+  return (
+    <Link
+      href="/review"
+      className={`mb-6 flex items-center justify-between gap-4 rounded-2xl border p-4 transition ${
+        has
+          ? "border-brand-400 bg-brand-50 hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-950/40 dark:hover:bg-brand-950"
+          : "border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+      }`}
+    >
+      <div>
+        <h3 className="font-semibold">
+          {has
+            ? `Repaso diario · ${pending} tarjeta${pending === 1 ? "" : "s"}`
+            : "Al día"}
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          {has
+            ? "Repite lo que ya conoces con repetición espaciada."
+            : nextReviewDueAt
+              ? `Próxima tarjeta: ${new Date(nextReviewDueAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}`
+              : "Completa una lección para tener repasos disponibles."}
+        </p>
+      </div>
+      <span
+        aria-hidden
+        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+          has
+            ? "bg-brand-600 text-white"
+            : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+        }`}
+      >
+        {has ? "Repasar" : "Sin pendientes"}
+      </span>
     </Link>
   );
 }

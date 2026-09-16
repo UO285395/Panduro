@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Exercise, Lesson, Sign } from "@/lib/curriculum/schema";
 import { HeartsBar } from "@/components/gamification/HeartsBar";
-import { completeLesson } from "@/lib/progress/actions";
+import { completeLesson } from "@/lib/progress/completeLesson";
 import { MAX_HEARTS } from "@/lib/gamification/xp";
 import { MultipleChoice } from "@/components/exercises/MultipleChoice";
 import { MatchPairs } from "@/components/exercises/MatchPairs";

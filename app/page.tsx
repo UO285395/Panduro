@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { DEMO_MODE } from "@/lib/storage/flags";
+import { DemoStartButton } from "./demo-start-button";
 
 export default function HomePage() {
   return (
@@ -29,19 +31,31 @@ export default function HomePage() {
           oficial LSE (MCER A1–B2).
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link
-            href="/register"
-            className="rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-brand-700"
-          >
-            Empezar gratis
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-slate-300 px-6 py-3 font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-          >
-            Ya tengo cuenta
-          </Link>
+          {DEMO_MODE ? (
+            <DemoStartButton />
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-brand-700"
+              >
+                Empezar gratis
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-full border border-slate-300 px-6 py-3 font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              >
+                Ya tengo cuenta
+              </Link>
+            </>
+          )}
         </div>
+        {DEMO_MODE && (
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Modo demo activo: la app funciona sin backend. Tu progreso se guarda
+            en este navegador.
+          </p>
+        )}
       </section>
 
       <footer className="text-xs text-slate-500 dark:text-slate-400">

@@ -30,6 +30,7 @@ type Profile = {
   xpTotal: number;
   streakDays: number;
   streakLastDay: string | null;
+  onboardingCompleted: boolean;
 };
 
 type ProgressRow = LessonProgress;
@@ -61,6 +62,7 @@ const initialSnapshot: Snapshot = {
     xpTotal: 0,
     streakDays: 0,
     streakLastDay: null,
+    onboardingCompleted: false,
   },
   progress: {},
   reviews: {},
@@ -194,7 +196,16 @@ export function getSnapshotDemo(nowMs = Date.now()): UserSnapshot {
     progressByLesson,
     pendingReviews,
     nextReviewDueAt,
+    onboardingCompleted: snap.profile.onboardingCompleted,
   };
+}
+
+export function markOnboardingCompletedDemo() {
+  const snap = read();
+  write({
+    ...snap,
+    profile: { ...snap.profile, onboardingCompleted: true },
+  });
 }
 
 export function completeLessonDemo(input: {

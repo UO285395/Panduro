@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getLevel, getLessonSequence } from "@/lib/curriculum/loader";
 import { getUserSnapshot } from "@/lib/progress/queries";
 import { DEMO_MODE } from "@/lib/storage/flags";
@@ -20,6 +21,7 @@ export default async function DashboardPage() {
       </main>
     );
   }
+  if (!snapshot.onboardingCompleted) redirect("/onboarding");
 
   const level = getLevel();
   const sequence = getLessonSequence().map(({ unit, lesson }) => ({

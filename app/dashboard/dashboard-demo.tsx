@@ -20,7 +20,12 @@ export function DashboardDemo() {
       router.replace("/");
       return;
     }
-    setSnapshot(getSnapshotDemo());
+    const s = getSnapshotDemo();
+    if (!s.onboardingCompleted) {
+      router.replace("/onboarding");
+      return;
+    }
+    setSnapshot(s);
   }, [router]);
 
   if (!snapshot) {

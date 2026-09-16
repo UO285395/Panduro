@@ -124,3 +124,16 @@ export async function completeLesson(input: CompleteLessonInput) {
   revalidatePath("/dashboard");
   return { xp, bestScore, perfected, heartsAfter };
 }
+
+export async function markOnboardingCompleted() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  await supabase
+    .from("profiles")
+    .update({ onboarding_completed: true })
+    .eq("id", user.id);
+  revalidatePath("/dashboard");
+}

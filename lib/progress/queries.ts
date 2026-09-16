@@ -23,6 +23,8 @@ export type UserSnapshot = {
   pendingReviews: PendingReview[];
   /** Fecha de la próxima revisión (útil para pintar el estado vacío). */
   nextReviewDueAt: number | null;
+  /** Se pone a true tras el flujo de bienvenida. */
+  onboardingCompleted: boolean;
 };
 
 const defaultSnapshot: UserSnapshot = {
@@ -34,6 +36,7 @@ const defaultSnapshot: UserSnapshot = {
   progressByLesson: new Map(),
   pendingReviews: [],
   nextReviewDueAt: null,
+  onboardingCompleted: false,
 };
 
 export async function getUserSnapshot(nowMs = Date.now()): Promise<UserSnapshot | null> {
@@ -46,7 +49,7 @@ export async function getUserSnapshot(nowMs = Date.now()): Promise<UserSnapshot 
   const [profileRes, progressRes, reviewsRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, hearts, hearts_regen_at, xp_total, streak_days, streak_last_day")
+      .select("display_name, hearts, hearts_regen_at, xp_total, streak_days, streak_last_day, onboarding_completed")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -116,5 +119,6 @@ export async function getUserSnapshot(nowMs = Date.now()): Promise<UserSnapshot 
     progressByLesson,
     pendingReviews,
     nextReviewDueAt: pendingReviews[0]?.dueAt ?? null,
+    onboardingCompleted: profileRes.data?.onboarding_completed ?? false,
   };
 }

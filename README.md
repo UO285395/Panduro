@@ -99,9 +99,19 @@ Ver `/root/.claude/plans/root-claude-uploads-b1567562-54a4-5158-mossy-breeze.md`
 | 2 | Árbol de lecciones + ejercicios sin cámara + Unidad 1 (Saludos) |
 | 3 | Pipeline MediaPipe Hand Landmarker + `/dev/hand-tracking` |
 | 4 | Reconocimiento de dactilología (k-NN + `SignThis` + `/dev/capture`) |
-| **5** *(actual)* | Repetición espaciada (SM-2) + `/review` + regeneración de corazones + racha |
-| 6 | 50 signos + avatar humanoide + pulido |
+| 5 | Repetición espaciada (SM-2) + `/review` + regeneración de corazones + racha |
+| **6** *(actual)* | Avatar humanoide + reglas geométricas + U3 Números + U4 Familia/comida + onboarding |
 | 7 | Traductor/transcriptor en tiempo real (`/translate`) |
+
+## Avatar humanoide
+
+Los signos se representan con un avatar 3D construido sobre **Three.js + `@pixiv/three-vrm`**. Cada `Sign` puede llevar un campo `avatarClip` con keyframes (posición y flexión de dedos) que `AvatarPlayer` interpola linealmente.
+
+**Modelo VRM**: coloca un archivo `.vrm` con licencia compatible en `public/avatars/panduro.vrm`. El binario **no** viaja en git. Si el archivo no existe, `AvatarPlayer` cae a un fallback SVG animado que muestra los mismos keyframes de forma esquemática — la app funciona igualmente y ningún test depende de un `.vrm` presente.
+
+## Reglas geométricas
+
+Cuando el clasificador k-NN se equivoca sistemáticamente, `lib/recognition/rules.ts` desambigua analizando la geometría de la mano (pulgar arriba/abajo, meñique extendido en Y/I, dedos cerrados). Se aplica tras `KnnClassifier.predict` en el `SignThis` y en el futuro traductor.
 
 ## Repaso diario y ciclo de retención
 

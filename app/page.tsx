@@ -58,10 +58,32 @@ export default function HomePage() {
         )}
       </section>
 
+      <section className="mb-12 space-y-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm dark:border-amber-800 dark:bg-amber-950/40">
+        <h2 className="font-semibold text-amber-900 dark:text-amber-100">
+          Estado del proyecto · MVP técnico
+        </h2>
+        <p className="text-amber-900/90 dark:text-amber-100/90">
+          Este MVP se ha construido antes de una validación lingüística formal
+          con asesoría sorda certificada. El corpus, las traducciones y las
+          animaciones del avatar son aproximaciones basadas en fuentes públicas
+          (DILSE, Spreadthesign). No debe usarse todavía como material educativo
+          oficial; su propósito actual es probar la infraestructura técnica.
+          Antes de una beta pública se cerrará la alianza con Fundación CNSE /
+          CNLSE.
+        </p>
+        <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
+          Ver{" "}
+          <Link href="/CREDITS.md" className="underline">
+            CREDITS
+          </Link>{" "}
+          para las fuentes lingüísticas usadas.
+        </p>
+      </section>
+
       <footer className="text-xs text-slate-500 dark:text-slate-400">
         <p>
-          Un proyecto validado con la comunidad sorda. LSE ≠ ASL. Ley 27/2007 de
-          reconocimiento de las lenguas de signos españolas.
+          LSE ≠ ASL. Ley 27/2007 de reconocimiento de las lenguas de signos
+          españolas.
         </p>
       </footer>
     </main>

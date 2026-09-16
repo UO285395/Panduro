@@ -8,7 +8,16 @@
       "translation": "Hola",
       "description": "Mano dominante abierta, palma hacia delante a la altura de la sien; movimiento breve de saludo.",
       "handedness": "one",
-      "tags": ["saludo", "u1"]
+      "tags": ["saludo", "u1"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          { "t": 0, "hand": { "x": -0.3, "y": 0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
+          { "t": 600, "hand": { "x": 0.3, "y": 0.7, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
+          { "t": 1200, "hand": { "x": -0.3, "y": 0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] }
+        ]
+      }
     },
     {
       "id": "ADIOS",
@@ -48,7 +57,16 @@
       "translation": "Gracias",
       "description": "Yemas de los dedos tocan la barbilla y se proyectan hacia delante.",
       "handedness": "one",
-      "tags": ["cortesia", "u1"]
+      "tags": ["cortesia", "u1"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
+          { "t": 500, "hand": { "x": 0.4, "y": 0.5, "z": 0.2, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
+          { "t": 1000, "hand": { "x": 0.6, "y": 0.4, "z": 0.4, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] }
+        ]
+      }
     },
     {
       "id": "POR_FAVOR",
@@ -112,7 +130,16 @@
       "translation": "Bien",
       "description": "Pulgar hacia arriba con puño cerrado.",
       "handedness": "one",
-      "tags": ["estado", "u1"]
+      "tags": ["estado", "u1"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
+          { "t": 400, "hand": { "x": 0, "y": 0.7, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
+          { "t": 800, "hand": { "x": 0, "y": 0.7, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] }
+        ]
+      }
     },
     {
       "id": "MAL",
@@ -120,7 +147,16 @@
       "translation": "Mal",
       "description": "Pulgar hacia abajo con puño cerrado.",
       "handedness": "one",
-      "tags": ["estado", "u1"]
+      "tags": ["estado", "u1"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
+          { "t": 400, "hand": { "x": 0, "y": -0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
+          { "t": 800, "hand": { "x": 0, "y": -0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] }
+        ]
+      }
     },
     {
       "id": "COMO_ESTAS",
@@ -129,7 +165,37 @@
       "description": "Manos con palmas hacia arriba oscilando ligeramente, con cejas levantadas (pregunta).",
       "handedness": "two",
       "tags": ["pregunta", "u1"]
-    }
+    },
+    { "id": "NUM_1", "gloss": "1", "translation": "Uno", "description": "Índice extendido hacia arriba, resto cerrados.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_2", "gloss": "2", "translation": "Dos", "description": "Índice y corazón extendidos en V.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_3", "gloss": "3", "translation": "Tres", "description": "Pulgar, índice y corazón extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_4", "gloss": "4", "translation": "Cuatro", "description": "Cuatro dedos extendidos (sin pulgar).", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_5", "gloss": "5", "translation": "Cinco", "description": "Mano abierta con los cinco dedos extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_6", "gloss": "6", "translation": "Seis", "description": "Pulgar y meñique extendidos, otros cerrados.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_7", "gloss": "7", "translation": "Siete", "description": "Pulgar, índice y meñique extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_8", "gloss": "8", "translation": "Ocho", "description": "Pulgar, índice, corazón y meñique extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_9", "gloss": "9", "translation": "Nueve", "description": "Cuatro dedos extendidos y pulgar apoyado.", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "NUM_10", "gloss": "10", "translation": "Diez", "description": "Puño cerrado con leve rotación, o pulgar hacia el lateral (LSE variante).", "handedness": "one", "tags": ["numero", "u3"] },
+    { "id": "PADRE", "gloss": "PADRE", "translation": "Padre", "description": "Mano con pulgar extendido tocando la sien dos veces.", "handedness": "one", "tags": ["familia", "u4"] },
+    { "id": "MADRE", "gloss": "MADRE", "translation": "Madre", "description": "Mano con índice y corazón tocando la mejilla dos veces.", "handedness": "one", "tags": ["familia", "u4"] },
+    { "id": "HERMANO", "gloss": "HERMANO", "translation": "Hermano", "description": "Índices juntos apuntando al frente y separándose ligeramente.", "handedness": "two", "tags": ["familia", "u4"] },
+    { "id": "HERMANA", "gloss": "HERMANA", "translation": "Hermana", "description": "Como HERMANO pero con matiz femenino (movimiento suave).", "handedness": "two", "tags": ["familia", "u4"] },
+    { "id": "HIJO", "gloss": "HIJO", "translation": "Hijo", "description": "Mano acuna al frente indicando cría/pequeño.", "handedness": "two", "tags": ["familia", "u4"] },
+    { "id": "HIJA", "gloss": "HIJA", "translation": "Hija", "description": "Variante femenina de HIJO.", "handedness": "two", "tags": ["familia", "u4"] },
+    { "id": "AMIGO", "gloss": "AMIGO", "translation": "Amigo", "description": "Índices enganchados en cruz alternando.", "handedness": "two", "tags": ["familia", "u4"] },
+    { "id": "AGUA", "gloss": "AGUA", "translation": "Agua", "description": "Mano en 'A' que toca dos veces la barbilla.", "handedness": "one", "tags": ["comida", "u4"] },
+    { "id": "PAN", "gloss": "PAN", "translation": "Pan", "description": "Manos abiertas simulando cortar una barra.", "handedness": "two", "tags": ["comida", "u4"] },
+    { "id": "LECHE", "gloss": "LECHE", "translation": "Leche", "description": "Puño cerrado que abre y cierra como ordeñando.", "handedness": "one", "tags": ["comida", "u4"] },
+    { "id": "CAFE", "gloss": "CAFÉ", "translation": "Café", "description": "Puño encima del otro simulando molinillo giratorio.", "handedness": "two", "tags": ["comida", "u4"] },
+    { "id": "FRUTA", "gloss": "FRUTA", "translation": "Fruta", "description": "Mano cerrada gira frente al pecho.", "handedness": "one", "tags": ["comida", "u4"] },
+    { "id": "CARNE", "gloss": "CARNE", "translation": "Carne", "description": "Índice y pulgar pellizcan la palma opuesta.", "handedness": "two", "tags": ["comida", "u4"] },
+    { "id": "PESCADO", "gloss": "PESCADO", "translation": "Pescado", "description": "Mano plana ondulando en horizontal como pez nadando.", "handedness": "one", "tags": ["comida", "u4"] },
+    { "id": "DULCE", "gloss": "DULCE", "translation": "Dulce", "description": "Yema del índice toca la barbilla con giro.", "handedness": "one", "tags": ["comida", "u4"] },
+    { "id": "DESAYUNO", "gloss": "DESAYUNO", "translation": "Desayuno", "description": "Compuesto: SOL + COMER (aproximación).", "handedness": "two", "tags": ["comida", "u4"] },
+    { "id": "COMIDA", "gloss": "COMIDA", "translation": "Comida", "description": "Mano cerrada acerca a la boca varias veces.", "handedness": "one", "tags": ["comida", "u4"] },
+    { "id": "CENA", "gloss": "CENA", "translation": "Cena", "description": "Compuesto: NOCHE + COMER (aproximación).", "handedness": "two", "tags": ["comida", "u4"] },
+    { "id": "CASA", "gloss": "CASA", "translation": "Casa", "description": "Manos forman un tejado sobre la frente.", "handedness": "two", "tags": ["comida", "u4"] },
+    { "id": "ESCUELA", "gloss": "ESCUELA", "translation": "Escuela", "description": "Palmas juntas que aplauden dos veces frente al pecho.", "handedness": "two", "tags": ["familia", "u4"] }
   ],
   "units": [
     {
@@ -388,6 +454,87 @@
               "prompt": "Y para cerrar, signa una R.",
               "letterId": "R"
             }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a1.u3",
+      "title": "Unidad 3 · Números del 1 al 10",
+      "summary": "Aprende a signar los primeros diez números.",
+      "lessons": [
+        {
+          "id": "a1.u3.l1",
+          "title": "Del 1 al 5",
+          "goal": "Reconocer los cinco primeros números.",
+          "signs": ["NUM_1", "NUM_2", "NUM_3", "NUM_4", "NUM_5"],
+          "exercises": [
+            { "id": "a1.u3.l1.e1", "type": "multiple_choice", "prompt": "¿Qué número?", "signId": "NUM_1", "options": ["Uno", "Dos", "Tres", "Cuatro"], "answer": "Uno" },
+            { "id": "a1.u3.l1.e2", "type": "multiple_choice", "prompt": "¿Qué número?", "signId": "NUM_3", "options": ["Uno", "Dos", "Tres", "Cinco"], "answer": "Tres" },
+            { "id": "a1.u3.l1.e3", "type": "type_word", "prompt": "Escribe el número.", "signId": "NUM_5", "acceptable": ["cinco", "5"] },
+            { "id": "a1.u3.l1.e4", "type": "match_pairs", "prompt": "Empareja cada número con su nombre.", "pairs": [
+              { "signId": "NUM_1", "translation": "Uno" },
+              { "signId": "NUM_2", "translation": "Dos" },
+              { "signId": "NUM_4", "translation": "Cuatro" },
+              { "signId": "NUM_5", "translation": "Cinco" }
+            ] }
+          ]
+        },
+        {
+          "id": "a1.u3.l2",
+          "title": "Del 6 al 10",
+          "goal": "Completar los diez primeros números.",
+          "signs": ["NUM_6", "NUM_7", "NUM_8", "NUM_9", "NUM_10"],
+          "exercises": [
+            { "id": "a1.u3.l2.e1", "type": "multiple_choice", "prompt": "¿Qué número?", "signId": "NUM_7", "options": ["Seis", "Siete", "Ocho", "Nueve"], "answer": "Siete" },
+            { "id": "a1.u3.l2.e2", "type": "type_word", "prompt": "Escribe el número.", "signId": "NUM_10", "acceptable": ["diez", "10"] },
+            { "id": "a1.u3.l2.e3", "type": "match_pairs", "prompt": "Empareja cada número con su nombre.", "pairs": [
+              { "signId": "NUM_6", "translation": "Seis" },
+              { "signId": "NUM_8", "translation": "Ocho" },
+              { "signId": "NUM_9", "translation": "Nueve" },
+              { "signId": "NUM_10", "translation": "Diez" }
+            ] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a1.u4",
+      "title": "Unidad 4 · Familia y comida",
+      "summary": "Vocabulario básico para hablar de la familia y de la comida.",
+      "lessons": [
+        {
+          "id": "a1.u4.l1",
+          "title": "Mi familia",
+          "goal": "Signos para hablar de padres, hermanos y amigos.",
+          "signs": ["PADRE", "MADRE", "HERMANO", "HERMANA", "AMIGO"],
+          "exercises": [
+            { "id": "a1.u4.l1.e1", "type": "multiple_choice", "prompt": "¿Qué significa este signo?", "signId": "PADRE", "options": ["Padre", "Madre", "Hermano", "Amigo"], "answer": "Padre" },
+            { "id": "a1.u4.l1.e2", "type": "multiple_choice", "prompt": "¿Qué significa este signo?", "signId": "MADRE", "options": ["Padre", "Madre", "Hermana", "Hija"], "answer": "Madre" },
+            { "id": "a1.u4.l1.e3", "type": "type_word", "prompt": "Escribe la traducción.", "signId": "AMIGO", "acceptable": ["amigo", "amiga", "amigos"] },
+            { "id": "a1.u4.l1.e4", "type": "match_pairs", "prompt": "Empareja cada signo con su traducción.", "pairs": [
+              { "signId": "PADRE", "translation": "Padre" },
+              { "signId": "MADRE", "translation": "Madre" },
+              { "signId": "HERMANO", "translation": "Hermano" },
+              { "signId": "HERMANA", "translation": "Hermana" }
+            ] }
+          ]
+        },
+        {
+          "id": "a1.u4.l2",
+          "title": "En la mesa",
+          "goal": "Comida y bebida básicas.",
+          "signs": ["AGUA", "PAN", "LECHE", "CAFE", "COMIDA"],
+          "exercises": [
+            { "id": "a1.u4.l2.e1", "type": "multiple_choice", "prompt": "¿Qué significa?", "signId": "AGUA", "options": ["Agua", "Leche", "Café", "Pan"], "answer": "Agua" },
+            { "id": "a1.u4.l2.e2", "type": "multiple_choice", "prompt": "¿Qué significa?", "signId": "COMIDA", "options": ["Comida", "Cena", "Desayuno", "Fruta"], "answer": "Comida" },
+            { "id": "a1.u4.l2.e3", "type": "type_word", "prompt": "Escribe la traducción.", "signId": "LECHE", "acceptable": ["leche"] },
+            { "id": "a1.u4.l2.e4", "type": "match_pairs", "prompt": "Empareja cada signo con su traducción.", "pairs": [
+              { "signId": "AGUA", "translation": "Agua" },
+              { "signId": "PAN", "translation": "Pan" },
+              { "signId": "LECHE", "translation": "Leche" },
+              { "signId": "CAFE", "translation": "Café" }
+            ] }
           ]
         }
       ]

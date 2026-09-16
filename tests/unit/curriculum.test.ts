@@ -66,9 +66,16 @@ describe("curriculum: schema + loader", () => {
   it("getLessonSequence linealiza las lecciones en orden", () => {
     const seq = getLessonSequence();
     expect(seq[0]?.lesson.id).toBe("a1.u1.l1");
-    // Recorre unidades en el orden declarado y termina en la última de U2.
-    expect(seq[seq.length - 1]?.lesson.id).toBe("a1.u2.l3");
+    // Recorre unidades en el orden declarado y termina en la última de U4.
+    expect(seq[seq.length - 1]?.lesson.id).toBe("a1.u4.l2");
     const u1Count = seq.filter((x) => x.unit.id === "a1.u1").length;
     expect(u1Count).toBe(3);
+  });
+
+  it("incluye U3 (Números) y U4 (Familia y comida) del Hito 6", () => {
+    const level = getLevel();
+    expect(level.signs.length).toBeGreaterThanOrEqual(40);
+    const unitIds = level.units.map((u) => u.id);
+    expect(unitIds).toEqual(["a1.u1", "a1.u2", "a1.u3", "a1.u4"]);
   });
 });

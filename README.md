@@ -116,9 +116,17 @@ Los signos reconocidos se guardan opcionalmente en la nueva tabla `translations`
 
 ## Avatar humanoide
 
-Los signos se representan con un avatar 3D construido sobre **Three.js + `@pixiv/three-vrm`**. Cada `Sign` puede llevar un campo `avatarClip` con keyframes (posición y flexión de dedos) que `AvatarPlayer` interpola linealmente.
+Los signos se representan con un avatar 3D construido sobre **Three.js**. Cada `Sign` puede llevar un campo `avatarClip` con keyframes (posición y flexión de dedos) que se interpolan y se aplican a un **rig humanoide procedimental** (torso + cabeza + brazo con IK 2-bone + mano articulada con 5 dedos). Cadena de fallback:
 
-**Modelo VRM**: coloca un archivo `.vrm` con licencia compatible en `public/avatars/panduro.vrm`. El binario **no** viaja en git. Si el archivo no existe, `AvatarPlayer` cae a un fallback SVG animado que muestra los mismos keyframes de forma esquemática — la app funciona igualmente y ningún test depende de un `.vrm` presente.
+1. **Rig procedimental Three.js** (por defecto, sin dependencias externas).
+2. **VRM externo** cuando pongas un `.vrm` compatible en `public/avatars/panduro.vrm` (queda como TODO integrar el mapa de bones VRM ↔ pose interna; el binario está gitignored).
+3. **Fallback SVG animado** si Three.js no arranca (WebGL desactivado o navegador antiguo).
+
+## Corpus semilla del clasificador
+
+El clasificador k-NN reconoce desde el minuto uno con **plantillas sintéticas plausibles** para las **12 letras más distintivas** (A, B, C, F, I, L, O, P, U, V, W, Y) y **6 signos léxicos** (HOLA, ADIOS, GRACIAS, SI, NO, BIEN), tres muestras por cada uno. Las plantillas viven en `content/signs/fingerspelling.json` y `content/signs/lexicon.json`, marcadas con `templateSource: "synthetic"`.
+
+Son **aproximaciones**: la fidelidad lingüística está pendiente de validación con asesor sordo. Cualquiera puede mejorar el corpus con `/dev/capture` (Descargar JSON → pegar sobre los sintéticos → commit).
 
 ## Reglas geométricas
 

@@ -9,6 +9,7 @@ import type { HandFrame, PerfStats } from "@/lib/mediapipe/types";
 import type { Exercise } from "@/lib/curriculum/schema";
 import { extractFeatures } from "@/lib/recognition/features";
 import { KnnClassifier } from "@/lib/recognition/knn";
+import { refineWithRules } from "@/lib/recognition/rules";
 import {
   getLetterMeta,
   loadGlobalTemplates,
@@ -118,7 +119,8 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
         }
         if (prev.kind === "evaluating") {
           const features = extractFeatures(detected.normalized);
-          const pred = classifier.predict(features);
+          const raw = classifier.predict(features);
+          const pred = refineWithRules(raw, detected.normalized);
           if (pred) votesRef.current.push({ label: pred.label, confidence: pred.confidence });
           if (now - prev.startedAt >= exercise.voteWindowMs) {
             // Terminar en el siguiente tick sincrónico:

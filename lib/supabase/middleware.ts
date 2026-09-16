@@ -4,7 +4,14 @@ import { DEMO_MODE } from "@/lib/storage/flags";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-const PROTECTED_PREFIXES = ["/dashboard", "/dev", "/lesson", "/review", "/onboarding"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/dev",
+  "/lesson",
+  "/review",
+  "/onboarding",
+  "/translate",
+];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

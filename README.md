@@ -100,8 +100,19 @@ Ver `/root/.claude/plans/root-claude-uploads-b1567562-54a4-5158-mossy-breeze.md`
 | 3 | Pipeline MediaPipe Hand Landmarker + `/dev/hand-tracking` |
 | 4 | Reconocimiento de dactilología (k-NN + `SignThis` + `/dev/capture`) |
 | 5 | Repetición espaciada (SM-2) + `/review` + regeneración de corazones + racha |
-| **6** *(actual)* | Avatar humanoide + reglas geométricas + U3 Números + U4 Familia/comida + onboarding |
-| 7 | Traductor/transcriptor en tiempo real (`/translate`) |
+| 6 | Avatar humanoide + reglas geométricas + U3 Números + U4 Familia/comida + onboarding |
+| **7** *(actual)* | Traductor/transcriptor en tiempo real (`/translate`) |
+
+## Traductor en tiempo real (`/translate`)
+
+Ruta de práctica libre: la persona signa frente a la cámara y ve la transcripción a castellano en tiempo real. Reutiliza todo lo anterior (cámara del Hito 3, clasificador y reglas del Hito 4/6, avatar del Hito 6) más dos piezas nuevas en `lib/translator/`:
+
+- **`SegmentStream`** (`segment.ts`): máquina de estados que consume `HandFrame` y emite `start` / `hold` / `end`. Un signo consolida cuando la velocidad de la muñeca queda bajo umbral durante 300 ms.
+- **`TextAssembler`** (`assembler.ts`): junta los signos reconocidos en texto. Reglas ligeras: dedupe de rebotes en 400 ms, letras dactilológicas concatenadas sin espacios, espacio si la pausa entre letras supera 1 s, punto y mayúscula tras 2 s de inactividad.
+
+Los signos reconocidos se guardan opcionalmente en la nueva tabla `translations` (con RLS por usuario) o en localStorage (`panduro:demo.translations`). Botones **Copiar** / **Descargar .txt** / **Guardar** disponibles siempre que haya texto.
+
+**Limitación honesta**: el traductor solo puede identificar signos ya presentes en el corpus del clasificador (alfabeto calibrado y cualquier signo léxico que hayas capturado en `/dev/capture`). No es traducción libre de LSE nativa — para eso haría falta un modelo temporal entrenado con corpus mucho mayores. El aviso está visible en la propia página.
 
 ## Avatar humanoide
 

@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { DEMO_MODE } from "@/lib/storage/flags";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -7,6 +8,10 @@ const PROTECTED_PREFIXES = ["/dashboard", "/dev", "/lesson"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+
+  // En modo demo dejamos pasar todas las rutas: la persistencia y el "estar
+  // dentro" se resuelven en cliente vía localStorage.
+  if (DEMO_MODE) return supabaseResponse;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

@@ -1,4 +1,5 @@
 import fingerspellingData from "@/content/signs/fingerspelling.json";
+import lexiconData from "@/content/signs/lexicon.json";
 import type { Template } from "./knn";
 import type { NormalizedLandmark } from "@/lib/mediapipe/types";
 
@@ -11,11 +12,24 @@ export type FingerspellingJson = {
       translation: string;
       description: string;
       templates: NormalizedLandmark[][];
+      templateSource?: "synthetic" | "captured";
+    }
+  >;
+};
+
+type LexiconJson = {
+  version: number;
+  signs: Record<
+    string,
+    {
+      templates: NormalizedLandmark[][];
+      templateSource?: "synthetic" | "captured";
     }
   >;
 };
 
 const source = fingerspellingData as FingerspellingJson;
+const lexicon = lexiconData as LexiconJson;
 
 /** Metadatos por letra (traducción y descripción). */
 export function getLetterMeta(letterId: string) {
@@ -27,18 +41,27 @@ export function listLetters(): string[] {
   return Object.keys(source.letters).sort();
 }
 
-/** Plantillas globales cargadas desde el repo. */
+/** Plantillas globales cargadas desde el repo: alfabeto + signos léxicos. */
 export function loadGlobalTemplates(): Template[] {
   const out: Template[] = [];
   for (const [letter, entry] of Object.entries(source.letters)) {
     for (const landmarks of entry.templates) {
-      out.push({
-        label: letter,
-        features: flatten(landmarks),
-      });
+      out.push({ label: letter, features: flatten(landmarks) });
+    }
+  }
+  for (const [signId, entry] of Object.entries(lexicon.signs)) {
+    for (const landmarks of entry.templates) {
+      out.push({ label: signId, features: flatten(landmarks) });
     }
   }
   return out;
+}
+
+/** Nº de plantillas cargadas para una etiqueta (letra o signo). */
+export function globalTemplateCount(label: string): number {
+  if (source.letters[label]) return source.letters[label]!.templates.length;
+  if (lexicon.signs[label]) return lexicon.signs[label]!.templates.length;
+  return 0;
 }
 
 function flatten(landmarks: NormalizedLandmark[]): number[] {

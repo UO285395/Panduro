@@ -21,23 +21,41 @@ PWA gamificada para aprender **Lengua de Signos Española (LSE)** con feedback p
 
 ## Setup
 
+Tienes tres formas de arrancar la app en local, de menos a más completa. Elige la que te encaje.
+
+### A. Modo demo (0 dependencias, sin backend)
+
+Sirve para ver la aplicación entera sin instalar Docker ni tener cuenta de Supabase. Todo el progreso se guarda en `localStorage`.
+
 ```bash
-# 1. Instalar dependencias
 pnpm install
+NEXT_PUBLIC_DEMO_MODE=1 pnpm dev
+```
 
-# 2. Configurar entorno
-cp .env.example .env.local
-# Edita .env.local con tu SUPABASE_URL y ANON_KEY
+En la landing verás el botón **"Entrar en modo demo"**. Puedes vaciar el progreso desde `/dev/demo-reset`.
 
-# 3. Aplicar migraciones (con Supabase CLI y proyecto vinculado)
-pnpm dlx supabase link --project-ref <tu-project-ref>
-pnpm dlx supabase db push
+### B. Modo local completo (Supabase local en Docker)
 
-# 4. Levantar el dev server
+Levanta Postgres + Auth + Studio en tu máquina y aplica migraciones y semilla.
+
+```bash
+bash scripts/local-setup.sh
 pnpm dev
 ```
 
-Abre <http://localhost:3000>.
+Usuario demo pre-creado: `demo@panduro.local` / `panduro-demo`. Studio en <http://localhost:54323>.
+
+### C. Modo cloud (Supabase en producción)
+
+```bash
+pnpm install
+cp .env.example .env.local        # rellena URL y ANON_KEY del proyecto real
+pnpm dlx supabase link --project-ref <tu-project-ref>
+pnpm dlx supabase db push
+pnpm dev
+```
+
+En los tres modos abre <http://localhost:3000>.
 
 ## Scripts
 

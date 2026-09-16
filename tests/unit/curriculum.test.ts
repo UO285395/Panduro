@@ -26,6 +26,19 @@ describe("curriculum: schema + loader", () => {
     expect(u1!.lessons.length).toBe(3);
   });
 
+  it("incluye la Unidad 2 de dactilología con ejercicios sign_this", () => {
+    const u2 = getUnit("a1.u2");
+    expect(u2).toBeDefined();
+    expect(u2!.lessons.length).toBeGreaterThanOrEqual(3);
+    const allExercises = u2!.lessons.flatMap((l) => l.exercises);
+    const signThis = allExercises.filter((e) => e.type === "sign_this");
+    expect(signThis.length).toBeGreaterThanOrEqual(10);
+    for (const ex of signThis) {
+      if (ex.type !== "sign_this") continue;
+      expect(ex.letterId).toMatch(/^[A-ZÑ]$/);
+    }
+  });
+
   it("todas las referencias signId de ejercicios existen en signs", () => {
     const level = getLevel();
     const ids = new Set(level.signs.map((s) => s.id));
@@ -53,6 +66,9 @@ describe("curriculum: schema + loader", () => {
   it("getLessonSequence linealiza las lecciones en orden", () => {
     const seq = getLessonSequence();
     expect(seq[0]?.lesson.id).toBe("a1.u1.l1");
-    expect(seq[seq.length - 1]?.lesson.id).toBe("a1.u1.l3");
+    // Recorre unidades en el orden declarado y termina en la última de U2.
+    expect(seq[seq.length - 1]?.lesson.id).toBe("a1.u2.l3");
+    const u1Count = seq.filter((x) => x.unit.id === "a1.u1").length;
+    expect(u1Count).toBe(3);
   });
 });

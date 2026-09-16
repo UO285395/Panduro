@@ -97,10 +97,25 @@ Ver `/root/.claude/plans/root-claude-uploads-b1567562-54a4-5158-mossy-breeze.md`
 | --- | --- |
 | 1 | Setup + auth + PWA |
 | 2 | Árbol de lecciones + ejercicios sin cámara + Unidad 1 (Saludos) |
-| **3** *(actual)* | Pipeline MediaPipe Hand Landmarker + `/dev/hand-tracking` |
-| 4 | Reconocimiento de dactilología (clasificador k-NN + Web Worker) |
+| 3 | Pipeline MediaPipe Hand Landmarker + `/dev/hand-tracking` |
+| **4** *(actual)* | Reconocimiento de dactilología (k-NN + `SignThis` + `/dev/capture`) |
 | 5 | Repetición espaciada (SM-2) + gamificación (corazones, racha) |
-| 6 | 50 signos + estudio de usabilidad + beta cerrada |
+| 6 | 50 signos + avatar humanoide + pulido |
+| 7 | Traductor/transcriptor en tiempo real (`/translate`) |
+
+## Practicar dactilología (Unidad 2 · Alfabeto LSE)
+
+La Unidad 2 introduce el alfabeto dactilológico con un nuevo tipo de ejercicio `sign_this`: el sistema pide una letra, tú la signas frente a la cámara y un clasificador **k-NN** ejecutándose localmente decide si has acertado.
+
+**Cómo funciona la calibración por auto-aprendizaje**
+
+La primera vez que aparece una letra, el clasificador no tiene plantillas. El ejercicio entra en modo **calibración**: te pide signar esa letra 3 veces seguidas y guarda las muestras en `localStorage`. A partir de la siguiente ronda, esa letra pasa al modo evaluación con voto por mayoría durante 2 s. Los fallos en ejercicios de cámara **no consumen corazones** — el ruido óptico puede provocar falsos negativos.
+
+**Poblar el corpus global** (para cualquier persona sin calibrar previamente)
+
+1. Ve a `/dev/capture` (requiere sesión o modo demo).
+2. Signa cada letra y pulsa el botón correspondiente. Con 3–5 plantillas por letra el clasificador ya es útil.
+3. Pulsa **Descargar JSON** y pega el contenido en `content/signs/fingerspelling.json`. Al commitearlo, cualquier usuario nuevo tendrá plantillas globales listas y no necesitará calibrar.
 
 ## Probar el hand-tracking (`/dev/hand-tracking`)
 

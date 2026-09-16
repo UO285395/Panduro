@@ -43,6 +43,15 @@ type EventRow = {
   createdAt: string;
 };
 
+type TranslationRowLocal = {
+  id: string;
+  text: string;
+  cardIds: string[];
+  startedAt: number;
+  endedAt: number;
+  createdAt: number;
+};
+
 type Snapshot = {
   version: 2;
   signedIn: boolean;
@@ -50,6 +59,7 @@ type Snapshot = {
   progress: Record<string, ProgressRow>;
   reviews: Record<string, ReviewRow>;
   events: EventRow[];
+  translations: TranslationRowLocal[];
 };
 
 const initialSnapshot: Snapshot = {
@@ -67,6 +77,7 @@ const initialSnapshot: Snapshot = {
   progress: {},
   reviews: {},
   events: [],
+  translations: [],
 };
 
 function isBrowser(): boolean {
@@ -79,7 +90,11 @@ function read(): Snapshot {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return initialSnapshot;
     const parsed = JSON.parse(raw) as Partial<Snapshot> & { version?: number };
-    if (parsed.version === 2) return parsed as Snapshot;
+    if (parsed.version === 2) {
+      // Los usuarios que tuvieran snapshot v2 sin translations siguen funcionando.
+      const raw = parsed as Snapshot;
+      return { ...raw, translations: raw.translations ?? [] };
+    }
     if (parsed.version === 1) {
       // Migración silenciosa desde la versión anterior sin reviews/heartsRegenAt.
       const migrated: Snapshot = {
@@ -327,6 +342,36 @@ export function initReviewsForLessonDemo(cardIds: string[], nowMs = Date.now()) 
     }
   }
   if (changed) write({ ...snap, reviews: nextReviews });
+}
+
+export type DemoTranslationInput = {
+  text: string;
+  cardIds: string[];
+  startedAt: number;
+  endedAt: number;
+};
+
+export function saveTranslationDemo(input: DemoTranslationInput) {
+  if (!input.text.trim()) return null;
+  const snap = read();
+  const now = Date.now();
+  const row: TranslationRowLocal = {
+    id: `local-${now}-${Math.random().toString(36).slice(2, 8)}`,
+    text: input.text,
+    cardIds: input.cardIds,
+    startedAt: input.startedAt,
+    endedAt: input.endedAt,
+    createdAt: now,
+  };
+  write({
+    ...snap,
+    translations: [row, ...snap.translations].slice(0, 50),
+  });
+  return row;
+}
+
+export function listTranslationsDemo(limit = 20) {
+  return read().translations.slice(0, limit);
 }
 
 /** Solo para tests: acceso crudo al perfil (evita re-implementar mocks). */

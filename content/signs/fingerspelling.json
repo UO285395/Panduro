@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "letters": {
+    "A": {
+      "translation": "A",
+      "description": "Puño cerrado con el pulgar extendido apoyado al lateral.",
+      "templates": []
+    },
+    "B": {
+      "translation": "B",
+      "description": "Palma plana hacia delante, cuatro dedos juntos y pulgar cruzado sobre la palma.",
+      "templates": []
+    },
+    "C": {
+      "translation": "C",
+      "description": "Mano en forma de C, dedos y pulgar curvados.",
+      "templates": []
+    },
+    "D": {
+      "translation": "D",
+      "description": "Índice extendido hacia arriba; pulgar toca las yemas de los dedos medios y anular.",
+      "templates": []
+    },
+    "E": {
+      "translation": "E",
+      "description": "Puño con las yemas de los dedos tocando el pulgar plegado.",
+      "templates": []
+    },
+    "F": {
+      "translation": "F",
+      "description": "Pulgar y índice forman un círculo; anular, corazón y meñique extendidos.",
+      "templates": []
+    },
+    "G": {
+      "translation": "G",
+      "description": "Pulgar e índice extendidos paralelos, orientados horizontalmente.",
+      "templates": []
+    },
+    "H": {
+      "translation": "H",
+      "description": "Índice y corazón extendidos juntos, en horizontal.",
+      "templates": []
+    },
+    "I": {
+      "translation": "I",
+      "description": "Puño con el meñique extendido hacia arriba.",
+      "templates": []
+    },
+    "J": {
+      "translation": "J",
+      "description": "Meñique extendido dibujando una J en el aire (aproximación estática: meñique + curva hacia abajo).",
+      "templates": []
+    },
+    "K": {
+      "translation": "K",
+      "description": "Índice y corazón extendidos en V con pulgar tocando la base del corazón.",
+      "templates": []
+    },
+    "L": {
+      "translation": "L",
+      "description": "Pulgar y índice extendidos formando una L.",
+      "templates": []
+    },
+    "M": {
+      "translation": "M",
+      "description": "Tres dedos (índice, corazón, anular) sobre el pulgar plegado.",
+      "templates": []
+    },
+    "N": {
+      "translation": "N",
+      "description": "Dos dedos (índice y corazón) sobre el pulgar plegado.",
+      "templates": []
+    },
+    "Ñ": {
+      "translation": "Ñ",
+      "description": "Como N pero con movimiento ondulatorio del dorso (aproximación estática igual a N).",
+      "templates": []
+    },
+    "O": {
+      "translation": "O",
+      "description": "Dedos y pulgar forman un círculo cerrado.",
+      "templates": []
+    },
+    "P": {
+      "translation": "P",
+      "description": "Como K rotada hacia abajo: índice y corazón bajos con pulgar entre ellos.",
+      "templates": []
+    },
+    "Q": {
+      "translation": "Q",
+      "description": "Como G rotada hacia abajo: pulgar e índice hacia el suelo.",
+      "templates": []
+    },
+    "R": {
+      "translation": "R",
+      "description": "Índice y corazón cruzados, extendidos hacia arriba.",
+      "templates": []
+    },
+    "S": {
+      "translation": "S",
+      "description": "Puño cerrado con el pulgar por delante de los dedos.",
+      "templates": []
+    },
+    "T": {
+      "translation": "T",
+      "description": "Pulgar entre índice y corazón, ambos parcialmente flexionados.",
+      "templates": []
+    },
+    "U": {
+      "translation": "U",
+      "description": "Índice y corazón extendidos y juntos hacia arriba.",
+      "templates": []
+    },
+    "V": {
+      "translation": "V",
+      "description": "Índice y corazón extendidos separados formando V.",
+      "templates": []
+    },
+    "W": {
+      "translation": "W",
+      "description": "Índice, corazón y anular extendidos separados.",
+      "templates": []
+    },
+    "X": {
+      "translation": "X",
+      "description": "Índice extendido y flexionado en la primera falange (forma de gancho).",
+      "templates": []
+    },
+    "Y": {
+      "translation": "Y",
+      "description": "Pulgar y meñique extendidos, resto de dedos cerrados.",
+      "templates": []
+    },
+    "Z": {
+      "translation": "Z",
+      "description": "Índice extendido dibujando una Z (aproximación estática: solo índice extendido).",
+      "templates": []
+    }
+  }
+}

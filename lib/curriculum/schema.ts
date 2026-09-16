@@ -49,10 +49,18 @@ const TypeWordExercise = ExerciseBase.extend({
   acceptable: z.array(z.string().min(1)).min(1), // variantes válidas
 });
 
+const SignThisExercise = ExerciseBase.extend({
+  type: z.literal("sign_this"),
+  letterId: z.string().length(1).regex(/[A-ZÑ]/), // A-Z, Ñ (dactilología LSE)
+  minConfidence: z.number().min(0).max(1).default(0.55),
+  voteWindowMs: z.number().int().min(500).max(6000).default(2000),
+});
+
 export const ExerciseSchema = z.discriminatedUnion("type", [
   MultipleChoiceExercise,
   MatchPairsExercise,
   TypeWordExercise,
+  SignThisExercise,
 ]);
 export type Exercise = z.infer<typeof ExerciseSchema>;
 

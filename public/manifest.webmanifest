@@ -1,0 +1,19 @@
+{
+  "name": "Panduro — aprende LSE",
+  "short_name": "Panduro",
+  "description": "Aprende Lengua de Signos Española de forma gamificada, con feedback por cámara y validación de la comunidad sorda.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1a72f2",
+  "lang": "es-ES",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

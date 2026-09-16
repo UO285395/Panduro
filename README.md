@@ -77,12 +77,27 @@ Ver `/root/.claude/plans/root-claude-uploads-b1567562-54a4-5158-mossy-breeze.md`
 
 | Hito | Contenido |
 | --- | --- |
-| **1** *(actual)* | Setup + auth + PWA |
+| 1 | Setup + auth + PWA |
 | 2 | Árbol de lecciones + ejercicios sin cámara + Unidad 1 (Saludos) |
-| 3 | Integración MediaPipe Hand Landmarker |
-| 4 | Reconocimiento de dactilología |
+| **3** *(actual)* | Pipeline MediaPipe Hand Landmarker + `/dev/hand-tracking` |
+| 4 | Reconocimiento de dactilología (clasificador k-NN + Web Worker) |
 | 5 | Repetición espaciada (SM-2) + gamificación (corazones, racha) |
 | 6 | 50 signos + estudio de usabilidad + beta cerrada |
+
+## Probar el hand-tracking (`/dev/hand-tracking`)
+
+1. Inicia sesión y navega a `/dev/hand-tracking`.
+2. Haz clic en **Empezar cámara** y concede el permiso cuando el navegador lo pida.
+3. La primera vez, el modelo (`hand_landmarker.task`, ~5 MB) tarda 1–3 s en descargarse desde el CDN de Google.
+4. Enseña una mano abierta a la cámara; verás 21 puntos + esqueleto superpuestos.
+5. La tarjeta inferior muestra **FPS**, **P50/P95 de latencia** y qué **delegate** está en uso (GPU o CPU fallback).
+
+**Requisitos**:
+- Chrome, Edge, Safari (iOS 15+) o Firefox actuales.
+- `localhost` o HTTPS (getUserMedia lo exige).
+- Buena iluminación frontal; encuadre a media distancia.
+
+**Privacidad**: la inferencia corre íntegra en tu navegador vía WebAssembly + WebGL. Ningún frame se sube a ningún servidor.
 
 ## Contribuir
 

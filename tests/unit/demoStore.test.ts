@@ -25,6 +25,39 @@ describe("demoStore", () => {
     expect(s.hearts).toBe(5);
     expect(s.streakDays).toBe(0);
     expect(s.progressByLesson.size).toBe(0);
+    expect(s.pendingReviews).toEqual([]);
+    expect(s.nextReviewDueAt).toBeNull();
+  });
+
+  it("completeLesson inicializa reviews SM-2 para las cards de la lección", () => {
+    mod.signInDemo();
+    mod.completeLessonDemo({
+      lessonId: "a1.u1.l1",
+      correct: 5,
+      total: 5,
+      heartsUsed: 0,
+      cardIds: ["sign:HOLA", "sign:ADIOS"],
+    });
+    const s = mod.getSnapshotDemo();
+    // Están vencidas ya (dueAt = now al crearse)
+    const ids = s.pendingReviews.map((r) => r.cardId).sort();
+    expect(ids).toEqual(["sign:ADIOS", "sign:HOLA"]);
+  });
+
+  it("submitReview reprograma la card y baja de pending", () => {
+    mod.signInDemo();
+    mod.completeLessonDemo({
+      lessonId: "a1.u1.l1",
+      correct: 5,
+      total: 5,
+      heartsUsed: 0,
+      cardIds: ["sign:HOLA"],
+    });
+    // Quality 4 (Bien) -> intervalo 1 día
+    mod.submitReviewDemo("sign:HOLA", 4);
+    const s = mod.getSnapshotDemo();
+    expect(s.pendingReviews).toHaveLength(0);
+    expect(s.nextReviewDueAt).not.toBeNull();
   });
 
   it("signIn persiste display name entre 'sesiones'", () => {

@@ -11,19 +11,30 @@
  */
 
 import { computeLessonScore, MAX_HEARTS } from "@/lib/gamification/xp";
-import type { LessonProgress, UserSnapshot } from "@/lib/progress/queries";
+import { applyLazySettings, onHeartsLost } from "@/lib/gamification/lazy";
+import type { LessonProgress, PendingReview, UserSnapshot } from "@/lib/progress/queries";
+import {
+  DEFAULT_EASE,
+  initialReview,
+  nextReview,
+  type Quality,
+  type ReviewState,
+} from "@/lib/srs/sm2";
 
 const STORAGE_KEY = "panduro:demo";
 
 type Profile = {
   displayName: string;
   hearts: number;
+  heartsRegenAt: number | null;
   xpTotal: number;
   streakDays: number;
   streakLastDay: string | null;
 };
 
 type ProgressRow = LessonProgress;
+
+type ReviewRow = ReviewState;
 
 type EventRow = {
   kind: string;
@@ -32,24 +43,27 @@ type EventRow = {
 };
 
 type Snapshot = {
-  version: 1;
+  version: 2;
   signedIn: boolean;
   profile: Profile;
   progress: Record<string, ProgressRow>;
+  reviews: Record<string, ReviewRow>;
   events: EventRow[];
 };
 
-const initial: Snapshot = {
-  version: 1,
+const initialSnapshot: Snapshot = {
+  version: 2,
   signedIn: false,
   profile: {
     displayName: "estudiante",
     hearts: MAX_HEARTS,
+    heartsRegenAt: null,
     xpTotal: 0,
     streakDays: 0,
     streakLastDay: null,
   },
   progress: {},
+  reviews: {},
   events: [],
 };
 
@@ -58,15 +72,31 @@ function isBrowser(): boolean {
 }
 
 function read(): Snapshot {
-  if (!isBrowser()) return initial;
+  if (!isBrowser()) return initialSnapshot;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return initial;
-    const parsed = JSON.parse(raw) as Snapshot;
-    if (parsed.version !== 1) return initial;
-    return parsed;
+    if (!raw) return initialSnapshot;
+    const parsed = JSON.parse(raw) as Partial<Snapshot> & { version?: number };
+    if (parsed.version === 2) return parsed as Snapshot;
+    if (parsed.version === 1) {
+      // Migración silenciosa desde la versión anterior sin reviews/heartsRegenAt.
+      const migrated: Snapshot = {
+        ...initialSnapshot,
+        signedIn: parsed.signedIn ?? false,
+        profile: {
+          ...initialSnapshot.profile,
+          ...(parsed.profile ?? {}),
+          heartsRegenAt: null,
+        },
+        progress: parsed.progress ?? {},
+        events: parsed.events ?? [],
+      };
+      write(migrated);
+      return migrated;
+    }
+    return initialSnapshot;
   } catch {
-    return initial;
+    return initialSnapshot;
   }
 }
 
@@ -114,18 +144,56 @@ export function resetDemo() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export function getSnapshotDemo(): UserSnapshot {
-  const snap = read();
+function applyLazyAndPersist(snap: Snapshot, now = Date.now()): Snapshot {
+  const { next, changed } = applyLazySettings(
+    {
+      hearts: snap.profile.hearts,
+      heartsRegenAt: snap.profile.heartsRegenAt,
+      streakDays: snap.profile.streakDays,
+      streakLastDay: snap.profile.streakLastDay,
+    },
+    now,
+  );
+  if (!changed) return snap;
+  const updated: Snapshot = {
+    ...snap,
+    profile: {
+      ...snap.profile,
+      hearts: next.hearts,
+      heartsRegenAt: next.heartsRegenAt,
+      streakDays: next.streakDays,
+      streakLastDay: next.streakLastDay,
+    },
+  };
+  write(updated);
+  return updated;
+}
+
+export function getSnapshotDemo(nowMs = Date.now()): UserSnapshot {
+  const raw = read();
+  const snap = applyLazyAndPersist(raw, nowMs);
   const progressByLesson = new Map<string, LessonProgress>();
   for (const [id, row] of Object.entries(snap.progress)) {
     progressByLesson.set(id, row);
   }
+  const pendingReviews: PendingReview[] = Object.entries(snap.reviews)
+    .filter(([, r]) => r.dueAt <= nowMs)
+    .sort((a, b) => a[1].dueAt - b[1].dueAt)
+    .slice(0, 20)
+    .map(([cardId, r]) => ({ cardId, dueAt: r.dueAt }));
+  const nextReviewDueAt = Object.values(snap.reviews)
+    .map((r) => r.dueAt)
+    .sort((a, b) => a - b)[0] ?? null;
+
   return {
     displayName: snap.profile.displayName,
     hearts: snap.profile.hearts,
+    heartsRegenAt: snap.profile.heartsRegenAt,
     xpTotal: snap.profile.xpTotal,
     streakDays: snap.profile.streakDays,
     progressByLesson,
+    pendingReviews,
+    nextReviewDueAt,
   };
 }
 
@@ -134,10 +202,19 @@ export function completeLessonDemo(input: {
   correct: number;
   total: number;
   heartsUsed: number;
+  cardIds?: string[];
 }) {
-  const snap = read();
+  const now = Date.now();
+  const raw = read();
+  const snap = applyLazyAndPersist(raw, now);
   const heartsBefore = snap.profile.hearts;
   const heartsAfter = Math.max(0, heartsBefore - input.heartsUsed);
+  const heartsRegenAt = onHeartsLost(
+    heartsBefore,
+    heartsAfter,
+    snap.profile.heartsRegenAt,
+    now,
+  );
   const { xp, bestScore, perfected } = computeLessonScore({
     correct: input.correct,
     total: input.total,
@@ -145,7 +222,6 @@ export function completeLessonDemo(input: {
   });
 
   const existing = snap.progress[input.lessonId];
-  const attempts = (existing?.bestScore != null ? 1 : 0) + (existing ? 1 : 0);
   const newBest = Math.max(existing?.bestScore ?? 0, bestScore);
   const status: ProgressRow["status"] = perfected ? "perfected" : "completed";
 
@@ -158,11 +234,17 @@ export function completeLessonDemo(input: {
     },
   };
 
-  // Racha diaria: si el último día registrado no es hoy, sube +1
-  const today = new Date().toISOString().slice(0, 10);
+  // Inicializa reviews para las cards de la lección si no existen.
+  const nextReviews: Record<string, ReviewRow> = { ...snap.reviews };
+  for (const cid of input.cardIds ?? []) {
+    if (!nextReviews[cid]) nextReviews[cid] = initialReview(now);
+  }
+
+  // Racha diaria: sube +1 si es un día nuevo respecto a streakLastDay.
+  const today = new Date(now).toISOString().slice(0, 10);
   const streakDays =
     snap.profile.streakLastDay === today
-      ? snap.profile.streakDays
+      ? snap.profile.streakDays || 1
       : snap.profile.streakDays + 1;
 
   const next: Snapshot = {
@@ -170,11 +252,13 @@ export function completeLessonDemo(input: {
     profile: {
       ...snap.profile,
       hearts: heartsAfter,
+      heartsRegenAt,
       xpTotal: snap.profile.xpTotal + xp,
       streakDays,
       streakLastDay: today,
     },
     progress: nextProgress,
+    reviews: nextReviews,
     events: [
       ...snap.events.slice(-99),
       {
@@ -187,13 +271,62 @@ export function completeLessonDemo(input: {
           xp_awarded: xp,
           perfected,
         },
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(now).toISOString(),
       },
     ],
   };
   write(next);
-  // NOTE(demo): silenciamos el warning porque `attempts` no se persiste todavía
-  // en el store demo — solo lo calculamos para paridad futura con Supabase.
-  void attempts;
   return { xp, bestScore, perfected, heartsAfter };
 }
+
+export function submitReviewDemo(cardId: string, quality: Quality, nowMs = Date.now()) {
+  const raw = read();
+  const snap = applyLazyAndPersist(raw, nowMs);
+  const current = snap.reviews[cardId] ?? initialReview(nowMs);
+  const state = nextReview(current, quality, nowMs);
+
+  // Sumar racha si es la primera actividad del día
+  const today = new Date(nowMs).toISOString().slice(0, 10);
+  const streakDays =
+    snap.profile.streakLastDay === today
+      ? snap.profile.streakDays || 1
+      : snap.profile.streakDays + 1;
+
+  const next: Snapshot = {
+    ...snap,
+    profile: {
+      ...snap.profile,
+      streakDays,
+      streakLastDay: today,
+    },
+    reviews: { ...snap.reviews, [cardId]: state },
+  };
+  write(next);
+  return state;
+}
+
+export function initReviewsForLessonDemo(cardIds: string[], nowMs = Date.now()) {
+  const snap = read();
+  const nextReviews = { ...snap.reviews };
+  let changed = false;
+  for (const cid of cardIds) {
+    if (!nextReviews[cid]) {
+      nextReviews[cid] = initialReview(nowMs);
+      changed = true;
+    }
+  }
+  if (changed) write({ ...snap, reviews: nextReviews });
+}
+
+/** Solo para tests: acceso crudo al perfil (evita re-implementar mocks). */
+export function _debugSetProfileForTests(patch: Partial<Profile>) {
+  const snap = read();
+  write({ ...snap, profile: { ...snap.profile, ...patch } });
+}
+
+export function _debugSetReviewForTests(cardId: string, state: ReviewState) {
+  const snap = read();
+  write({ ...snap, reviews: { ...snap.reviews, [cardId]: state } });
+}
+
+export { DEFAULT_EASE };

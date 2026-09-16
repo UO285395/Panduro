@@ -10,6 +10,7 @@ import { MAX_HEARTS } from "@/lib/gamification/xp";
 import { MultipleChoice } from "@/components/exercises/MultipleChoice";
 import { MatchPairs } from "@/components/exercises/MatchPairs";
 import { TypeWord } from "@/components/exercises/TypeWord";
+import { SignThis } from "@/components/exercises/SignThis";
 
 type SignRecord = Record<string, Sign | undefined>;
 
@@ -44,8 +45,14 @@ export function LessonRunner({
       setCorrect((c) => c + 1);
       setFeedback({ kind: "correct", message: "¡Correcto!" });
     } else {
-      setHeartsUsed((h) => h + 1);
-      setFeedback({ kind: "wrong", message: "Casi. ¡Sigue!" });
+      // Los ejercicios de cámara no consumen corazones: el ruido óptico puede
+      // provocar falsos negativos que frustrarían al estudiante sin motivo.
+      const consumes = current.type !== "sign_this";
+      if (consumes) setHeartsUsed((h) => h + 1);
+      setFeedback({
+        kind: "wrong",
+        message: consumes ? "Casi. ¡Sigue!" : "No se reconoció bien. Vamos a otra.",
+      });
     }
   }
 
@@ -210,6 +217,15 @@ function ExerciseView({
         <TypeWord
           exercise={exercise}
           sign={sign}
+          onAnswer={onAnswer}
+          disabled={disabled}
+        />
+      );
+    }
+    case "sign_this": {
+      return (
+        <SignThis
+          exercise={exercise}
           onAnswer={onAnswer}
           disabled={disabled}
         />

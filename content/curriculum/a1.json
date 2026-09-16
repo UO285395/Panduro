@@ -288,6 +288,109 @@
           ]
         }
       ]
+    },
+    {
+      "id": "a1.u2",
+      "title": "Unidad 2 · Dactilología LSE",
+      "summary": "Aprende el alfabeto dactilológico para deletrear nombres propios y palabras sin signo estándar.",
+      "lessons": [
+        {
+          "id": "a1.u2.l1",
+          "title": "Vocales",
+          "goal": "Reconocer y ejecutar las cinco vocales.",
+          "signs": ["HOLA"],
+          "exercises": [
+            {
+              "id": "a1.u2.l1.e1",
+              "type": "sign_this",
+              "prompt": "Signa la letra A ante la cámara.",
+              "letterId": "A"
+            },
+            {
+              "id": "a1.u2.l1.e2",
+              "type": "sign_this",
+              "prompt": "Signa la letra E.",
+              "letterId": "E"
+            },
+            {
+              "id": "a1.u2.l1.e3",
+              "type": "sign_this",
+              "prompt": "Signa la letra I.",
+              "letterId": "I"
+            },
+            {
+              "id": "a1.u2.l1.e4",
+              "type": "sign_this",
+              "prompt": "Signa la letra O.",
+              "letterId": "O"
+            },
+            {
+              "id": "a1.u2.l1.e5",
+              "type": "sign_this",
+              "prompt": "Signa la letra U.",
+              "letterId": "U"
+            }
+          ]
+        },
+        {
+          "id": "a1.u2.l2",
+          "title": "Consonantes iniciales",
+          "goal": "Practicar consonantes con configuración distintiva.",
+          "signs": ["HOLA"],
+          "exercises": [
+            {
+              "id": "a1.u2.l2.e1",
+              "type": "sign_this",
+              "prompt": "Signa la letra B.",
+              "letterId": "B"
+            },
+            {
+              "id": "a1.u2.l2.e2",
+              "type": "sign_this",
+              "prompt": "Signa la letra C.",
+              "letterId": "C"
+            },
+            {
+              "id": "a1.u2.l2.e3",
+              "type": "sign_this",
+              "prompt": "Signa la letra L.",
+              "letterId": "L"
+            },
+            {
+              "id": "a1.u2.l2.e4",
+              "type": "sign_this",
+              "prompt": "Signa la letra Y.",
+              "letterId": "Y"
+            }
+          ]
+        },
+        {
+          "id": "a1.u2.l3",
+          "title": "Deletreando tu nombre",
+          "goal": "Enlazar varias letras seguidas.",
+          "signs": ["NOMBRE"],
+          "exercises": [
+            {
+              "id": "a1.u2.l3.e1",
+              "type": "sign_this",
+              "prompt": "Empieza tu nombre por M — signa la M.",
+              "letterId": "M"
+            },
+            {
+              "id": "a1.u2.l3.e2",
+              "type": "sign_this",
+              "prompt": "Ahora signa una A.",
+              "letterId": "A"
+            },
+            {
+              "id": "a1.u2.l3.e3",
+              "type": "sign_this",
+              "prompt": "Y para cerrar, signa una R.",
+              "letterId": "R"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

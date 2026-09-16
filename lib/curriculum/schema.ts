@@ -1,6 +1,30 @@
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// Avatar clip (keyframes ligeros interpretados por AvatarPlayer)
+// ---------------------------------------------------------------------------
+const AvatarKeyframeSchema = z.object({
+  t: z.number().min(0), // ms desde el inicio
+  hand: z.object({
+    x: z.number(),
+    y: z.number(),
+    z: z.number(),
+    rot: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
+  }),
+  fingers: z
+    .tuple([z.number(), z.number(), z.number(), z.number(), z.number()])
+    .default([0, 0, 0, 0, 0]),
+});
+export type AvatarKeyframe = z.infer<typeof AvatarKeyframeSchema>;
+
+const AvatarClipSchema = z.object({
+  handedness: z.enum(["one", "two"]).default("one"),
+  duration: z.number().int().min(200).max(6000),
+  keyframes: z.array(AvatarKeyframeSchema).min(2),
+});
+export type AvatarClip = z.infer<typeof AvatarClipSchema>;
+
+// ---------------------------------------------------------------------------
 // Signos (léxico compartido entre lecciones)
 // ---------------------------------------------------------------------------
 export const SignSchema = z.object({
@@ -12,6 +36,7 @@ export const SignSchema = z.object({
   posterUrl: z.string().url().nullable().optional(),
   handedness: z.enum(["one", "two"]).default("one"),
   tags: z.array(z.string()).default([]),
+  avatarClip: AvatarClipSchema.optional(),
 });
 export type Sign = z.infer<typeof SignSchema>;
 

@@ -35,6 +35,9 @@ public/workbox-*.js
 public/workbox-*.js.map
 public/worker-*.js
 
+# Avatares VRM (binarios grandes, licencia de terceros — ver README)
+public/avatars/*.vrm
+
 # misc
 .DS_Store
 *.pem

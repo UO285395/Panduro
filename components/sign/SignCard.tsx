@@ -1,4 +1,5 @@
 import type { Sign } from "@/lib/curriculum/schema";
+import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
 
 export function SignCard({
   sign,
@@ -19,7 +20,7 @@ export function SignCard({
         className={
           compact
             ? "flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-brand-100 text-lg font-bold text-brand-700"
-            : "flex aspect-square w-full max-w-[280px] flex-col items-center justify-center rounded-xl bg-brand-100 p-6 text-center text-brand-800 dark:bg-brand-900/40 dark:text-brand-100"
+            : "flex aspect-square w-full max-w-[280px] flex-col items-center justify-center overflow-hidden rounded-xl bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-100"
         }
         aria-hidden
       >
@@ -31,25 +32,16 @@ export function SignCard({
             playsInline
             className="h-full w-full rounded-lg object-cover"
           />
+        ) : sign.avatarClip && !compact ? (
+          <AvatarPlayer clip={sign.avatarClip} label={sign.gloss} size={260} />
         ) : (
-          <>
-            <span className={compact ? "text-xs" : "text-4xl font-bold"}>
-              {sign.gloss}
-            </span>
-            {!compact && (
-              <span className="mt-2 text-xs uppercase tracking-wider opacity-70">
-                Vídeo pendiente
-              </span>
-            )}
-          </>
+          <span className={compact ? "text-xs" : "text-4xl font-bold"}>
+            {sign.gloss}
+          </span>
         )}
       </div>
       <figcaption
-        className={
-          compact
-            ? "text-sm"
-            : "space-y-1 text-center"
-        }
+        className={compact ? "text-sm" : "space-y-1 text-center"}
       >
         <span className="block font-semibold">{sign.translation}</span>
         {!compact && sign.description && (

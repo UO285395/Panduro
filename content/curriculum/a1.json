@@ -1,0 +1,293 @@
+{
+  "id": "A1",
+  "title": "LSE A1 · Contacto inicial",
+  "signs": [
+    {
+      "id": "HOLA",
+      "gloss": "HOLA",
+      "translation": "Hola",
+      "description": "Mano dominante abierta, palma hacia delante a la altura de la sien; movimiento breve de saludo.",
+      "handedness": "one",
+      "tags": ["saludo", "u1"]
+    },
+    {
+      "id": "ADIOS",
+      "gloss": "ADIÓS",
+      "translation": "Adiós",
+      "description": "Mano abierta, palma hacia delante, se agita ligeramente como despedida.",
+      "handedness": "one",
+      "tags": ["saludo", "u1"]
+    },
+    {
+      "id": "BUENOS_DIAS",
+      "gloss": "BUENOS-DÍAS",
+      "translation": "Buenos días",
+      "description": "Signo compuesto: BIEN (pulgar arriba) + DÍA (mano curva describiendo el arco solar).",
+      "handedness": "one",
+      "tags": ["saludo", "u1"]
+    },
+    {
+      "id": "BUENAS_TARDES",
+      "gloss": "BUENAS-TARDES",
+      "translation": "Buenas tardes",
+      "description": "Signo compuesto: BIEN + TARDE (mano baja hacia el horizonte).",
+      "handedness": "one",
+      "tags": ["saludo", "u1"]
+    },
+    {
+      "id": "BUENAS_NOCHES",
+      "gloss": "BUENAS-NOCHES",
+      "translation": "Buenas noches",
+      "description": "Signo compuesto: BIEN + NOCHE (mano describe curva descendente).",
+      "handedness": "one",
+      "tags": ["saludo", "u1"]
+    },
+    {
+      "id": "GRACIAS",
+      "gloss": "GRACIAS",
+      "translation": "Gracias",
+      "description": "Yemas de los dedos tocan la barbilla y se proyectan hacia delante.",
+      "handedness": "one",
+      "tags": ["cortesia", "u1"]
+    },
+    {
+      "id": "POR_FAVOR",
+      "gloss": "POR-FAVOR",
+      "translation": "Por favor",
+      "description": "Mano plana sobre el pecho con un movimiento circular corto.",
+      "handedness": "one",
+      "tags": ["cortesia", "u1"]
+    },
+    {
+      "id": "PERDON",
+      "gloss": "PERDÓN",
+      "translation": "Perdón",
+      "description": "Puño con pulgar extendido roza el pecho en un círculo pequeño.",
+      "handedness": "one",
+      "tags": ["cortesia", "u1"]
+    },
+    {
+      "id": "SI",
+      "gloss": "SÍ",
+      "translation": "Sí",
+      "description": "Puño cerrado que asiente con el nudillo del índice arriba y abajo.",
+      "handedness": "one",
+      "tags": ["respuesta", "u1"]
+    },
+    {
+      "id": "NO",
+      "gloss": "NO",
+      "translation": "No",
+      "description": "Índice extendido que oscila lateralmente.",
+      "handedness": "one",
+      "tags": ["respuesta", "u1"]
+    },
+    {
+      "id": "YO",
+      "gloss": "YO",
+      "translation": "Yo",
+      "description": "Índice extendido señalando el propio pecho.",
+      "handedness": "one",
+      "tags": ["pronombre", "u1"]
+    },
+    {
+      "id": "TU",
+      "gloss": "TÚ",
+      "translation": "Tú",
+      "description": "Índice extendido señalando a la persona interlocutora.",
+      "handedness": "one",
+      "tags": ["pronombre", "u1"]
+    },
+    {
+      "id": "NOMBRE",
+      "gloss": "NOMBRE",
+      "translation": "Nombre / Me llamo",
+      "description": "Índice y medio extendidos golpean dos veces sobre la palma opuesta.",
+      "handedness": "two",
+      "tags": ["presentacion", "u1"]
+    },
+    {
+      "id": "BIEN",
+      "gloss": "BIEN",
+      "translation": "Bien",
+      "description": "Pulgar hacia arriba con puño cerrado.",
+      "handedness": "one",
+      "tags": ["estado", "u1"]
+    },
+    {
+      "id": "MAL",
+      "gloss": "MAL",
+      "translation": "Mal",
+      "description": "Pulgar hacia abajo con puño cerrado.",
+      "handedness": "one",
+      "tags": ["estado", "u1"]
+    },
+    {
+      "id": "COMO_ESTAS",
+      "gloss": "CÓMO-ESTAR",
+      "translation": "¿Cómo estás?",
+      "description": "Manos con palmas hacia arriba oscilando ligeramente, con cejas levantadas (pregunta).",
+      "handedness": "two",
+      "tags": ["pregunta", "u1"]
+    }
+  ],
+  "units": [
+    {
+      "id": "a1.u1",
+      "title": "Unidad 1 · Saludos y presentaciones",
+      "summary": "Aprende a saludar, despedirte, dar las gracias y presentarte en LSE.",
+      "lessons": [
+        {
+          "id": "a1.u1.l1",
+          "title": "Saludar y despedirse",
+          "goal": "Reconocer y usar los saludos básicos según la hora del día.",
+          "signs": ["HOLA", "ADIOS", "BUENOS_DIAS", "BUENAS_TARDES", "BUENAS_NOCHES"],
+          "exercises": [
+            {
+              "id": "a1.u1.l1.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "HOLA",
+              "options": ["Hola", "Adiós", "Buenas tardes", "Buenos días"],
+              "answer": "Hola"
+            },
+            {
+              "id": "a1.u1.l1.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "ADIOS",
+              "options": ["Hola", "Adiós", "Perdón", "Gracias"],
+              "answer": "Adiós"
+            },
+            {
+              "id": "a1.u1.l1.e3",
+              "type": "multiple_choice",
+              "prompt": "Es de mañana. ¿Cómo saludas?",
+              "signId": "BUENOS_DIAS",
+              "options": ["Buenos días", "Buenas tardes", "Buenas noches", "Hola"],
+              "answer": "Buenos días"
+            },
+            {
+              "id": "a1.u1.l1.e4",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "BUENAS_TARDES",
+              "acceptable": ["buenas tardes", "buenas tardes."]
+            },
+            {
+              "id": "a1.u1.l1.e5",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                { "signId": "HOLA", "translation": "Hola" },
+                { "signId": "ADIOS", "translation": "Adiós" },
+                { "signId": "BUENOS_DIAS", "translation": "Buenos días" },
+                { "signId": "BUENAS_NOCHES", "translation": "Buenas noches" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a1.u1.l2",
+          "title": "Cortesía y respuestas",
+          "goal": "Expresar cortesía y responder de forma básica.",
+          "signs": ["GRACIAS", "POR_FAVOR", "PERDON", "SI", "NO"],
+          "exercises": [
+            {
+              "id": "a1.u1.l2.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "GRACIAS",
+              "options": ["Gracias", "Por favor", "Perdón", "Adiós"],
+              "answer": "Gracias"
+            },
+            {
+              "id": "a1.u1.l2.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "POR_FAVOR",
+              "options": ["Gracias", "Por favor", "Sí", "No"],
+              "answer": "Por favor"
+            },
+            {
+              "id": "a1.u1.l2.e3",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "PERDON",
+              "acceptable": ["perdón", "perdon", "lo siento"]
+            },
+            {
+              "id": "a1.u1.l2.e4",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo usarías para responder afirmativamente?",
+              "signId": "SI",
+              "options": ["Sí", "No", "Gracias", "Perdón"],
+              "answer": "Sí"
+            },
+            {
+              "id": "a1.u1.l2.e5",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                { "signId": "GRACIAS", "translation": "Gracias" },
+                { "signId": "POR_FAVOR", "translation": "Por favor" },
+                { "signId": "SI", "translation": "Sí" },
+                { "signId": "NO", "translation": "No" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a1.u1.l3",
+          "title": "Presentarse",
+          "goal": "Decir tu nombre, preguntar cómo está alguien y responder.",
+          "signs": ["YO", "TU", "NOMBRE", "BIEN", "MAL", "COMO_ESTAS"],
+          "exercises": [
+            {
+              "id": "a1.u1.l3.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "YO",
+              "options": ["Yo", "Tú", "Nombre", "Bien"],
+              "answer": "Yo"
+            },
+            {
+              "id": "a1.u1.l3.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "COMO_ESTAS",
+              "options": ["¿Cómo estás?", "Buenos días", "Nombre", "Perdón"],
+              "answer": "¿Cómo estás?"
+            },
+            {
+              "id": "a1.u1.l3.e3",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "NOMBRE",
+              "acceptable": ["nombre", "me llamo", "mi nombre"]
+            },
+            {
+              "id": "a1.u1.l3.e4",
+              "type": "multiple_choice",
+              "prompt": "Te preguntan cómo estás y todo va bien. ¿Qué signo respondes?",
+              "signId": "BIEN",
+              "options": ["Bien", "Mal", "No", "Sí"],
+              "answer": "Bien"
+            },
+            {
+              "id": "a1.u1.l3.e5",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                { "signId": "YO", "translation": "Yo" },
+                { "signId": "TU", "translation": "Tú" },
+                { "signId": "NOMBRE", "translation": "Nombre / Me llamo" },
+                { "signId": "COMO_ESTAS", "translation": "¿Cómo estás?" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

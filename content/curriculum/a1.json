@@ -8,14 +8,74 @@
       "translation": "Hola",
       "description": "Mano dominante abierta, palma hacia delante a la altura de la sien; movimiento breve de saludo.",
       "handedness": "one",
-      "tags": ["saludo", "u1"],
+      "tags": [
+        "saludo",
+        "u1"
+      ],
       "avatarClip": {
         "handedness": "one",
         "duration": 1200,
         "keyframes": [
-          { "t": 0, "hand": { "x": -0.3, "y": 0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
-          { "t": 600, "hand": { "x": 0.3, "y": 0.7, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
-          { "t": 1200, "hand": { "x": -0.3, "y": 0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] }
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.3,
+              "y": 0.6,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.3,
+              "y": 0.7,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": -0.3,
+              "y": 0.6,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
         ]
       }
     },
@@ -25,7 +85,96 @@
       "translation": "Adiós",
       "description": "Mano abierta, palma hacia delante, se agita ligeramente como despedida.",
       "handedness": "one",
-      "tags": ["saludo", "u1"]
+      "tags": [
+        "saludo",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.3,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.2,
+              "y": 0.3,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "BUENOS_DIAS",
@@ -33,7 +182,76 @@
       "translation": "Buenos días",
       "description": "Signo compuesto: BIEN (pulgar arriba) + DÍA (mano curva describiendo el arco solar).",
       "handedness": "one",
-      "tags": ["saludo", "u1"]
+      "tags": [
+        "saludo",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "BUENAS_TARDES",
@@ -41,7 +259,76 @@
       "translation": "Buenas tardes",
       "description": "Signo compuesto: BIEN + TARDE (mano baja hacia el horizonte).",
       "handedness": "one",
-      "tags": ["saludo", "u1"]
+      "tags": [
+        "saludo",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.15,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "BUENAS_NOCHES",
@@ -49,7 +336,76 @@
       "translation": "Buenas noches",
       "description": "Signo compuesto: BIEN + NOCHE (mano describe curva descendente).",
       "handedness": "one",
-      "tags": ["saludo", "u1"]
+      "tags": [
+        "saludo",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.15,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.1,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "GRACIAS",
@@ -57,14 +413,74 @@
       "translation": "Gracias",
       "description": "Yemas de los dedos tocan la barbilla y se proyectan hacia delante.",
       "handedness": "one",
-      "tags": ["cortesia", "u1"],
+      "tags": [
+        "cortesia",
+        "u1"
+      ],
       "avatarClip": {
         "handedness": "one",
         "duration": 1000,
         "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
-          { "t": 500, "hand": { "x": 0.4, "y": 0.5, "z": 0.2, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] },
-          { "t": 1000, "hand": { "x": 0.6, "y": 0.4, "z": 0.4, "rot": [0,0,0] }, "fingers": [0,0,0,0,0] }
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.4,
+              "y": 0.5,
+              "z": 0.2,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.6,
+              "y": 0.4,
+              "z": 0.4,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
         ]
       }
     },
@@ -74,7 +490,96 @@
       "translation": "Por favor",
       "description": "Mano plana sobre el pecho con un movimiento circular corto.",
       "handedness": "one",
-      "tags": ["cortesia", "u1"]
+      "tags": [
+        "cortesia",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.1,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "PERDON",
@@ -82,7 +587,76 @@
       "translation": "Perdón",
       "description": "Puño con pulgar extendido roza el pecho en un círculo pequeño.",
       "handedness": "one",
-      "tags": ["cortesia", "u1"]
+      "tags": [
+        "cortesia",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.1,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "SI",
@@ -90,7 +664,76 @@
       "translation": "Sí",
       "description": "Puño cerrado que asiente con el nudillo del índice arriba y abajo.",
       "handedness": "one",
-      "tags": ["respuesta", "u1"]
+      "tags": [
+        "respuesta",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.15,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "NO",
@@ -98,7 +741,96 @@
       "translation": "No",
       "description": "Índice extendido que oscila lateralmente.",
       "handedness": "one",
-      "tags": ["respuesta", "u1"]
+      "tags": [
+        "respuesta",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 333,
+            "hand": {
+              "x": 0.15,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 667,
+            "hand": {
+              "x": -0.15,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "YO",
@@ -106,7 +838,76 @@
       "translation": "Yo",
       "description": "Índice extendido señalando el propio pecho.",
       "handedness": "one",
-      "tags": ["pronombre", "u1"]
+      "tags": [
+        "pronombre",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.15,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "TU",
@@ -114,7 +915,76 @@
       "translation": "Tú",
       "description": "Índice extendido señalando a la persona interlocutora.",
       "handedness": "one",
-      "tags": ["pronombre", "u1"]
+      "tags": [
+        "pronombre",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": -0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": -0.15,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": -0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "NOMBRE",
@@ -122,7 +992,96 @@
       "translation": "Nombre / Me llamo",
       "description": "Índice y medio extendidos golpean dos veces sobre la palma opuesta.",
       "handedness": "two",
-      "tags": ["presentacion", "u1"]
+      "tags": [
+        "presentacion",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.18,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.18,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "BIEN",
@@ -130,14 +1089,74 @@
       "translation": "Bien",
       "description": "Pulgar hacia arriba con puño cerrado.",
       "handedness": "one",
-      "tags": ["estado", "u1"],
+      "tags": [
+        "estado",
+        "u1"
+      ],
       "avatarClip": {
         "handedness": "one",
         "duration": 800,
         "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
-          { "t": 400, "hand": { "x": 0, "y": 0.7, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
-          { "t": 800, "hand": { "x": 0, "y": 0.7, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] }
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0,
+              "y": 0.7,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.7,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
         ]
       }
     },
@@ -147,14 +1166,74 @@
       "translation": "Mal",
       "description": "Pulgar hacia abajo con puño cerrado.",
       "handedness": "one",
-      "tags": ["estado", "u1"],
+      "tags": [
+        "estado",
+        "u1"
+      ],
       "avatarClip": {
         "handedness": "one",
         "duration": 800,
         "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
-          { "t": 400, "hand": { "x": 0, "y": -0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] },
-          { "t": 800, "hand": { "x": 0, "y": -0.6, "z": 0, "rot": [0,0,0] }, "fingers": [0,1,1,1,1] }
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0,
+              "y": -0.6,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": -0.6,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
         ]
       }
     },
@@ -164,38 +1243,4192 @@
       "translation": "¿Cómo estás?",
       "description": "Manos con palmas hacia arriba oscilando ligeramente, con cejas levantadas (pregunta).",
       "handedness": "two",
-      "tags": ["pregunta", "u1"]
+      "tags": [
+        "pregunta",
+        "u1"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.1,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.1,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": -0.1,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
     },
-    { "id": "NUM_1", "gloss": "1", "translation": "Uno", "description": "Índice extendido hacia arriba, resto cerrados.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_2", "gloss": "2", "translation": "Dos", "description": "Índice y corazón extendidos en V.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_3", "gloss": "3", "translation": "Tres", "description": "Pulgar, índice y corazón extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_4", "gloss": "4", "translation": "Cuatro", "description": "Cuatro dedos extendidos (sin pulgar).", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_5", "gloss": "5", "translation": "Cinco", "description": "Mano abierta con los cinco dedos extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_6", "gloss": "6", "translation": "Seis", "description": "Pulgar y meñique extendidos, otros cerrados.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_7", "gloss": "7", "translation": "Siete", "description": "Pulgar, índice y meñique extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_8", "gloss": "8", "translation": "Ocho", "description": "Pulgar, índice, corazón y meñique extendidos.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_9", "gloss": "9", "translation": "Nueve", "description": "Cuatro dedos extendidos y pulgar apoyado.", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "NUM_10", "gloss": "10", "translation": "Diez", "description": "Puño cerrado con leve rotación, o pulgar hacia el lateral (LSE variante).", "handedness": "one", "tags": ["numero", "u3"] },
-    { "id": "PADRE", "gloss": "PADRE", "translation": "Padre", "description": "Mano con pulgar extendido tocando la sien dos veces.", "handedness": "one", "tags": ["familia", "u4"] },
-    { "id": "MADRE", "gloss": "MADRE", "translation": "Madre", "description": "Mano con índice y corazón tocando la mejilla dos veces.", "handedness": "one", "tags": ["familia", "u4"] },
-    { "id": "HERMANO", "gloss": "HERMANO", "translation": "Hermano", "description": "Índices juntos apuntando al frente y separándose ligeramente.", "handedness": "two", "tags": ["familia", "u4"] },
-    { "id": "HERMANA", "gloss": "HERMANA", "translation": "Hermana", "description": "Como HERMANO pero con matiz femenino (movimiento suave).", "handedness": "two", "tags": ["familia", "u4"] },
-    { "id": "HIJO", "gloss": "HIJO", "translation": "Hijo", "description": "Mano acuna al frente indicando cría/pequeño.", "handedness": "two", "tags": ["familia", "u4"] },
-    { "id": "HIJA", "gloss": "HIJA", "translation": "Hija", "description": "Variante femenina de HIJO.", "handedness": "two", "tags": ["familia", "u4"] },
-    { "id": "AMIGO", "gloss": "AMIGO", "translation": "Amigo", "description": "Índices enganchados en cruz alternando.", "handedness": "two", "tags": ["familia", "u4"] },
-    { "id": "AGUA", "gloss": "AGUA", "translation": "Agua", "description": "Mano en 'A' que toca dos veces la barbilla.", "handedness": "one", "tags": ["comida", "u4"] },
-    { "id": "PAN", "gloss": "PAN", "translation": "Pan", "description": "Manos abiertas simulando cortar una barra.", "handedness": "two", "tags": ["comida", "u4"] },
-    { "id": "LECHE", "gloss": "LECHE", "translation": "Leche", "description": "Puño cerrado que abre y cierra como ordeñando.", "handedness": "one", "tags": ["comida", "u4"] },
-    { "id": "CAFE", "gloss": "CAFÉ", "translation": "Café", "description": "Puño encima del otro simulando molinillo giratorio.", "handedness": "two", "tags": ["comida", "u4"] },
-    { "id": "FRUTA", "gloss": "FRUTA", "translation": "Fruta", "description": "Mano cerrada gira frente al pecho.", "handedness": "one", "tags": ["comida", "u4"] },
-    { "id": "CARNE", "gloss": "CARNE", "translation": "Carne", "description": "Índice y pulgar pellizcan la palma opuesta.", "handedness": "two", "tags": ["comida", "u4"] },
-    { "id": "PESCADO", "gloss": "PESCADO", "translation": "Pescado", "description": "Mano plana ondulando en horizontal como pez nadando.", "handedness": "one", "tags": ["comida", "u4"] },
-    { "id": "DULCE", "gloss": "DULCE", "translation": "Dulce", "description": "Yema del índice toca la barbilla con giro.", "handedness": "one", "tags": ["comida", "u4"] },
-    { "id": "DESAYUNO", "gloss": "DESAYUNO", "translation": "Desayuno", "description": "Compuesto: SOL + COMER (aproximación).", "handedness": "two", "tags": ["comida", "u4"] },
-    { "id": "COMIDA", "gloss": "COMIDA", "translation": "Comida", "description": "Mano cerrada acerca a la boca varias veces.", "handedness": "one", "tags": ["comida", "u4"] },
-    { "id": "CENA", "gloss": "CENA", "translation": "Cena", "description": "Compuesto: NOCHE + COMER (aproximación).", "handedness": "two", "tags": ["comida", "u4"] },
-    { "id": "CASA", "gloss": "CASA", "translation": "Casa", "description": "Manos forman un tejado sobre la frente.", "handedness": "two", "tags": ["comida", "u4"] },
-    { "id": "ESCUELA", "gloss": "ESCUELA", "translation": "Escuela", "description": "Palmas juntas que aplauden dos veces frente al pecho.", "handedness": "two", "tags": ["familia", "u4"] }
+    {
+      "id": "NUM_1",
+      "gloss": "1",
+      "translation": "Uno",
+      "description": "Índice extendido hacia arriba, resto cerrados.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_2",
+      "gloss": "2",
+      "translation": "Dos",
+      "description": "Índice y corazón extendidos en V.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_3",
+      "gloss": "3",
+      "translation": "Tres",
+      "description": "Pulgar, índice y corazón extendidos.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_4",
+      "gloss": "4",
+      "translation": "Cuatro",
+      "description": "Cuatro dedos extendidos (sin pulgar).",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_5",
+      "gloss": "5",
+      "translation": "Cinco",
+      "description": "Mano abierta con los cinco dedos extendidos.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_6",
+      "gloss": "6",
+      "translation": "Seis",
+      "description": "Pulgar y meñique extendidos, otros cerrados.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_7",
+      "gloss": "7",
+      "translation": "Siete",
+      "description": "Pulgar, índice y meñique extendidos.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_8",
+      "gloss": "8",
+      "translation": "Ocho",
+      "description": "Pulgar, índice, corazón y meñique extendidos.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_9",
+      "gloss": "9",
+      "translation": "Nueve",
+      "description": "Cuatro dedos extendidos y pulgar apoyado.",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_10",
+      "gloss": "10",
+      "translation": "Diez",
+      "description": "Puño cerrado con leve rotación, o pulgar hacia el lateral (LSE variante).",
+      "handedness": "one",
+      "tags": [
+        "numero",
+        "u3"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 600,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PADRE",
+      "gloss": "PADRE",
+      "translation": "Padre",
+      "description": "Mano con pulgar extendido tocando la sien dos veces.",
+      "handedness": "one",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.12,
+              "y": 0.37,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MADRE",
+      "gloss": "MADRE",
+      "translation": "Madre",
+      "description": "Mano con índice y corazón tocando la mejilla dos veces.",
+      "handedness": "one",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.17,
+              "y": 0.32,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "HERMANO",
+      "gloss": "HERMANO",
+      "translation": "Hermano",
+      "description": "Índices juntos apuntando al frente y separándose ligeramente.",
+      "handedness": "two",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.05,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "HERMANA",
+      "gloss": "HERMANA",
+      "translation": "Hermana",
+      "description": "Como HERMANO pero con matiz femenino (movimiento suave).",
+      "handedness": "two",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": -0.05,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "HIJO",
+      "gloss": "HIJO",
+      "translation": "Hijo",
+      "description": "Mano acuna al frente indicando cría/pequeño.",
+      "handedness": "two",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "HIJA",
+      "gloss": "HIJA",
+      "translation": "Hija",
+      "description": "Variante femenina de HIJO.",
+      "handedness": "two",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AMIGO",
+      "gloss": "AMIGO",
+      "translation": "Amigo",
+      "description": "Índices enganchados en cruz alternando.",
+      "handedness": "two",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AGUA",
+      "gloss": "AGUA",
+      "translation": "Agua",
+      "description": "Mano en 'A' que toca dos veces la barbilla.",
+      "handedness": "one",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.3,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PAN",
+      "gloss": "PAN",
+      "translation": "Pan",
+      "description": "Manos abiertas simulando cortar una barra.",
+      "handedness": "two",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.1,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "LECHE",
+      "gloss": "LECHE",
+      "translation": "Leche",
+      "description": "Puño cerrado que abre y cierra como ordeñando.",
+      "handedness": "one",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CAFE",
+      "gloss": "CAFÉ",
+      "translation": "Café",
+      "description": "Puño encima del otro simulando molinillo giratorio.",
+      "handedness": "two",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "two",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.05,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.05,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.0,
+              "y": 0.22,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FRUTA",
+      "gloss": "FRUTA",
+      "translation": "Fruta",
+      "description": "Mano cerrada gira frente al pecho.",
+      "handedness": "one",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.18,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0.5,
+              0.8,
+              0.8,
+              0.8,
+              0.8
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0,
+              "y": 0.22,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ]
+            },
+            "fingers": [
+              0.5,
+              0.8,
+              0.8,
+              0.8,
+              0.8
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0,
+              "y": 0.18,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0.5,
+              0.8,
+              0.8,
+              0.8,
+              0.8
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CARNE",
+      "gloss": "CARNE",
+      "translation": "Carne",
+      "description": "Índice y pulgar pellizcan la palma opuesta.",
+      "handedness": "two",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0.3,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0,
+              "y": 0.18,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ]
+            },
+            "fingers": [
+              0.3,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0.3,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PESCADO",
+      "gloss": "PESCADO",
+      "translation": "Pescado",
+      "description": "Mano plana ondulando en horizontal como pez nadando.",
+      "handedness": "one",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.1,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.08,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0.1,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DULCE",
+      "gloss": "DULCE",
+      "translation": "Dulce",
+      "description": "Yema del índice toca la barbilla con giro.",
+      "handedness": "one",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.05,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.08,
+              "y": 0.28,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.05,
+              "y": 0.26,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DESAYUNO",
+      "gloss": "DESAYUNO",
+      "translation": "Desayuno",
+      "description": "Compuesto: SOL + COMER (aproximación).",
+      "handedness": "two",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.18,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0,
+              "y": 0.18,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "COMIDA",
+      "gloss": "COMIDA",
+      "translation": "Comida",
+      "description": "Mano cerrada acerca a la boca varias veces.",
+      "handedness": "one",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.28,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CENA",
+      "gloss": "CENA",
+      "translation": "Cena",
+      "description": "Compuesto: NOCHE + COMER (aproximación).",
+      "handedness": "two",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.18,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": -0.05,
+              "y": 0.26,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0,
+              "y": 0.18,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CASA",
+      "gloss": "CASA",
+      "translation": "Casa",
+      "description": "Manos forman un tejado sobre la frente.",
+      "handedness": "two",
+      "tags": [
+        "comida",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0,
+              "y": 0.28,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0.2
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ESCUELA",
+      "gloss": "ESCUELA",
+      "translation": "Escuela",
+      "description": "Palmas juntas que aplauden dos veces frente al pecho.",
+      "handedness": "two",
+      "tags": [
+        "familia",
+        "u4"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0,
+              "y": 0.26,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0,
+              "y": 0.26,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ROJO",
+      "gloss": "ROJO",
+      "translation": "Rojo",
+      "description": "Índice roza la barbilla hacia afuera.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AZUL",
+      "gloss": "AZUL",
+      "translation": "Azul",
+      "description": "Mano A a la altura del pecho.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "VERDE",
+      "gloss": "VERDE",
+      "translation": "Verde",
+      "description": "Mano V frente al pecho.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AMARILLO",
+      "gloss": "AMARILLO",
+      "translation": "Amarillo",
+      "description": "Mano Y sacude hacia el lado.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NARANJA",
+      "gloss": "NARANJA",
+      "translation": "Naranja",
+      "description": "Mano C abre y cierra.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MORADO",
+      "gloss": "MORADO",
+      "translation": "Morado",
+      "description": "Mano M frente al pecho.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "BLANCO",
+      "gloss": "BLANCO",
+      "translation": "Blanco",
+      "description": "Mano abierta sobre el pecho hacia afuera.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NEGRO",
+      "gloss": "NEGRO",
+      "translation": "Negro",
+      "description": "Índice roza la frente hacia el lado.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ROSA",
+      "gloss": "ROSA",
+      "translation": "Rosa",
+      "description": "Letra R frente al pecho.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "GRIS",
+      "gloss": "GRIS",
+      "translation": "Gris",
+      "description": "Dedos entrelazados frente al pecho.",
+      "handedness": "one",
+      "tags": [
+        "color",
+        "u5"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FELIZ",
+      "gloss": "FELIZ",
+      "translation": "Feliz",
+      "description": "Manos planas ascienden por el pecho.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TRISTE",
+      "gloss": "TRISTE",
+      "translation": "Triste",
+      "description": "Manos bajan por las mejillas.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ENFADADO",
+      "gloss": "ENFADADO",
+      "translation": "Enfadado",
+      "description": "Puños frente al pecho, ceño fruncido.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CANSADO",
+      "gloss": "CANSADO",
+      "translation": "Cansado",
+      "description": "Manos caen frente al pecho.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NERVIOSO",
+      "gloss": "NERVIOSO",
+      "translation": "Nervioso",
+      "description": "Dedos agitan sobre el pecho.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SORPRENDIDO",
+      "gloss": "SORPRENDIDO",
+      "translation": "Sorprendido",
+      "description": "Manos abiertas a los lados del rostro.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ALEGRE",
+      "gloss": "ALEGRE",
+      "translation": "Alegre",
+      "description": "Manos circulan hacia arriba en el pecho.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ABURRIDO",
+      "gloss": "ABURRIDO",
+      "translation": "Aburrido",
+      "description": "Índice roza la mejilla descendiendo.",
+      "handedness": "one",
+      "tags": [
+        "emocion",
+        "u6"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "HABLAR",
+      "gloss": "HABLAR",
+      "translation": "Hablar",
+      "description": "Índice frente a la boca, movimiento.",
+      "handedness": "one",
+      "tags": [
+        "conversacion",
+        "u7"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ENTENDER",
+      "gloss": "ENTENDER",
+      "translation": "Entender",
+      "description": "Índice toca la sien.",
+      "handedness": "one",
+      "tags": [
+        "conversacion",
+        "u7"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "REPETIR",
+      "gloss": "REPETIR",
+      "translation": "Repetir",
+      "description": "Mano R hace círculo frente al pecho.",
+      "handedness": "one",
+      "tags": [
+        "conversacion",
+        "u7"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MAS_DESPACIO",
+      "gloss": "MÁS-DESPACIO",
+      "translation": "Más despacio",
+      "description": "Manos abiertas descienden lentamente.",
+      "handedness": "one",
+      "tags": [
+        "conversacion",
+        "u7"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NO_ENTIENDO",
+      "gloss": "NO-ENTIENDO",
+      "translation": "No entiendo",
+      "description": "Mano niega + toca sien.",
+      "handedness": "one",
+      "tags": [
+        "conversacion",
+        "u7"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PUEDE_REPETIR",
+      "gloss": "PUEDE-REPETIR",
+      "translation": "¿Puede repetir?",
+      "description": "Mano abierta + mano R circulando.",
+      "handedness": "one",
+      "tags": [
+        "conversacion",
+        "u7"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "GRACIAS_MUCHO",
+      "gloss": "GRACIAS-MUCHO",
+      "translation": "Muchas gracias",
+      "description": "Mano desde barbilla proyecta hacia afuera.",
+      "handedness": "one",
+      "tags": [
+        "conversacion",
+        "u7"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.0,
+              "y": 0.24,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    }
   ],
   "units": [
     {
@@ -207,14 +5440,25 @@
           "id": "a1.u1.l1",
           "title": "Saludar y despedirse",
           "goal": "Reconocer y usar los saludos básicos según la hora del día.",
-          "signs": ["HOLA", "ADIOS", "BUENOS_DIAS", "BUENAS_TARDES", "BUENAS_NOCHES"],
+          "signs": [
+            "HOLA",
+            "ADIOS",
+            "BUENOS_DIAS",
+            "BUENAS_TARDES",
+            "BUENAS_NOCHES"
+          ],
           "exercises": [
             {
               "id": "a1.u1.l1.e1",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
               "signId": "HOLA",
-              "options": ["Hola", "Adiós", "Buenas tardes", "Buenos días"],
+              "options": [
+                "Hola",
+                "Adiós",
+                "Buenas tardes",
+                "Buenos días"
+              ],
               "answer": "Hola"
             },
             {
@@ -222,7 +5466,12 @@
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
               "signId": "ADIOS",
-              "options": ["Hola", "Adiós", "Perdón", "Gracias"],
+              "options": [
+                "Hola",
+                "Adiós",
+                "Perdón",
+                "Gracias"
+              ],
               "answer": "Adiós"
             },
             {
@@ -230,7 +5479,12 @@
               "type": "multiple_choice",
               "prompt": "Es de mañana. ¿Cómo saludas?",
               "signId": "BUENOS_DIAS",
-              "options": ["Buenos días", "Buenas tardes", "Buenas noches", "Hola"],
+              "options": [
+                "Buenos días",
+                "Buenas tardes",
+                "Buenas noches",
+                "Hola"
+              ],
               "answer": "Buenos días"
             },
             {
@@ -238,17 +5492,32 @@
               "type": "type_word",
               "prompt": "Escribe la traducción de este signo.",
               "signId": "BUENAS_TARDES",
-              "acceptable": ["buenas tardes", "buenas tardes."]
+              "acceptable": [
+                "buenas tardes",
+                "buenas tardes."
+              ]
             },
             {
               "id": "a1.u1.l1.e5",
               "type": "match_pairs",
               "prompt": "Empareja cada signo con su traducción.",
               "pairs": [
-                { "signId": "HOLA", "translation": "Hola" },
-                { "signId": "ADIOS", "translation": "Adiós" },
-                { "signId": "BUENOS_DIAS", "translation": "Buenos días" },
-                { "signId": "BUENAS_NOCHES", "translation": "Buenas noches" }
+                {
+                  "signId": "HOLA",
+                  "translation": "Hola"
+                },
+                {
+                  "signId": "ADIOS",
+                  "translation": "Adiós"
+                },
+                {
+                  "signId": "BUENOS_DIAS",
+                  "translation": "Buenos días"
+                },
+                {
+                  "signId": "BUENAS_NOCHES",
+                  "translation": "Buenas noches"
+                }
               ]
             }
           ]
@@ -257,14 +5526,25 @@
           "id": "a1.u1.l2",
           "title": "Cortesía y respuestas",
           "goal": "Expresar cortesía y responder de forma básica.",
-          "signs": ["GRACIAS", "POR_FAVOR", "PERDON", "SI", "NO"],
+          "signs": [
+            "GRACIAS",
+            "POR_FAVOR",
+            "PERDON",
+            "SI",
+            "NO"
+          ],
           "exercises": [
             {
               "id": "a1.u1.l2.e1",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
               "signId": "GRACIAS",
-              "options": ["Gracias", "Por favor", "Perdón", "Adiós"],
+              "options": [
+                "Gracias",
+                "Por favor",
+                "Perdón",
+                "Adiós"
+              ],
               "answer": "Gracias"
             },
             {
@@ -272,7 +5552,12 @@
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
               "signId": "POR_FAVOR",
-              "options": ["Gracias", "Por favor", "Sí", "No"],
+              "options": [
+                "Gracias",
+                "Por favor",
+                "Sí",
+                "No"
+              ],
               "answer": "Por favor"
             },
             {
@@ -280,14 +5565,23 @@
               "type": "type_word",
               "prompt": "Escribe la traducción de este signo.",
               "signId": "PERDON",
-              "acceptable": ["perdón", "perdon", "lo siento"]
+              "acceptable": [
+                "perdón",
+                "perdon",
+                "lo siento"
+              ]
             },
             {
               "id": "a1.u1.l2.e4",
               "type": "multiple_choice",
               "prompt": "¿Qué signo usarías para responder afirmativamente?",
               "signId": "SI",
-              "options": ["Sí", "No", "Gracias", "Perdón"],
+              "options": [
+                "Sí",
+                "No",
+                "Gracias",
+                "Perdón"
+              ],
               "answer": "Sí"
             },
             {
@@ -295,10 +5589,22 @@
               "type": "match_pairs",
               "prompt": "Empareja cada signo con su traducción.",
               "pairs": [
-                { "signId": "GRACIAS", "translation": "Gracias" },
-                { "signId": "POR_FAVOR", "translation": "Por favor" },
-                { "signId": "SI", "translation": "Sí" },
-                { "signId": "NO", "translation": "No" }
+                {
+                  "signId": "GRACIAS",
+                  "translation": "Gracias"
+                },
+                {
+                  "signId": "POR_FAVOR",
+                  "translation": "Por favor"
+                },
+                {
+                  "signId": "SI",
+                  "translation": "Sí"
+                },
+                {
+                  "signId": "NO",
+                  "translation": "No"
+                }
               ]
             }
           ]
@@ -307,14 +5613,26 @@
           "id": "a1.u1.l3",
           "title": "Presentarse",
           "goal": "Decir tu nombre, preguntar cómo está alguien y responder.",
-          "signs": ["YO", "TU", "NOMBRE", "BIEN", "MAL", "COMO_ESTAS"],
+          "signs": [
+            "YO",
+            "TU",
+            "NOMBRE",
+            "BIEN",
+            "MAL",
+            "COMO_ESTAS"
+          ],
           "exercises": [
             {
               "id": "a1.u1.l3.e1",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
               "signId": "YO",
-              "options": ["Yo", "Tú", "Nombre", "Bien"],
+              "options": [
+                "Yo",
+                "Tú",
+                "Nombre",
+                "Bien"
+              ],
               "answer": "Yo"
             },
             {
@@ -322,7 +5640,12 @@
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
               "signId": "COMO_ESTAS",
-              "options": ["¿Cómo estás?", "Buenos días", "Nombre", "Perdón"],
+              "options": [
+                "¿Cómo estás?",
+                "Buenos días",
+                "Nombre",
+                "Perdón"
+              ],
               "answer": "¿Cómo estás?"
             },
             {
@@ -330,14 +5653,23 @@
               "type": "type_word",
               "prompt": "Escribe la traducción de este signo.",
               "signId": "NOMBRE",
-              "acceptable": ["nombre", "me llamo", "mi nombre"]
+              "acceptable": [
+                "nombre",
+                "me llamo",
+                "mi nombre"
+              ]
             },
             {
               "id": "a1.u1.l3.e4",
               "type": "multiple_choice",
               "prompt": "Te preguntan cómo estás y todo va bien. ¿Qué signo respondes?",
               "signId": "BIEN",
-              "options": ["Bien", "Mal", "No", "Sí"],
+              "options": [
+                "Bien",
+                "Mal",
+                "No",
+                "Sí"
+              ],
               "answer": "Bien"
             },
             {
@@ -345,10 +5677,22 @@
               "type": "match_pairs",
               "prompt": "Empareja cada signo con su traducción.",
               "pairs": [
-                { "signId": "YO", "translation": "Yo" },
-                { "signId": "TU", "translation": "Tú" },
-                { "signId": "NOMBRE", "translation": "Nombre / Me llamo" },
-                { "signId": "COMO_ESTAS", "translation": "¿Cómo estás?" }
+                {
+                  "signId": "YO",
+                  "translation": "Yo"
+                },
+                {
+                  "signId": "TU",
+                  "translation": "Tú"
+                },
+                {
+                  "signId": "NOMBRE",
+                  "translation": "Nombre / Me llamo"
+                },
+                {
+                  "signId": "COMO_ESTAS",
+                  "translation": "¿Cómo estás?"
+                }
               ]
             }
           ]
@@ -364,7 +5708,9 @@
           "id": "a1.u2.l1",
           "title": "Vocales",
           "goal": "Reconocer y ejecutar las cinco vocales.",
-          "signs": ["HOLA"],
+          "signs": [
+            "HOLA"
+          ],
           "exercises": [
             {
               "id": "a1.u2.l1.e1",
@@ -402,7 +5748,9 @@
           "id": "a1.u2.l2",
           "title": "Consonantes iniciales",
           "goal": "Practicar consonantes con configuración distintiva.",
-          "signs": ["HOLA"],
+          "signs": [
+            "HOLA"
+          ],
           "exercises": [
             {
               "id": "a1.u2.l2.e1",
@@ -434,7 +5782,9 @@
           "id": "a1.u2.l3",
           "title": "Deletreando tu nombre",
           "goal": "Enlazar varias letras seguidas.",
-          "signs": ["NOMBRE"],
+          "signs": [
+            "NOMBRE"
+          ],
           "exercises": [
             {
               "id": "a1.u2.l3.e1",
@@ -467,33 +5817,133 @@
           "id": "a1.u3.l1",
           "title": "Del 1 al 5",
           "goal": "Reconocer los cinco primeros números.",
-          "signs": ["NUM_1", "NUM_2", "NUM_3", "NUM_4", "NUM_5"],
+          "signs": [
+            "NUM_1",
+            "NUM_2",
+            "NUM_3",
+            "NUM_4",
+            "NUM_5"
+          ],
           "exercises": [
-            { "id": "a1.u3.l1.e1", "type": "multiple_choice", "prompt": "¿Qué número?", "signId": "NUM_1", "options": ["Uno", "Dos", "Tres", "Cuatro"], "answer": "Uno" },
-            { "id": "a1.u3.l1.e2", "type": "multiple_choice", "prompt": "¿Qué número?", "signId": "NUM_3", "options": ["Uno", "Dos", "Tres", "Cinco"], "answer": "Tres" },
-            { "id": "a1.u3.l1.e3", "type": "type_word", "prompt": "Escribe el número.", "signId": "NUM_5", "acceptable": ["cinco", "5"] },
-            { "id": "a1.u3.l1.e4", "type": "match_pairs", "prompt": "Empareja cada número con su nombre.", "pairs": [
-              { "signId": "NUM_1", "translation": "Uno" },
-              { "signId": "NUM_2", "translation": "Dos" },
-              { "signId": "NUM_4", "translation": "Cuatro" },
-              { "signId": "NUM_5", "translation": "Cinco" }
-            ] }
+            {
+              "id": "a1.u3.l1.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número?",
+              "signId": "NUM_1",
+              "options": [
+                "Uno",
+                "Dos",
+                "Tres",
+                "Cuatro"
+              ],
+              "answer": "Uno"
+            },
+            {
+              "id": "a1.u3.l1.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número?",
+              "signId": "NUM_3",
+              "options": [
+                "Uno",
+                "Dos",
+                "Tres",
+                "Cinco"
+              ],
+              "answer": "Tres"
+            },
+            {
+              "id": "a1.u3.l1.e3",
+              "type": "type_word",
+              "prompt": "Escribe el número.",
+              "signId": "NUM_5",
+              "acceptable": [
+                "cinco",
+                "5"
+              ]
+            },
+            {
+              "id": "a1.u3.l1.e4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada número con su nombre.",
+              "pairs": [
+                {
+                  "signId": "NUM_1",
+                  "translation": "Uno"
+                },
+                {
+                  "signId": "NUM_2",
+                  "translation": "Dos"
+                },
+                {
+                  "signId": "NUM_4",
+                  "translation": "Cuatro"
+                },
+                {
+                  "signId": "NUM_5",
+                  "translation": "Cinco"
+                }
+              ]
+            }
           ]
         },
         {
           "id": "a1.u3.l2",
           "title": "Del 6 al 10",
           "goal": "Completar los diez primeros números.",
-          "signs": ["NUM_6", "NUM_7", "NUM_8", "NUM_9", "NUM_10"],
+          "signs": [
+            "NUM_6",
+            "NUM_7",
+            "NUM_8",
+            "NUM_9",
+            "NUM_10"
+          ],
           "exercises": [
-            { "id": "a1.u3.l2.e1", "type": "multiple_choice", "prompt": "¿Qué número?", "signId": "NUM_7", "options": ["Seis", "Siete", "Ocho", "Nueve"], "answer": "Siete" },
-            { "id": "a1.u3.l2.e2", "type": "type_word", "prompt": "Escribe el número.", "signId": "NUM_10", "acceptable": ["diez", "10"] },
-            { "id": "a1.u3.l2.e3", "type": "match_pairs", "prompt": "Empareja cada número con su nombre.", "pairs": [
-              { "signId": "NUM_6", "translation": "Seis" },
-              { "signId": "NUM_8", "translation": "Ocho" },
-              { "signId": "NUM_9", "translation": "Nueve" },
-              { "signId": "NUM_10", "translation": "Diez" }
-            ] }
+            {
+              "id": "a1.u3.l2.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número?",
+              "signId": "NUM_7",
+              "options": [
+                "Seis",
+                "Siete",
+                "Ocho",
+                "Nueve"
+              ],
+              "answer": "Siete"
+            },
+            {
+              "id": "a1.u3.l2.e2",
+              "type": "type_word",
+              "prompt": "Escribe el número.",
+              "signId": "NUM_10",
+              "acceptable": [
+                "diez",
+                "10"
+              ]
+            },
+            {
+              "id": "a1.u3.l2.e3",
+              "type": "match_pairs",
+              "prompt": "Empareja cada número con su nombre.",
+              "pairs": [
+                {
+                  "signId": "NUM_6",
+                  "translation": "Seis"
+                },
+                {
+                  "signId": "NUM_8",
+                  "translation": "Ocho"
+                },
+                {
+                  "signId": "NUM_9",
+                  "translation": "Nueve"
+                },
+                {
+                  "signId": "NUM_10",
+                  "translation": "Diez"
+                }
+              ]
+            }
           ]
         }
       ]
@@ -507,34 +5957,431 @@
           "id": "a1.u4.l1",
           "title": "Mi familia",
           "goal": "Signos para hablar de padres, hermanos y amigos.",
-          "signs": ["PADRE", "MADRE", "HERMANO", "HERMANA", "AMIGO"],
+          "signs": [
+            "PADRE",
+            "MADRE",
+            "HERMANO",
+            "HERMANA",
+            "AMIGO"
+          ],
           "exercises": [
-            { "id": "a1.u4.l1.e1", "type": "multiple_choice", "prompt": "¿Qué significa este signo?", "signId": "PADRE", "options": ["Padre", "Madre", "Hermano", "Amigo"], "answer": "Padre" },
-            { "id": "a1.u4.l1.e2", "type": "multiple_choice", "prompt": "¿Qué significa este signo?", "signId": "MADRE", "options": ["Padre", "Madre", "Hermana", "Hija"], "answer": "Madre" },
-            { "id": "a1.u4.l1.e3", "type": "type_word", "prompt": "Escribe la traducción.", "signId": "AMIGO", "acceptable": ["amigo", "amiga", "amigos"] },
-            { "id": "a1.u4.l1.e4", "type": "match_pairs", "prompt": "Empareja cada signo con su traducción.", "pairs": [
-              { "signId": "PADRE", "translation": "Padre" },
-              { "signId": "MADRE", "translation": "Madre" },
-              { "signId": "HERMANO", "translation": "Hermano" },
-              { "signId": "HERMANA", "translation": "Hermana" }
-            ] }
+            {
+              "id": "a1.u4.l1.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "PADRE",
+              "options": [
+                "Padre",
+                "Madre",
+                "Hermano",
+                "Amigo"
+              ],
+              "answer": "Padre"
+            },
+            {
+              "id": "a1.u4.l1.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "MADRE",
+              "options": [
+                "Padre",
+                "Madre",
+                "Hermana",
+                "Hija"
+              ],
+              "answer": "Madre"
+            },
+            {
+              "id": "a1.u4.l1.e3",
+              "type": "type_word",
+              "prompt": "Escribe la traducción.",
+              "signId": "AMIGO",
+              "acceptable": [
+                "amigo",
+                "amiga",
+                "amigos"
+              ]
+            },
+            {
+              "id": "a1.u4.l1.e4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                {
+                  "signId": "PADRE",
+                  "translation": "Padre"
+                },
+                {
+                  "signId": "MADRE",
+                  "translation": "Madre"
+                },
+                {
+                  "signId": "HERMANO",
+                  "translation": "Hermano"
+                },
+                {
+                  "signId": "HERMANA",
+                  "translation": "Hermana"
+                }
+              ]
+            }
           ]
         },
         {
           "id": "a1.u4.l2",
           "title": "En la mesa",
           "goal": "Comida y bebida básicas.",
-          "signs": ["AGUA", "PAN", "LECHE", "CAFE", "COMIDA"],
+          "signs": [
+            "AGUA",
+            "PAN",
+            "LECHE",
+            "CAFE",
+            "COMIDA"
+          ],
           "exercises": [
-            { "id": "a1.u4.l2.e1", "type": "multiple_choice", "prompt": "¿Qué significa?", "signId": "AGUA", "options": ["Agua", "Leche", "Café", "Pan"], "answer": "Agua" },
-            { "id": "a1.u4.l2.e2", "type": "multiple_choice", "prompt": "¿Qué significa?", "signId": "COMIDA", "options": ["Comida", "Cena", "Desayuno", "Fruta"], "answer": "Comida" },
-            { "id": "a1.u4.l2.e3", "type": "type_word", "prompt": "Escribe la traducción.", "signId": "LECHE", "acceptable": ["leche"] },
-            { "id": "a1.u4.l2.e4", "type": "match_pairs", "prompt": "Empareja cada signo con su traducción.", "pairs": [
-              { "signId": "AGUA", "translation": "Agua" },
-              { "signId": "PAN", "translation": "Pan" },
-              { "signId": "LECHE", "translation": "Leche" },
-              { "signId": "CAFE", "translation": "Café" }
-            ] }
+            {
+              "id": "a1.u4.l2.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa?",
+              "signId": "AGUA",
+              "options": [
+                "Agua",
+                "Leche",
+                "Café",
+                "Pan"
+              ],
+              "answer": "Agua"
+            },
+            {
+              "id": "a1.u4.l2.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa?",
+              "signId": "COMIDA",
+              "options": [
+                "Comida",
+                "Cena",
+                "Desayuno",
+                "Fruta"
+              ],
+              "answer": "Comida"
+            },
+            {
+              "id": "a1.u4.l2.e3",
+              "type": "type_word",
+              "prompt": "Escribe la traducción.",
+              "signId": "LECHE",
+              "acceptable": [
+                "leche"
+              ]
+            },
+            {
+              "id": "a1.u4.l2.e4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                {
+                  "signId": "AGUA",
+                  "translation": "Agua"
+                },
+                {
+                  "signId": "PAN",
+                  "translation": "Pan"
+                },
+                {
+                  "signId": "LECHE",
+                  "translation": "Leche"
+                },
+                {
+                  "signId": "CAFE",
+                  "translation": "Café"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a1.u5",
+      "title": "Unidad 5 · Colores",
+      "summary": "Aprende los colores básicos en LSE.",
+      "lessons": [
+        {
+          "id": "a1.u5.l1",
+          "title": "Los colores",
+          "goal": "Reconocer y producir los colores más habituales.",
+          "signs": [
+            "ROJO",
+            "AZUL",
+            "VERDE",
+            "AMARILLO",
+            "NARANJA",
+            "MORADO",
+            "BLANCO",
+            "NEGRO",
+            "ROSA",
+            "GRIS"
+          ],
+          "exercises": [
+            {
+              "id": "a1.u5.l1.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué color es?",
+              "signId": "ROJO",
+              "options": [
+                "Rojo",
+                "Azul",
+                "Verde",
+                "Amarillo"
+              ],
+              "answer": "Rojo"
+            },
+            {
+              "id": "a1.u5.l1.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué color es?",
+              "signId": "AZUL",
+              "options": [
+                "Rojo",
+                "Azul",
+                "Naranja",
+                "Morado"
+              ],
+              "answer": "Azul"
+            },
+            {
+              "id": "a1.u5.l1.e3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué color es?",
+              "signId": "VERDE",
+              "options": [
+                "Blanco",
+                "Negro",
+                "Verde",
+                "Rosa"
+              ],
+              "answer": "Verde"
+            },
+            {
+              "id": "a1.u5.l1.e4",
+              "type": "multiple_choice",
+              "prompt": "¿Qué color es?",
+              "signId": "AMARILLO",
+              "options": [
+                "Azul",
+                "Amarillo",
+                "Gris",
+                "Rojo"
+              ],
+              "answer": "Amarillo"
+            },
+            {
+              "id": "a1.u5.l1.e5",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                {
+                  "signId": "ROJO",
+                  "translation": "Rojo"
+                },
+                {
+                  "signId": "AZUL",
+                  "translation": "Azul"
+                },
+                {
+                  "signId": "VERDE",
+                  "translation": "Verde"
+                },
+                {
+                  "signId": "AMARILLO",
+                  "translation": "Amarillo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a1.u6",
+      "title": "Unidad 6 · Emociones",
+      "summary": "Expresa cómo te sientes en LSE.",
+      "lessons": [
+        {
+          "id": "a1.u6.l1",
+          "title": "Cómo me siento",
+          "goal": "Describir estados emocionales básicos.",
+          "signs": [
+            "FELIZ",
+            "TRISTE",
+            "ENFADADO",
+            "CANSADO",
+            "NERVIOSO",
+            "SORPRENDIDO",
+            "ALEGRE",
+            "ABURRIDO"
+          ],
+          "exercises": [
+            {
+              "id": "a1.u6.l1.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Cómo se siente?",
+              "signId": "FELIZ",
+              "options": [
+                "Feliz",
+                "Triste",
+                "Enfadado",
+                "Cansado"
+              ],
+              "answer": "Feliz"
+            },
+            {
+              "id": "a1.u6.l1.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Cómo se siente?",
+              "signId": "TRISTE",
+              "options": [
+                "Feliz",
+                "Triste",
+                "Nervioso",
+                "Alegre"
+              ],
+              "answer": "Triste"
+            },
+            {
+              "id": "a1.u6.l1.e3",
+              "type": "multiple_choice",
+              "prompt": "¿Cómo se siente?",
+              "signId": "ENFADADO",
+              "options": [
+                "Sorprendido",
+                "Alegre",
+                "Enfadado",
+                "Cansado"
+              ],
+              "answer": "Enfadado"
+            },
+            {
+              "id": "a1.u6.l1.e4",
+              "type": "multiple_choice",
+              "prompt": "¿Cómo se siente?",
+              "signId": "SORPRENDIDO",
+              "options": [
+                "Nervioso",
+                "Aburrido",
+                "Cansado",
+                "Sorprendido"
+              ],
+              "answer": "Sorprendido"
+            },
+            {
+              "id": "a1.u6.l1.e5",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                {
+                  "signId": "FELIZ",
+                  "translation": "Feliz"
+                },
+                {
+                  "signId": "TRISTE",
+                  "translation": "Triste"
+                },
+                {
+                  "signId": "ENFADADO",
+                  "translation": "Enfadado"
+                },
+                {
+                  "signId": "CANSADO",
+                  "translation": "Cansado"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a1.u7",
+      "title": "Unidad 7 · Conversación básica",
+      "summary": "Frases y recursos para mantener una conversación sencilla.",
+      "lessons": [
+        {
+          "id": "a1.u7.l1",
+          "title": "Comunicarse",
+          "goal": "Usar frases básicas de conversación.",
+          "signs": [
+            "HABLAR",
+            "ENTENDER",
+            "REPETIR",
+            "MAS_DESPACIO",
+            "NO_ENTIENDO",
+            "PUEDE_REPETIR",
+            "GRACIAS_MUCHO"
+          ],
+          "exercises": [
+            {
+              "id": "a1.u7.l1.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa?",
+              "signId": "HABLAR",
+              "options": [
+                "Hablar",
+                "Entender",
+                "Repetir",
+                "Más despacio"
+              ],
+              "answer": "Hablar"
+            },
+            {
+              "id": "a1.u7.l1.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa?",
+              "signId": "ENTENDER",
+              "options": [
+                "Hablar",
+                "Entender",
+                "No entiendo",
+                "Repetir"
+              ],
+              "answer": "Entender"
+            },
+            {
+              "id": "a1.u7.l1.e3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa?",
+              "signId": "MAS_DESPACIO",
+              "options": [
+                "Hablar",
+                "Repetir",
+                "Más despacio",
+                "¿Puede repetir?"
+              ],
+              "answer": "Más despacio"
+            },
+            {
+              "id": "a1.u7.l1.e4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo con su traducción.",
+              "pairs": [
+                {
+                  "signId": "HABLAR",
+                  "translation": "Hablar"
+                },
+                {
+                  "signId": "ENTENDER",
+                  "translation": "Entender"
+                },
+                {
+                  "signId": "REPETIR",
+                  "translation": "Repetir"
+                },
+                {
+                  "signId": "MAS_DESPACIO",
+                  "translation": "Más despacio"
+                }
+              ]
+            }
           ]
         }
       ]

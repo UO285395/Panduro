@@ -58,10 +58,22 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       renderer.setSize(size, size, false);
 
       const scene = new THREE.Scene();
-      // Cámara acercada a la mano derecha: el brazo y la mano ocupan el frame.
-      const camera = new THREE.PerspectiveCamera(28, 1, 0.01, 10);
-      camera.position.set(0.55, 0.92, 1.1);
-      camera.lookAt(RIGHT_SHOULDER_X + 0.15, 0.75, 0.05);
+      // Cámara ortográfica centrada en la zona de alcance de la mano derecha.
+      // Marco fijo de ~0.75 unidades → la mano (0.11) ocupa ≈ 15% del canvas
+      // y sigue visible tanto arriba (HOLA) como pegada al pecho (BIEN).
+      const aspect = 1;
+      const halfH = 0.42;
+      const halfW = halfH * aspect;
+      const camera = new THREE.OrthographicCamera(
+        -halfW,
+        halfW,
+        halfH,
+        -halfH,
+        0.01,
+        10,
+      );
+      camera.position.set(RIGHT_SHOULDER_X + 0.05, 0.9, 1.5);
+      camera.lookAt(RIGHT_SHOULDER_X + 0.05, 0.9, 0);
 
       // Iluminación: ambiental baja + frontal + rim light detrás para volumen.
       scene.add(new THREE.AmbientLight(0xffffff, 0.35));

@@ -36,6 +36,7 @@ export function TranslateView({ initialHistory, demo }: Props) {
   const classifierRef = useRef<KnnClassifier | null>(null);
   const cardIdsRef = useRef<string[]>([]);
   const startedAtRef = useRef<number>(0);
+  const lastFrameRef = useRef<import("@/lib/mediapipe/types").HandFrame | null>(null);
 
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,8 @@ export function TranslateView({ initialHistory, demo }: Props) {
   const [stats, setStats] = useState<PerfStats>({ fps: 0, p50: 0, p95: 0, samples: 0 });
   const [text, setText] = useState("");
   const [active, setActive] = useState<{ label: string; display: string; confidence: number } | null>(null);
+  const [segPhase, setSegPhase] = useState<"idle" | "moving" | "holding">("idle");
+  const [segStableMs, setSegStableMs] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [history, setHistory] = useState<TranslationRow[]>(initialHistory);
   const [saving, setSaving] = useState(false);
@@ -78,6 +81,7 @@ export function TranslateView({ initialHistory, demo }: Props) {
         const detected = tracker.detect(video, now);
         setFrame(detected);
         setStats(tracker.stats());
+        lastFrameRef.current = detected;
 
         const events = seg.push(detected, now);
         for (const evt of events) {
@@ -93,6 +97,10 @@ export function TranslateView({ initialHistory, demo }: Props) {
             }
           }
         }
+        const segState = seg.state();
+        setSegPhase(segState.phase);
+        setSegStableMs(segState.stableMs);
+
         const nowClient = Date.now();
         const frameOut = asm.currentFrame(nowClient);
         setText(frameOut.text);
@@ -172,6 +180,29 @@ export function TranslateView({ initialHistory, demo }: Props) {
     URL.revokeObjectURL(url);
   }
 
+  function onCaptureNow() {
+    const seg = segmenterRef.current;
+    const asm = assemblerRef.current;
+    const frame = lastFrameRef.current;
+    if (!seg || !asm || !frame) return;
+    const buf = seg.lastBuffer();
+    const centroid = buf.length > 0 ? averageBuf(buf) : frame.normalized;
+    const features = extractFeatures(centroid);
+    const raw = classifierRef.current?.predict(features) ?? null;
+    const pred = raw ? refineWithRules(raw, centroid) : null;
+    if (pred && pred.confidence >= MIN_TRANSLATE_CONFIDENCE) {
+      asm.consume({ label: pred.label, confidence: pred.confidence, at: Date.now() });
+      cardIdsRef.current.push(
+        /^[A-ZÑ]$/.test(pred.label) ? `letter:${pred.label}` : `sign:${pred.label}`,
+      );
+      const frameOut = asm.currentFrame(Date.now());
+      setText(frameOut.text);
+      setActive(frameOut.active);
+    } else {
+      setNotice(pred ? `Confianza baja: ${((pred.confidence ?? 0) * 100).toFixed(0)}%` : "Sin detección");
+    }
+  }
+
   async function onSave() {
     if (!text || saving) return;
     setSaving(true);
@@ -245,14 +276,38 @@ export function TranslateView({ initialHistory, demo }: Props) {
             aria-live="polite"
             className="min-h-[6rem] rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
           >
-            <p className="text-xs uppercase tracking-wider text-slate-500">
-              Transcripción
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-wider text-slate-500">
+                Transcripción
+              </p>
+              {status === "recording" && (
+                <span
+                  className={`ml-auto rounded-full px-2 py-0.5 text-xs font-mono ${
+                    segPhase === "holding"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                      : segPhase === "moving"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                        : "bg-slate-100 text-slate-500 dark:bg-slate-800"
+                  }`}
+                >
+                  {segPhase === "holding"
+                    ? `hold ${Math.min(segStableMs, 300).toFixed(0)} ms`
+                    : segPhase === "moving"
+                      ? "moviendo"
+                      : "espera"}
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-lg font-medium">{text || "…"}</p>
             {active && (
               <p className="mt-2 text-xs text-slate-500">
-                Último signo: <b>{active.display}</b> ({active.label}) ·{" "}
-                {(active.confidence * 100).toFixed(0)}%
+                Último signo:{" "}
+                <b>{active.display}</b> ({active.label}) ·{" "}
+                <span
+                  className={active.confidence < 0.7 ? "text-amber-600 dark:text-amber-400" : ""}
+                >
+                  {(active.confidence * 100).toFixed(0)}%
+                </span>
               </p>
             )}
           </section>
@@ -264,6 +319,15 @@ export function TranslateView({ initialHistory, demo }: Props) {
               className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
             >
               Nueva frase
+            </button>
+            <button
+              type="button"
+              onClick={onCaptureNow}
+              disabled={status !== "recording" || !lastFrameRef.current}
+              title="Fuerza el reconocimiento del frame actual sin esperar la pausa de segmentación"
+              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
+              Capturar ahora
             </button>
             <button
               type="button"
@@ -305,4 +369,18 @@ export function TranslateView({ initialHistory, demo }: Props) {
       </div>
     </main>
   );
+}
+
+function averageBuf(
+  frames: import("@/lib/mediapipe/types").NormalizedLandmark[][],
+): import("@/lib/mediapipe/types").NormalizedLandmark[] {
+  if (frames.length === 0) return [];
+  const n = frames[0]!.length;
+  const out: import("@/lib/mediapipe/types").NormalizedLandmark[] = new Array(n);
+  for (let i = 0; i < n; i++) {
+    let x = 0, y = 0, z = 0;
+    for (const f of frames) { x += f[i]!.x; y += f[i]!.y; z += f[i]!.z; }
+    out[i] = { x: x / frames.length, y: y / frames.length, z: z / frames.length };
+  }
+  return out;
 }

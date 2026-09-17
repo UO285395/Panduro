@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { Exercise, Lesson, Sign } from "@/lib/curriculum/schema";
 import { HeartsBar } from "@/components/gamification/HeartsBar";
 import { completeLesson } from "@/lib/progress/completeLesson";
@@ -11,6 +12,12 @@ import { MultipleChoice } from "@/components/exercises/MultipleChoice";
 import { MatchPairs } from "@/components/exercises/MatchPairs";
 import { TypeWord } from "@/components/exercises/TypeWord";
 import { SignThis } from "@/components/exercises/SignThis";
+import type { MascotState } from "@/components/mascot/ThingMascot";
+
+const ThingMascot = dynamic(
+  () => import("@/components/mascot/ThingMascot").then((m) => ({ default: m.ThingMascot })),
+  { ssr: false },
+);
 
 type SignRecord = Record<string, Sign | undefined>;
 
@@ -34,16 +41,31 @@ export function LessonRunner({
     bestScore: number;
     perfected: boolean;
   } | null>(null);
+  const [mascotState, setMascotState] = useState<MascotState>("idle");
+  const mascotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (mascotTimerRef.current) clearTimeout(mascotTimerRef.current);
+    };
+  }, []);
 
   const total = lesson.exercises.length;
   const current = lesson.exercises[step];
   const heartsLeft = Math.max(0, MAX_HEARTS - heartsUsed);
   const outOfHearts = heartsLeft === 0;
 
+  function triggerMascot(next: MascotState, durationMs: number) {
+    if (mascotTimerRef.current) clearTimeout(mascotTimerRef.current);
+    setMascotState(next);
+    mascotTimerRef.current = setTimeout(() => setMascotState("idle"), durationMs);
+  }
+
   function onAnswer(isCorrect: boolean) {
     if (isCorrect) {
       setCorrect((c) => c + 1);
       setFeedback({ kind: "correct", message: "¡Correcto!" });
+      triggerMascot("correct", 2000);
     } else {
       // Los ejercicios de cámara no consumen corazones: el ruido óptico puede
       // provocar falsos negativos que frustrarían al estudiante sin motivo.
@@ -53,6 +75,7 @@ export function LessonRunner({
         kind: "wrong",
         message: consumes ? "Casi. ¡Sigue!" : "No se reconoció bien. Vamos a otra.",
       });
+      triggerMascot("incorrect", 2000);
     }
   }
 
@@ -61,6 +84,7 @@ export function LessonRunner({
     if (step + 1 < total) {
       setStep(step + 1);
     } else {
+      triggerMascot("celebrate", 2500);
       finish();
     }
   }
@@ -127,6 +151,11 @@ export function LessonRunner({
           isLast={step + 1 === total}
         />
       )}
+
+      <ThingMascot
+        state={mascotState}
+        className="fixed bottom-20 right-4 z-50 drop-shadow-lg"
+      />
     </div>
   );
 }

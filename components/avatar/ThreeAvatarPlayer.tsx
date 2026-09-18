@@ -23,12 +23,9 @@ type Props = {
 };
 
 /**
- * Avatar 3D con cámara dinámica que sigue la mano.
- * La mano ocupa ~60% del canvas y la cámara suaviza el seguimiento.
- *
- * Materiales MeshPhysicalMaterial con clearcoat para piel realista.
- * Palma con eminencias tenar/hipotenar. Dedos con CapsuleGeometry de
- * 8 lados y nudillos esféricos. Iluminación de tres puntos.
+ * Avatar 3D — rig procedimental de alta calidad.
+ * Palma elipsoidal, dedos con LatheGeometry cónica + nudillos,
+ * iluminación de 4 puntos con hemisférica.
  */
 export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -58,11 +55,9 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0xfff3e8);
 
-      // Cámara ortográfica — halfH 0.20 para que la mano tenga margen.
-      const halfH = 0.20;
+      // Cámara ortográfica — halfH 0.22 con foco en la mano.
+      const halfH = 0.22;
       const camera = new THREE.OrthographicCamera(-halfH, halfH, halfH, -halfH, 0.01, 10);
-      // Inicializar la cámara directamente en la posición del primer keyframe para
-      // evitar el LERP largo desde una posición incorrecta.
       const initKf = clip?.keyframes[0];
       let camX = RIGHT_SHOULDER_X + (initKf ? initKf.hand.x * 0.5 : 0.05);
       let camY = initKf
@@ -73,21 +68,29 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       camera.position.set(camX, camY, 1.5);
       camera.lookAt(camX, camY, 0);
 
-      // Iluminación de tres puntos más hemisphere para ambient suave.
-      const hemi = new THREE.HemisphereLight(0xfff0e0, 0x806040, 0.45);
-      scene.add(hemi);
+      // ── Iluminación de 4 puntos ──────────────────────────────────────────
+      // Hemisférica suave (cielo cálido / suelo frío) como ambient.
+      scene.add(new THREE.HemisphereLight(0xfff0e0, 0x806040, 0.50));
 
-      const key = new THREE.DirectionalLight(0xfffaf0, 1.05);
-      key.position.set(0.8, 2.5, 2.0);
+      // Key: luz principal desde arriba-derecha-delante.
+      const key = new THREE.DirectionalLight(0xfffaf0, 1.10);
+      key.position.set(1.2, 3.0, 2.5);
       scene.add(key);
 
-      const fill = new THREE.DirectionalLight(0xd0e8ff, 0.45);
-      fill.position.set(-1.2, 1.5, 1.5);
+      // Fill: suave desde la izquierda, reduce sombras duras.
+      const fill = new THREE.DirectionalLight(0xd0e8ff, 0.40);
+      fill.position.set(-1.5, 1.5, 1.5);
       scene.add(fill);
 
-      const rim = new THREE.DirectionalLight(0xffd8b0, 0.3);
-      rim.position.set(0.0, -1.0, -1.5);
+      // Rim: luz de contorno desde detrás-arriba para separar la mano del fondo.
+      const rim = new THREE.DirectionalLight(0xffddbb, 0.35);
+      rim.position.set(0.0, 2.0, -2.0);
       scene.add(rim);
+
+      // Micro-fill: luz frontal cercana para iluminar el detalle de la piel.
+      const micro = new THREE.DirectionalLight(0xffffff, 0.20);
+      micro.position.set(0.0, 0.0, 3.0);
+      scene.add(micro);
 
       const rig = buildProceduralRig(THREE);
       scene.add(rig.group);
@@ -105,7 +108,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           const pose = poseFromKeyframe(kf);
           rig.apply(pose);
 
-          // Seguimiento suave de la cámara hacia la posición de la mano.
+          // Seguimiento suave de la cámara.
           const targetX = RIGHT_SHOULDER_X + kf.hand.x * 0.5;
           const targetY = SHOULDER_HEIGHT + kf.hand.y * 0.5
             - BONE_LENGTHS.upperArm * 0.5
@@ -122,9 +125,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       };
       loop();
 
-      return () => {
-        renderer.dispose();
-      };
+      return () => { renderer.dispose(); };
     })();
 
     return () => {
@@ -147,7 +148,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
 }
 
 // ----------------------------------------------------------------------------
-// Rig procedimental mejorado
+// Rig procedimental de alta calidad
 // ----------------------------------------------------------------------------
 
 type FingerHandle = {
@@ -161,30 +162,29 @@ type RigHandle = {
 };
 
 function buildProceduralRig(THREE: typeof import("three")): RigHandle {
-  // MeshStandardMaterial: compatible con software WebGL / SwiftShader en Windows.
-  const matSkin = new THREE.MeshStandardMaterial({ color: 0xe0aa78, roughness: 0.62, metalness: 0 });
-  const matPalm = new THREE.MeshStandardMaterial({ color: 0xf0c89a, roughness: 0.68, metalness: 0 });
+  // MeshStandardMaterial: funciona en software WebGL (Windows SwiftShader).
+  const matSkin = new THREE.MeshStandardMaterial({ color: 0xd4956a, roughness: 0.55, metalness: 0 });
+  const matPalm = new THREE.MeshStandardMaterial({ color: 0xe8b88a, roughness: 0.62, metalness: 0 });
   const matShirt = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.55, metalness: 0 });
-  const matNail = new THREE.MeshStandardMaterial({ color: 0xf8e0c8, roughness: 0.30, metalness: 0 });
-  const matHighlight = new THREE.MeshStandardMaterial({ color: 0xff9900, roughness: 0.42, metalness: 0.05 });
+  const matNail  = new THREE.MeshStandardMaterial({ color: 0xf0d5bf, roughness: 0.22, metalness: 0.05 });
 
   const group = new THREE.Group();
 
-  // Torso (decoración de fondo, se ve parcialmente).
+  // Torso (decorativo, se ve parcialmente en el encuadre).
   const torso = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.09, 0.11, BONE_LENGTHS.torso, 16),
+    new THREE.CylinderGeometry(0.09, 0.115, BONE_LENGTHS.torso, 18),
     matShirt,
   );
   torso.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso / 2;
   group.add(torso);
 
-  // Hombro derecho — pivot del brazo.
+  // ── Brazo ─────────────────────────────────────────────────────────────────
   const shoulder = new THREE.Group();
   shoulder.position.set(RIGHT_SHOULDER_X, SHOULDER_HEIGHT, 0);
   group.add(shoulder);
 
   const upperArm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.031, BONE_LENGTHS.upperArm - 0.06, 6, 14),
+    new THREE.CapsuleGeometry(0.030, BONE_LENGTHS.upperArm - 0.06, 8, 18),
     matSkin,
   );
   upperArm.position.y = -BONE_LENGTHS.upperArm / 2;
@@ -193,12 +193,10 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const elbow = new THREE.Group();
   elbow.position.y = -BONE_LENGTHS.upperArm;
   shoulder.add(elbow);
-
-  const elbowKnob = new THREE.Mesh(new THREE.SphereGeometry(0.030, 16, 14), matSkin);
-  elbow.add(elbowKnob);
+  elbow.add(new THREE.Mesh(new THREE.SphereGeometry(0.028, 18, 14), matSkin));
 
   const foreArm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.027, BONE_LENGTHS.foreArm - 0.06, 6, 14),
+    new THREE.CapsuleGeometry(0.025, BONE_LENGTHS.foreArm - 0.06, 8, 18),
     matSkin,
   );
   foreArm.position.y = -BONE_LENGTHS.foreArm / 2;
@@ -208,148 +206,88 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   wrist.position.y = -BONE_LENGTHS.foreArm;
   elbow.add(wrist);
 
-  // ── Palma mejorada ──────────────────────────────────────────────────────
-
+  // ── Palma elipsoidal ──────────────────────────────────────────────────────
   const palm = new THREE.Group();
-  palm.position.y = -PALM_HEIGHT / 2;
+  palm.position.y = -PALM_HEIGHT * 0.40;
   wrist.add(palm);
 
-  // Dorso de la mano (más oscuro).
-  const dorso = new THREE.Mesh(
-    new THREE.BoxGeometry(PALM_WIDTH, PALM_HEIGHT, PALM_DEPTH * 0.55),
-    matSkin,
-  );
-  dorso.position.z = -PALM_DEPTH * 0.22;
-  palm.add(dorso);
+  // Cuerpo principal: esfera unidad escalada a proporciones de palma.
+  const palmBody = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matSkin);
+  palmBody.scale.set(PALM_WIDTH * 0.52, PALM_HEIGHT * 0.50, PALM_DEPTH * 0.30);
+  palm.add(palmBody);
 
-  // Palmar (más claro).
-  const palma = new THREE.Mesh(
-    new THREE.BoxGeometry(PALM_WIDTH * 0.9, PALM_HEIGHT * 0.88, PALM_DEPTH * 0.55),
-    matPalm,
-  );
-  palma.position.z = PALM_DEPTH * 0.22;
-  palm.add(palma);
+  // Capa palmar (más clara, ligeramente desplazada hacia el espectador).
+  const palmFace = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matPalm);
+  palmFace.scale.set(PALM_WIDTH * 0.44, PALM_HEIGHT * 0.45, PALM_DEPTH * 0.20);
+  palmFace.position.z = PALM_DEPTH * 0.16;
+  palm.add(palmFace);
 
-  // Bordes redondeados laterales.
-  for (const side of [-1, 1]) {
-    const edge = new THREE.Mesh(
-      new THREE.SphereGeometry(PALM_DEPTH / 2, 12, 10),
-      side === 1 ? matSkin : matSkin,
-    );
-    edge.position.set((side * PALM_WIDTH) / 2, 0, 0);
-    edge.scale.set(0.7, PALM_HEIGHT / PALM_DEPTH, 1);
-    palm.add(edge);
-  }
-
-  // Eminencia tenar (base del pulgar — músculo otenar).
-  const thenar = new THREE.Mesh(
-    new THREE.SphereGeometry(0.023, 14, 10),
-    matPalm,
-  );
-  thenar.position.set(PALM_WIDTH * 0.42, PALM_HEIGHT * 0.10, PALM_DEPTH * 0.25);
-  thenar.scale.set(1, 1.4, 0.85);
+  // Eminencia tenar (músculo de la base del pulgar).
+  const thenar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matPalm);
+  thenar.scale.set(0.022, 0.038, 0.016);
+  thenar.position.set(PALM_WIDTH * 0.38, PALM_HEIGHT * 0.06, PALM_DEPTH * 0.18);
   palm.add(thenar);
 
-  // Eminencia hipotenar (base del meñique).
-  const hypothenar = new THREE.Mesh(
-    new THREE.SphereGeometry(0.018, 14, 10),
-    matPalm,
-  );
-  hypothenar.position.set(-PALM_WIDTH * 0.42, PALM_HEIGHT * 0.15, PALM_DEPTH * 0.20);
-  hypothenar.scale.set(0.8, 1.2, 0.8);
+  // Eminencia hipotenar (músculo del meñique).
+  const hypothenar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matPalm);
+  hypothenar.scale.set(0.016, 0.030, 0.012);
+  hypothenar.position.set(-PALM_WIDTH * 0.38, PALM_HEIGHT * 0.10, PALM_DEPTH * 0.14);
   palm.add(hypothenar);
 
-  // Muñeca base (esfera que une antebrazo con palma).
-  const wristBase = new THREE.Mesh(
-    new THREE.SphereGeometry(0.030, 16, 12),
-    matSkin,
-  );
-  wristBase.position.set(0, PALM_HEIGHT / 2, 0);
-  palm.add(wristBase);
+  // Articulación muñeca–palma.
+  const wristBall = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.6, 18, 14), matSkin);
+  wristBall.position.set(0, PALM_HEIGHT * 0.50, 0);
+  palm.add(wristBall);
 
-  // ── Dedos ───────────────────────────────────────────────────────────────
-
-  const fingerRadii: [number, number, number] = [0.015, 0.012, 0.010];
+  // ── Dedos ─────────────────────────────────────────────────────────────────
+  // Radios: [proximal-base, medial-base, distal-base]
+  const radii: [number, number, number] = [0.0158, 0.0132, 0.0108];
   const spacing = PALM_WIDTH / 4;
   const fingers: FingerHandle[] = [];
 
-  // Pulgar en el lateral radial.
+  // Pulgar — nace en el lateral radial de la palma.
   const thumbBase = new THREE.Group();
-  thumbBase.position.set(PALM_WIDTH * 0.48, -PALM_HEIGHT * 0.22, PALM_DEPTH * 0.15);
-  thumbBase.rotation.set(0, -Math.PI / 2.2, -THUMB_ABDUCTION);
+  thumbBase.position.set(PALM_WIDTH * 0.46, PALM_HEIGHT * 0.05, PALM_DEPTH * 0.10);
+  thumbBase.rotation.set(-0.25, -Math.PI / 2.4, -THUMB_ABDUCTION);
   palm.add(thumbBase);
 
-  const thumb = buildFinger(THREE, matSkin, matNail, "thumb", [
-    BONE_LENGTHS.thumb1,
-    BONE_LENGTHS.thumb2,
-    BONE_LENGTHS.thumb3,
-  ], fingerRadii);
+  const thumb = buildFinger(THREE, matSkin, matNail, "thumb",
+    [BONE_LENGTHS.thumb1, BONE_LENGTHS.thumb2, BONE_LENGTHS.thumb3], radii);
   thumbBase.add(thumb.root);
   fingers.push(thumb);
 
   // Cuatro dedos largos.
-  const fingerSpecs: Array<{
-    name: string;
-    x: number;
-    lens: [number, number, number];
-  }> = [
-    {
-      name: "index",
-      x: PALM_WIDTH / 2 - spacing * 0.5,
-      lens: [BONE_LENGTHS.index1, BONE_LENGTHS.index2, BONE_LENGTHS.index3],
-    },
-    {
-      name: "middle",
-      x: PALM_WIDTH / 2 - spacing * 1.5,
-      lens: [BONE_LENGTHS.middle1, BONE_LENGTHS.middle2, BONE_LENGTHS.middle3],
-    },
-    {
-      name: "ring",
-      x: PALM_WIDTH / 2 - spacing * 2.5,
-      lens: [BONE_LENGTHS.ring1, BONE_LENGTHS.ring2, BONE_LENGTHS.ring3],
-    },
-    {
-      name: "pinky",
-      x: PALM_WIDTH / 2 - spacing * 3.5,
-      lens: [BONE_LENGTHS.pinky1, BONE_LENGTHS.pinky2, BONE_LENGTHS.pinky3],
-    },
+  const fingerSpecs: Array<{ name: string; x: number; lens: [number, number, number] }> = [
+    { name: "index",  x: PALM_WIDTH / 2 - spacing * 0.5,
+      lens: [BONE_LENGTHS.index1,  BONE_LENGTHS.index2,  BONE_LENGTHS.index3]  },
+    { name: "middle", x: PALM_WIDTH / 2 - spacing * 1.5,
+      lens: [BONE_LENGTHS.middle1, BONE_LENGTHS.middle2, BONE_LENGTHS.middle3] },
+    { name: "ring",   x: PALM_WIDTH / 2 - spacing * 2.5,
+      lens: [BONE_LENGTHS.ring1,   BONE_LENGTHS.ring2,   BONE_LENGTHS.ring3]   },
+    { name: "pinky",  x: PALM_WIDTH / 2 - spacing * 3.5,
+      lens: [BONE_LENGTHS.pinky1,  BONE_LENGTHS.pinky2,  BONE_LENGTHS.pinky3]  },
   ];
 
   for (const spec of fingerSpecs) {
     const anchor = new THREE.Group();
-    anchor.position.set(spec.x, -PALM_HEIGHT / 2, PALM_DEPTH * 0.05);
+    anchor.position.set(spec.x, -PALM_HEIGHT / 2, PALM_DEPTH * 0.04);
     palm.add(anchor);
 
-    // Nudillo (articulación MCP).
-    const knuckle = new THREE.Mesh(
-      new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.1, 14, 12),
-      matSkin,
-    );
-    anchor.add(knuckle);
+    // Nudillo MCP (articulación metacarpofalángica).
+    anchor.add(new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.2, 14, 12), matSkin));
 
-    const f = buildFinger(THREE, matSkin, matNail, spec.name, spec.lens, fingerRadii);
+    const f = buildFinger(THREE, matSkin, matNail, spec.name, spec.lens, radii);
     anchor.add(f.root);
     fingers.push(f);
   }
-
-  // Uña destacada en el índice para identificar la mano dominante.
-  const indexTip = fingers[1]!.joints[2];
-  const nail = new THREE.Mesh(
-    new THREE.BoxGeometry(fingerRadii[2] * 1.6, fingerRadii[2] * 0.5, BONE_LENGTHS.index3 * 0.55),
-    matHighlight,
-  );
-  nail.position.set(0, -BONE_LENGTHS.index3 * 0.4, fingerRadii[2] * 0.9);
-  indexTip.add(nail);
 
   function apply(pose: ReturnType<typeof poseFromKeyframe>) {
     shoulder.rotation.set(pose.shoulder[0], pose.shoulder[1], pose.shoulder[2]);
     elbow.rotation.set(-pose.elbow, 0, 0);
     wrist.rotation.set(pose.wrist[0], pose.wrist[1], pose.wrist[2]);
-    applyFingerFlex(fingers[0]!, pose.fingers[0]);
-    applyFingerFlex(fingers[1]!, pose.fingers[1]);
-    applyFingerFlex(fingers[2]!, pose.fingers[2]);
-    applyFingerFlex(fingers[3]!, pose.fingers[3]);
-    applyFingerFlex(fingers[4]!, pose.fingers[4]);
+    for (let i = 0; i < 5; i++) {
+      applyFingerFlex(fingers[i]!, pose.fingers[i]);
+    }
   }
 
   return { group, apply };
@@ -361,45 +299,105 @@ function applyFingerFlex(finger: FingerHandle, flex: FingerPose) {
   finger.joints[2].rotation.x = -flex.distal;
 }
 
+/**
+ * Construye un dedo con tres falanges.
+ * Cada falange usa LatheGeometry (perfil de revolución): sección cónica con
+ * protuberancia articular en la base y yema redondeada en la distal.
+ * El perfil se define de punta (y=0) a base (y=len) y se traslada -len en Y
+ * para que la articulación quede en y=0 y la punta en y=-len.
+ */
 function buildFinger(
   THREE: typeof import("three"),
-  material: import("three").Material,
-  nailMat: import("three").Material,
+  matSkin: import("three").Material,
+  matNail: import("three").Material,
   name: string,
   lengths: [number, number, number],
   radii: [number, number, number],
 ): FingerHandle {
-  const seg = (len: number, r: number, tip: boolean) => {
-    const geo = new THREE.CapsuleGeometry(r, Math.max(len - r * 2, 0.002), 8, 12);
-    const mesh = new THREE.Mesh(geo, material);
-    mesh.position.y = -len / 2;
-    return mesh;
-  };
+  const [len1, len2, len3] = lengths;
+  const [r0, r1, r2] = radii;
 
   const g1 = new THREE.Group();
   g1.name = `${name}1`;
-  g1.add(seg(lengths[0], radii[0], false));
+  // Falange proximal: nudillo MCP en la base → taper hacia PIP
+  g1.add(makeLatheSegment(THREE, matSkin, len1, r0, r1 * 0.90, true));
 
   const g2 = new THREE.Group();
   g2.name = `${name}2`;
-  g2.position.y = -lengths[0];
-  g2.add(seg(lengths[1], radii[1], false));
-
-  // PIP knuckle
-  const pip = new THREE.Mesh(new THREE.SphereGeometry(radii[1] * 1.15, 10, 8), material);
-  g2.add(pip);
+  g2.position.y = -len1;
+  // Falange medial: nudillo PIP en la base → taper hacia DIP
+  g2.add(makeLatheSegment(THREE, matSkin, len2, r1, r2 * 0.90, true));
 
   const g3 = new THREE.Group();
   g3.name = `${name}3`;
-  g3.position.y = -lengths[1];
-  g3.add(seg(lengths[2], radii[2], true));
+  g3.position.y = -len2;
+  // Falange distal: sin nudillo, yema redondeada
+  g3.add(makeLatheSegment(THREE, matSkin, len3, r2, r2 * 0.68, false));
 
-  // DIP knuckle
-  const dip = new THREE.Mesh(new THREE.SphereGeometry(radii[2] * 1.15, 10, 8), material);
-  g3.add(dip);
+  // Uña en la distal (pequeño box brillante).
+  const nail = new THREE.Mesh(
+    new THREE.BoxGeometry(r2 * 1.5, r2 * 0.28, len3 * 0.44),
+    matNail,
+  );
+  nail.position.set(0, -len3 * 0.52, r2 * 0.82);
+  g3.add(nail);
 
   g2.add(g3);
   g1.add(g2);
-
   return { root: g1, joints: [g1, g2, g3] };
+}
+
+/**
+ * Segmento de dedo como sólido de revolución (LatheGeometry).
+ * El perfil va de punta (y=0, radio pequeño) a base (y=len, radio grande + nudillo).
+ * `mesh.position.y = -len` → articulación en y=0, punta en y=-len.
+ */
+function makeLatheSegment(
+  THREE: typeof import("three"),
+  material: import("three").Material,
+  len: number,
+  rBase: number,
+  rTip:  number,
+  withKnuckle: boolean,
+): import("three").Mesh {
+  const pts: import("three").Vector2[] = [];
+
+  // Yema redondeada en y=0..rTip*dome
+  const domeSegs = 7;
+  const domeR = rTip * 0.82;
+  for (let i = 0; i <= domeSegs; i++) {
+    const a = ((domeSegs - i) / domeSegs) * (Math.PI / 2);
+    pts.push(new THREE.Vector2(domeR * Math.cos(a), domeR * (1 - Math.sin(a))));
+  }
+
+  // Transición tip → shaft
+  pts.push(new THREE.Vector2(rTip * 1.02, domeR + len * 0.06));
+
+  // Eje cónico principal (taper de punta a base)
+  const shaftSteps = 6;
+  for (let i = 1; i <= shaftSteps; i++) {
+    const t = i / shaftSteps;
+    // Curva suave con easing cúbico
+    const r = rTip + (rBase - rTip) * (t * t * (3 - 2 * t));
+    pts.push(new THREE.Vector2(r, domeR + len * (0.06 + t * 0.72)));
+  }
+
+  // Zona articular en la base
+  const shaftEnd = domeR + len * 0.78;
+  if (withKnuckle) {
+    pts.push(new THREE.Vector2(rBase * 0.96, shaftEnd + len * 0.04));
+    pts.push(new THREE.Vector2(rBase * 1.10, shaftEnd + len * 0.10));
+    pts.push(new THREE.Vector2(rBase * 1.20, shaftEnd + len * 0.17));
+    pts.push(new THREE.Vector2(rBase * 1.18, len));
+  } else {
+    pts.push(new THREE.Vector2(rBase, len));
+  }
+
+  const totalH = len; // altura total del perfil
+  const geo = new THREE.LatheGeometry(pts, 18);
+  const mesh = new THREE.Mesh(geo, material);
+  // Perfil: y=0 (punta) → y=totalH (base). Mover -totalH en Y:
+  // articulación queda en y=0, punta en y=-totalH.
+  mesh.position.y = -totalH;
+  return mesh;
 }

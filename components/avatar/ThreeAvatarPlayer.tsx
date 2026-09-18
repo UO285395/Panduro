@@ -55,18 +55,13 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0xfff3e8);
 
-      // Cámara ortográfica — halfH 0.22 con foco en la mano.
-      const halfH = 0.22;
+      // Cámara ortográfica fija — encuadra el cuerpo completo (cabeza + torso + brazo).
+      const halfH = 0.40;
       const camera = new THREE.OrthographicCamera(-halfH, halfH, halfH, -halfH, 0.01, 10);
-      const initKf = clip?.keyframes[0];
-      let camX = RIGHT_SHOULDER_X + (initKf ? initKf.hand.x * 0.5 : 0.05);
-      let camY = initKf
-        ? SHOULDER_HEIGHT + initKf.hand.y * 0.5
-          - BONE_LENGTHS.upperArm * 0.5
-          - BONE_LENGTHS.foreArm * 0.3
-        : SHOULDER_HEIGHT - BONE_LENGTHS.upperArm - BONE_LENGTHS.foreArm * 0.5;
-      camera.position.set(camX, camY, 1.5);
-      camera.lookAt(camX, camY, 0);
+      const CAM_X = RIGHT_SHOULDER_X;
+      const CAM_Y = 0.80;
+      camera.position.set(CAM_X, CAM_Y, 1.5);
+      camera.lookAt(CAM_X, CAM_Y, 0);
 
       // ── Iluminación de 4 puntos ──────────────────────────────────────────
       // Hemisférica suave (cielo cálido / suelo frío) como ambient.
@@ -107,17 +102,6 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         if (clip && kf) {
           const pose = poseFromKeyframe(kf);
           rig.apply(pose);
-
-          // Seguimiento suave de la cámara.
-          const targetX = RIGHT_SHOULDER_X + kf.hand.x * 0.5;
-          const targetY = SHOULDER_HEIGHT + kf.hand.y * 0.5
-            - BONE_LENGTHS.upperArm * 0.5
-            - BONE_LENGTHS.foreArm * 0.3;
-          const LERP = 0.04;
-          camX += (targetX - camX) * LERP;
-          camY += (targetY - camY) * LERP;
-          camera.position.set(camX, camY, 1.5);
-          camera.lookAt(camX, camY, 0);
         }
 
         renderer.render(scene, camera);
@@ -168,15 +152,38 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const matShirt = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.55, metalness: 0 });
   const matNail  = new THREE.MeshStandardMaterial({ color: 0xf0d5bf, roughness: 0.22, metalness: 0.05 });
 
+  const matFace  = new THREE.MeshStandardMaterial({ color: 0xd4956a, roughness: 0.50, metalness: 0 });
+  const matHair  = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.80, metalness: 0 });
+
   const group = new THREE.Group();
 
-  // Torso (decorativo, se ve parcialmente en el encuadre).
+  // Torso
   const torso = new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.115, BONE_LENGTHS.torso, 18),
     matShirt,
   );
   torso.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso / 2;
   group.add(torso);
+
+  // Cuello
+  const neck = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.026, BONE_LENGTHS.neck - 0.04, 6, 12),
+    matSkin,
+  );
+  neck.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck / 2;
+  group.add(neck);
+
+  // Cabeza
+  const headR = BONE_LENGTHS.head / 2;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 26, 20), matFace);
+  head.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck + headR;
+  group.add(head);
+
+  // Pelo (casquete superior)
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.01, 26, 20), matHair);
+  hair.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck + headR + headR * 0.10;
+  hair.scale.set(1, 0.55, 1);
+  group.add(hair);
 
   // ── Brazo ─────────────────────────────────────────────────────────────────
   const shoulder = new THREE.Group();

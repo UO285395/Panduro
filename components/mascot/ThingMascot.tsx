@@ -24,7 +24,7 @@ type Props = {
 /**
  * Mascota "Thing" de la Familia Addams: mano aislada con el antebrazo
  * emergiendo desde la parte inferior del canvas y los dedos apuntando
- * hacia arriba. Se anima según el resultado del ejercicio.
+ * hacia arriba. Dedos con LatheGeometry cónica (misma calidad que el avatar).
  */
 export function ThingMascot({ state, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -56,20 +56,23 @@ export function ThingMascot({ state, className }: Props) {
 
       const scene = new THREE.Scene();
 
-      // Ortográfica — dedos hacia arriba, antebrazo emergiendo desde abajo.
-      const halfH = 0.19;
+      // Cámara ortográfica ampliada para que los clips no salgan del frustum.
+      const halfH = 0.28;
       const halfW = halfH * (W / H);
       const camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.01, 10);
-      camera.position.set(0, 0.05, 1.5);
-      camera.lookAt(0, 0.05, 0);
+      camera.position.set(0, 0.02, 1.5);
+      camera.lookAt(0, 0.02, 0);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-      const key = new THREE.DirectionalLight(0xffffff, 0.85);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.40));
+      const key = new THREE.DirectionalLight(0xfffaf0, 1.00);
       key.position.set(0.8, 2, 2);
       scene.add(key);
       const fill = new THREE.DirectionalLight(0xd8e8ff, 0.35);
       fill.position.set(-0.8, 0, 1);
       scene.add(fill);
+      const rim = new THREE.DirectionalLight(0xffddbb, 0.25);
+      rim.position.set(0, 1.5, -1.5);
+      scene.add(rim);
 
       const rig = buildThingRig(THREE);
       scene.add(rig.group);
@@ -113,8 +116,8 @@ export function ThingMascot({ state, className }: Props) {
 }
 
 // ---------------------------------------------------------------------------
-// Rig autónomo estilo "Thing": palma en el centro, dedos hacia +Y,
-// antebrazo hacia -Y (parcialmente fuera del canvas = efecto "emergiendo").
+// Rig autónomo estilo "Thing": palma elipsoidal, dedos LatheGeometry hacia +Y,
+// antebrazo emergiendo desde -Y (efecto "emergiendo del suelo").
 // ---------------------------------------------------------------------------
 
 type FingerHandle = {
@@ -128,77 +131,66 @@ type ThingRig = {
 };
 
 function buildThingRig(THREE: typeof import("three")): ThingRig {
-  const matSkin = new THREE.MeshStandardMaterial({ color: 0xe0aa78, roughness: 0.65, metalness: 0 });
-  const matPalm = new THREE.MeshStandardMaterial({ color: 0xf0c89a, roughness: 0.70, metalness: 0 });
+  const matSkin = new THREE.MeshStandardMaterial({ color: 0xe0aa78, roughness: 0.62, metalness: 0 });
+  const matPalm = new THREE.MeshStandardMaterial({ color: 0xf0c89a, roughness: 0.68, metalness: 0 });
+  const matNail = new THREE.MeshStandardMaterial({ color: 0xf5e0cc, roughness: 0.22, metalness: 0.05 });
 
-  // Grupo raíz — se traslada y rota en apply() para las animaciones del clip.
   const group = new THREE.Group();
 
-  // Antebrazo stub (emerge desde abajo del canvas).
+  // Antebrazo (emerge desde abajo).
   const foreArmStub = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.024, 0.10, 4, 8),
+    new THREE.CapsuleGeometry(0.024, 0.10, 6, 12),
     matSkin,
   );
   foreArmStub.position.y = -(PALM_HEIGHT / 2 + 0.06);
   group.add(foreArmStub);
 
-  // Muñeca (esfera de unión entre antebrazo y palma).
+  // Muñeca.
   const wristSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.027, 12, 10),
+    new THREE.SphereGeometry(0.027, 14, 12),
     matSkin,
   );
   wristSphere.position.y = -PALM_HEIGHT / 2;
   group.add(wristSphere);
 
-  // Dorso de la palma.
-  const dorso = new THREE.Mesh(
-    new THREE.BoxGeometry(PALM_WIDTH, PALM_HEIGHT, PALM_DEPTH * 0.55),
-    matSkin,
-  );
-  dorso.position.z = -PALM_DEPTH * 0.22;
-  group.add(dorso);
+  // Palma elipsoidal (dorso).
+  const palmBody = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matSkin);
+  palmBody.scale.set(PALM_WIDTH * 0.52, PALM_HEIGHT * 0.50, PALM_DEPTH * 0.30);
+  group.add(palmBody);
 
-  // Cara palmar (más clara).
-  const palma = new THREE.Mesh(
-    new THREE.BoxGeometry(PALM_WIDTH * 0.9, PALM_HEIGHT * 0.88, PALM_DEPTH * 0.55),
-    matPalm,
-  );
-  palma.position.z = PALM_DEPTH * 0.22;
-  group.add(palma);
+  // Cara palmar (más clara, ligeramente hacia el espectador).
+  const palmFace = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matPalm);
+  palmFace.scale.set(PALM_WIDTH * 0.44, PALM_HEIGHT * 0.45, PALM_DEPTH * 0.20);
+  palmFace.position.z = PALM_DEPTH * 0.16;
+  group.add(palmFace);
 
-  // Bordes laterales redondeados.
-  for (const side of [-1, 1]) {
-    const edge = new THREE.Mesh(
-      new THREE.SphereGeometry(PALM_DEPTH / 2, 8, 6),
-      matSkin,
-    );
-    edge.position.set((side * PALM_WIDTH) / 2, 0, 0);
-    edge.scale.set(0.7, PALM_HEIGHT / PALM_DEPTH, 1);
-    group.add(edge);
-  }
+  // Eminencia tenar.
+  const thenar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matPalm);
+  thenar.scale.set(0.022, 0.038, 0.016);
+  thenar.position.set(PALM_WIDTH * 0.38, PALM_HEIGHT * 0.06, PALM_DEPTH * 0.18);
+  group.add(thenar);
 
-  const fingerRadii: [number, number, number] = [0.013, 0.010, 0.008];
+  const fingerRadii: [number, number, number] = [0.0158, 0.0132, 0.0108];
   const spacing = PALM_WIDTH / 4;
   const fingers: FingerHandle[] = [];
 
-  // Pulgar — sale del lateral radial (derecha de la palma desde el punto de
-  // vista del espectador cuando ve el dorso).
+  // Pulgar — nace del lateral radial de la palma.
   const thumbBase = new THREE.Group();
   thumbBase.position.set(PALM_WIDTH * 0.46, PALM_HEIGHT * 0.05, PALM_DEPTH * 0.10);
   thumbBase.rotation.set(-0.25, -Math.PI / 2.4, -THUMB_ABDUCTION);
   group.add(thumbBase);
-  const thumb = buildFingerUp(THREE, matSkin, "thumb", [
+  const thumb = buildFingerUp(THREE, matSkin, matNail, "thumb", [
     BONE_LENGTHS.thumb1, BONE_LENGTHS.thumb2, BONE_LENGTHS.thumb3,
   ], fingerRadii);
   thumbBase.add(thumb.root);
   fingers.push(thumb);
 
-  // Cuatro dedos largos que arrancan desde el borde superior de la palma (+Y).
+  // Cuatro dedos largos desde el borde superior de la palma (+Y).
   const fingerSpecs: Array<{ x: number; lens: [number, number, number] }> = [
-    { x: PALM_WIDTH / 2 - spacing * 0.5,  lens: [BONE_LENGTHS.index1, BONE_LENGTHS.index2, BONE_LENGTHS.index3] },
+    { x: PALM_WIDTH / 2 - spacing * 0.5,  lens: [BONE_LENGTHS.index1,  BONE_LENGTHS.index2,  BONE_LENGTHS.index3]  },
     { x: PALM_WIDTH / 2 - spacing * 1.5,  lens: [BONE_LENGTHS.middle1, BONE_LENGTHS.middle2, BONE_LENGTHS.middle3] },
-    { x: PALM_WIDTH / 2 - spacing * 2.5,  lens: [BONE_LENGTHS.ring1, BONE_LENGTHS.ring2, BONE_LENGTHS.ring3] },
-    { x: PALM_WIDTH / 2 - spacing * 3.5,  lens: [BONE_LENGTHS.pinky1, BONE_LENGTHS.pinky2, BONE_LENGTHS.pinky3] },
+    { x: PALM_WIDTH / 2 - spacing * 2.5,  lens: [BONE_LENGTHS.ring1,   BONE_LENGTHS.ring2,   BONE_LENGTHS.ring3]   },
+    { x: PALM_WIDTH / 2 - spacing * 3.5,  lens: [BONE_LENGTHS.pinky1,  BONE_LENGTHS.pinky2,  BONE_LENGTHS.pinky3]  },
   ];
 
   for (const spec of fingerSpecs) {
@@ -206,23 +198,20 @@ function buildThingRig(THREE: typeof import("three")): ThingRig {
     anchor.position.set(spec.x, PALM_HEIGHT / 2, PALM_DEPTH * 0.05);
     group.add(anchor);
 
-    const knuckle = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS, 10, 8), matSkin);
-    anchor.add(knuckle);
+    anchor.add(new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.2, 14, 12), matSkin));
 
-    const f = buildFingerUp(THREE, matSkin, "f", spec.lens, fingerRadii);
+    const f = buildFingerUp(THREE, matSkin, matNail, "f", spec.lens, fingerRadii);
     anchor.add(f.root);
     fingers.push(f);
   }
 
   function apply(kf: AvatarKeyframe) {
-    // Traslación suave para las animaciones de los clips.
     group.position.set(kf.hand.x * 0.055, kf.hand.y * 0.055 - 0.04, 0);
-    // Rotación de muñeca.
     group.rotation.set(kf.hand.rot[0], kf.hand.rot[1], kf.hand.rot[2]);
-    // Flexión de dedos (cerrar = curva hacia la cámara).
     for (let i = 0; i < 5; i++) {
       const f = fingers[i]!;
       const fp = distributeFlex(kf.fingers[i]);
+      // Flexión positiva alrededor de X curva los dedos hacia el espectador (+Z).
       f.joints[0].rotation.x = fp.proximal;
       f.joints[1].rotation.x = fp.middle;
       f.joints[2].rotation.x = fp.distal;
@@ -232,40 +221,91 @@ function buildThingRig(THREE: typeof import("three")): ThingRig {
   return { group, apply };
 }
 
-/** Construye un dedo con segmentos que se extienden hacia arriba (+Y). */
+/**
+ * Construye un dedo cuyos segmentos se extienden hacia arriba (+Y).
+ * Usa LatheGeometry (perfil de revolución cónico) como el avatar principal.
+ */
 function buildFingerUp(
   THREE: typeof import("three"),
-  material: import("three").Material,
+  matSkin: import("three").Material,
+  matNail: import("three").Material,
   name: string,
   lengths: [number, number, number],
   radii: [number, number, number],
 ): FingerHandle {
-  const seg = (len: number, r: number) => {
-    const mesh = new THREE.Mesh(
-      new THREE.CapsuleGeometry(r, Math.max(len - r * 2, 0.001), 4, 8),
-      material,
-    );
-    mesh.position.y = len / 2; // segmento hacia arriba (+Y)
-    return mesh;
-  };
+  const [len1, len2, len3] = lengths;
+  const [r0, r1, r2] = radii;
 
   const g1 = new THREE.Group();
   g1.name = `${name}1`;
-  g1.add(seg(lengths[0], radii[0]));
+  g1.add(makeLatheSegmentUp(THREE, matSkin, len1, r0, r1 * 0.90, true));
 
   const g2 = new THREE.Group();
   g2.name = `${name}2`;
-  g2.position.y = lengths[0]; // hacia arriba
-  g2.add(seg(lengths[1], radii[1]));
-  g2.add(new THREE.Mesh(new THREE.SphereGeometry(radii[1] * 1.1, 8, 6), material)); // PIP
+  g2.position.y = len1;
+  g2.add(makeLatheSegmentUp(THREE, matSkin, len2, r1, r2 * 0.90, true));
 
   const g3 = new THREE.Group();
   g3.name = `${name}3`;
-  g3.position.y = lengths[1]; // hacia arriba
-  g3.add(seg(lengths[2], radii[2]));
-  g3.add(new THREE.Mesh(new THREE.SphereGeometry(radii[2] * 1.1, 8, 6), material)); // DIP
+  g3.position.y = len2;
+  g3.add(makeLatheSegmentUp(THREE, matSkin, len3, r2, r2 * 0.68, false));
+
+  // Uña en la falange distal.
+  const nail = new THREE.Mesh(
+    new THREE.BoxGeometry(r2 * 1.5, len3 * 0.44, r2 * 0.28),
+    matNail,
+  );
+  nail.position.set(0, len3 * 0.52, -r2 * 0.82);
+  g3.add(nail);
 
   g2.add(g3);
   g1.add(g2);
   return { root: g1, joints: [g1, g2, g3] };
+}
+
+/**
+ * Segmento de falange como sólido de revolución que apunta hacia +Y.
+ * Perfil: base (y=0, nudillo) → taper cónico → yema redondeada en y≈len.
+ */
+function makeLatheSegmentUp(
+  THREE: typeof import("three"),
+  material: import("three").Material,
+  len: number,
+  rBase: number,
+  rTip:  number,
+  withKnuckle: boolean,
+): import("three").Mesh {
+  const pts: import("three").Vector2[] = [];
+
+  // Nudillo / zona articular en la base (y=0)
+  if (withKnuckle) {
+    pts.push(new THREE.Vector2(rBase * 1.18, 0));
+    pts.push(new THREE.Vector2(rBase * 1.20, len * 0.06));
+    pts.push(new THREE.Vector2(rBase * 1.10, len * 0.12));
+    pts.push(new THREE.Vector2(rBase * 0.96, len * 0.20));
+  } else {
+    pts.push(new THREE.Vector2(rBase, 0));
+  }
+
+  // Eje cónico: base → taper suave hacia la punta
+  const shaftSteps = 6;
+  for (let i = 1; i <= shaftSteps; i++) {
+    const t = i / shaftSteps;
+    const r = rBase + (rTip - rBase) * (t * t * (3 - 2 * t));
+    pts.push(new THREE.Vector2(r, len * (0.22 + t * 0.60)));
+  }
+
+  // Yema redondeada en la punta (y ≈ len)
+  const domeR = rTip * 0.82;
+  const domeSegs = 7;
+  for (let i = 0; i <= domeSegs; i++) {
+    const a = (i / domeSegs) * (Math.PI / 2);
+    pts.push(new THREE.Vector2(
+      domeR * Math.cos(a),
+      len * 0.82 + domeR * Math.sin(a),
+    ));
+  }
+
+  const geo = new THREE.LatheGeometry(pts, 18);
+  return new THREE.Mesh(geo, material);
 }

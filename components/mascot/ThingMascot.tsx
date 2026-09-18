@@ -62,6 +62,8 @@ export function ThingMascot({ state, className }: Props) {
       const camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.01, 10);
       camera.position.set(0, 0.02, 1.5);
       camera.lookAt(0, 0.02, 0);
+      // Invertir el viewport: los dedos (+Y) aparecen abajo, el brazo (-Y) arriba.
+      camera.up.set(0, -1, 0);
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.40));
       const key = new THREE.DirectionalLight(0xfffaf0, 1.00);

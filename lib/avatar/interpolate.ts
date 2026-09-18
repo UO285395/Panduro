@@ -20,7 +20,9 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
     const b = kfs[i + 1]!;
     if (tMs >= a.t && tMs < b.t) {
       const span = b.t - a.t;
-      const u = span > 0 ? (tMs - a.t) / span : 0;
+      const raw = span > 0 ? (tMs - a.t) / span : 0;
+      // Smoothstep: elimina arranques y paradas abruptas entre keyframes.
+      const u = raw * raw * (3 - 2 * raw);
       return {
         t: tMs,
         hand: {

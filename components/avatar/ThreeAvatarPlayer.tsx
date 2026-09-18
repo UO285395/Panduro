@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, type FingerPose } from "@/lib/avatar/pose";
+import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
+import { applyPoseToVrm } from "@/lib/avatar/vrmMapper";
 import {
   BONE_LENGTHS,
   KNUCKLE_RADIUS,
@@ -29,7 +31,7 @@ type Props = {
  */
 export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [mode] = useState<"procedural" | "vrm">("procedural");
+  const [mode, setMode] = useState<"procedural" | "vrm">("procedural");
 
   useEffect(() => {
     let disposed = false;
@@ -87,27 +89,55 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       micro.position.set(0.0, 0.0, 3.0);
       scene.add(micro);
 
-      const rig = buildProceduralRig(THREE);
-      scene.add(rig.group);
+      // Intentar cargar VRM; si no está disponible, usar el rig procedimental.
+      const loaded = await loadPanduroVrm();
 
-      onReady?.("procedural");
+      if (loaded && !disposed) {
+        const { scene: vrmScene, vrm } = loaded as {
+          scene: import("three").Group;
+          vrm: import("@pixiv/three-vrm").VRM;
+        };
+        scene.add(vrmScene);
+        setMode("vrm");
+        onReady?.("vrm");
 
-      const started = performance.now();
+        const clock = new THREE.Clock();
+        const started = performance.now();
 
-      const loop = () => {
-        if (disposed) return;
-        const dt = performance.now() - started;
+        const loop = () => {
+          if (disposed) return;
+          const dt = performance.now() - started;
+          const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
+          if (kf) {
+            const pose = poseFromKeyframe(kf);
+            applyPoseToVrm(vrm, pose);
+          }
+          vrm.update(clock.getDelta());
+          renderer.render(scene, camera);
+          raf = requestAnimationFrame(loop);
+        };
+        loop();
+      } else {
+        // Fallback: rig procedimental
+        const rig = buildProceduralRig(THREE);
+        scene.add(rig.group);
+        onReady?.("procedural");
 
-        let kf = clip ? sampleClip(clip, dt % clip.duration) : null;
-        if (clip && kf) {
-          const pose = poseFromKeyframe(kf);
-          rig.apply(pose);
-        }
+        const started = performance.now();
 
-        renderer.render(scene, camera);
-        raf = requestAnimationFrame(loop);
-      };
-      loop();
+        const loop = () => {
+          if (disposed) return;
+          const dt = performance.now() - started;
+          const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
+          if (clip && kf) {
+            const pose = poseFromKeyframe(kf);
+            rig.apply(pose);
+          }
+          renderer.render(scene, camera);
+          raf = requestAnimationFrame(loop);
+        };
+        loop();
+      }
 
       return () => { renderer.dispose(); };
     })();

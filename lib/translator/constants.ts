@@ -21,7 +21,7 @@ export const SENTENCE_PAUSE_MS = 2000;
 export const DEDUPE_MS = 400;
 
 /** Confianza mínima que emite el clasificador para publicar un signo. */
-export const MIN_TRANSLATE_CONFIDENCE = 0.55;
+export const MIN_TRANSLATE_CONFIDENCE = 0.35;
 
 /** Nº de frames que promediamos para obtener el snapshot de landmarks. */
 export const HOLD_SAMPLE_FRAMES = 10;

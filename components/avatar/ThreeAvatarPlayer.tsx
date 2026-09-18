@@ -53,18 +53,23 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(size, size, false);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.enabled = false;
 
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0xfff3e8);
 
-      // Cámara ortográfica estrecha — halfH 0.16 para zoom sobre la mano.
-      const halfH = 0.165;
+      // Cámara ortográfica — halfH 0.20 para que la mano tenga margen.
+      const halfH = 0.20;
       const camera = new THREE.OrthographicCamera(-halfH, halfH, halfH, -halfH, 0.01, 10);
-      // Centro inicial en zona de la mano relajada.
-      let camX = RIGHT_SHOULDER_X + 0.05;
-      let camY = SHOULDER_HEIGHT - BONE_LENGTHS.upperArm - BONE_LENGTHS.foreArm * 0.5;
+      // Inicializar la cámara directamente en la posición del primer keyframe para
+      // evitar el LERP largo desde una posición incorrecta.
+      const initKf = clip?.keyframes[0];
+      let camX = RIGHT_SHOULDER_X + (initKf ? initKf.hand.x * 0.5 : 0.05);
+      let camY = initKf
+        ? SHOULDER_HEIGHT + initKf.hand.y * 0.5
+          - BONE_LENGTHS.upperArm * 0.5
+          - BONE_LENGTHS.foreArm * 0.3
+        : SHOULDER_HEIGHT - BONE_LENGTHS.upperArm - BONE_LENGTHS.foreArm * 0.5;
       camera.position.set(camX, camY, 1.5);
       camera.lookAt(camX, camY, 0);
 
@@ -74,14 +79,6 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
 
       const key = new THREE.DirectionalLight(0xfffaf0, 1.05);
       key.position.set(0.8, 2.5, 2.0);
-      key.castShadow = true;
-      key.shadow.mapSize.set(512, 512);
-      key.shadow.camera.near = 0.5;
-      key.shadow.camera.far = 6;
-      key.shadow.camera.left = -0.5;
-      key.shadow.camera.right = 0.5;
-      key.shadow.camera.top = 0.5;
-      key.shadow.camera.bottom = -0.5;
       scene.add(key);
 
       const fill = new THREE.DirectionalLight(0xd0e8ff, 0.45);
@@ -164,39 +161,12 @@ type RigHandle = {
 };
 
 function buildProceduralRig(THREE: typeof import("three")): RigHandle {
-  // Materiales físicos para piel realista.
-  const matSkin = new THREE.MeshPhysicalMaterial({
-    color: 0xe0aa78,
-    roughness: 0.62,
-    metalness: 0,
-    clearcoat: 0.18,
-    clearcoatRoughness: 0.75,
-  });
-  const matPalm = new THREE.MeshPhysicalMaterial({
-    color: 0xf0c89a,
-    roughness: 0.68,
-    metalness: 0,
-    clearcoat: 0.10,
-    clearcoatRoughness: 0.9,
-  });
-  const matShirt = new THREE.MeshPhysicalMaterial({
-    color: 0xea580c,
-    roughness: 0.55,
-    metalness: 0,
-  });
-  const matNail = new THREE.MeshPhysicalMaterial({
-    color: 0xf8e0c8,
-    roughness: 0.3,
-    metalness: 0,
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.3,
-  });
-  const matHighlight = new THREE.MeshPhysicalMaterial({
-    color: 0xff9900,
-    roughness: 0.42,
-    metalness: 0.05,
-    clearcoat: 0.4,
-  });
+  // MeshStandardMaterial: compatible con software WebGL / SwiftShader en Windows.
+  const matSkin = new THREE.MeshStandardMaterial({ color: 0xe0aa78, roughness: 0.62, metalness: 0 });
+  const matPalm = new THREE.MeshStandardMaterial({ color: 0xf0c89a, roughness: 0.68, metalness: 0 });
+  const matShirt = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.55, metalness: 0 });
+  const matNail = new THREE.MeshStandardMaterial({ color: 0xf8e0c8, roughness: 0.30, metalness: 0 });
+  const matHighlight = new THREE.MeshStandardMaterial({ color: 0xff9900, roughness: 0.42, metalness: 0.05 });
 
   const group = new THREE.Group();
 
@@ -206,7 +176,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matShirt,
   );
   torso.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso / 2;
-  torso.castShadow = true;
   group.add(torso);
 
   // Hombro derecho — pivot del brazo.
@@ -219,7 +188,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matSkin,
   );
   upperArm.position.y = -BONE_LENGTHS.upperArm / 2;
-  upperArm.castShadow = true;
   shoulder.add(upperArm);
 
   const elbow = new THREE.Group();
@@ -227,7 +195,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   shoulder.add(elbow);
 
   const elbowKnob = new THREE.Mesh(new THREE.SphereGeometry(0.030, 16, 14), matSkin);
-  elbowKnob.castShadow = true;
   elbow.add(elbowKnob);
 
   const foreArm = new THREE.Mesh(
@@ -235,7 +202,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matSkin,
   );
   foreArm.position.y = -BONE_LENGTHS.foreArm / 2;
-  foreArm.castShadow = true;
   elbow.add(foreArm);
 
   const wrist = new THREE.Group();
@@ -254,7 +220,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matSkin,
   );
   dorso.position.z = -PALM_DEPTH * 0.22;
-  dorso.castShadow = true;
   palm.add(dorso);
 
   // Palmar (más claro).
@@ -263,7 +228,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matPalm,
   );
   palma.position.z = PALM_DEPTH * 0.22;
-  palma.castShadow = true;
   palm.add(palma);
 
   // Bordes redondeados laterales.
@@ -284,7 +248,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   );
   thenar.position.set(PALM_WIDTH * 0.42, PALM_HEIGHT * 0.10, PALM_DEPTH * 0.25);
   thenar.scale.set(1, 1.4, 0.85);
-  thenar.castShadow = true;
   palm.add(thenar);
 
   // Eminencia hipotenar (base del meñique).
@@ -294,7 +257,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   );
   hypothenar.position.set(-PALM_WIDTH * 0.42, PALM_HEIGHT * 0.15, PALM_DEPTH * 0.20);
   hypothenar.scale.set(0.8, 1.2, 0.8);
-  hypothenar.castShadow = true;
   palm.add(hypothenar);
 
   // Muñeca base (esfera que une antebrazo con palma).
@@ -363,7 +325,6 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
       new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.1, 14, 12),
       matSkin,
     );
-    knuckle.castShadow = true;
     anchor.add(knuckle);
 
     const f = buildFinger(THREE, matSkin, matNail, spec.name, spec.lens, fingerRadii);
@@ -412,7 +373,6 @@ function buildFinger(
     const geo = new THREE.CapsuleGeometry(r, Math.max(len - r * 2, 0.002), 8, 12);
     const mesh = new THREE.Mesh(geo, material);
     mesh.position.y = -len / 2;
-    mesh.castShadow = true;
     return mesh;
   };
 
@@ -427,7 +387,6 @@ function buildFinger(
 
   // PIP knuckle
   const pip = new THREE.Mesh(new THREE.SphereGeometry(radii[1] * 1.15, 10, 8), material);
-  pip.castShadow = true;
   g2.add(pip);
 
   const g3 = new THREE.Group();
@@ -437,7 +396,6 @@ function buildFinger(
 
   // DIP knuckle
   const dip = new THREE.Mesh(new THREE.SphereGeometry(radii[2] * 1.15, 10, 8), material);
-  dip.castShadow = true;
   g3.add(dip);
 
   g2.add(g3);

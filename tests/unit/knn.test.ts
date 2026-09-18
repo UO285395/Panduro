@@ -41,12 +41,17 @@ function makeTemplates(): Template[] {
 }
 
 describe("features.extractFeatures", () => {
-  it("aplana 21 landmarks a 63 números", () => {
+  it("aplana 21 landmarks a 63 números con normalización de rotación", () => {
     const hand = randomHand(1);
     const out = extractFeatures(hand);
     expect(out).toHaveLength(63);
-    expect(out[0]).toBe(hand[0]!.x);
+    // z no se toca en la rotación XY — se preserva exacto
+    expect(out[2]).toBe(hand[0]!.z);
     expect(out[62]).toBe(hand[20]!.z);
+    // la distancia euclídea entre dos puntos se preserva (rotación es isométrica)
+    const d_before = Math.hypot(hand[1]!.x - hand[0]!.x, hand[1]!.y - hand[0]!.y);
+    const d_after  = Math.hypot(out[3]! - out[0]!, out[4]! - out[1]!);
+    expect(d_after).toBeCloseTo(d_before, 10);
   });
 
   it("lanza si el número de landmarks no es 21", () => {

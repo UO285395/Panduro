@@ -2,6 +2,7 @@ import fingerspellingData from "@/content/signs/fingerspelling.json";
 import lexiconData from "@/content/signs/lexicon.json";
 import type { Template } from "./knn";
 import type { NormalizedLandmark } from "@/lib/mediapipe/types";
+import { extractFeatures } from "./features";
 
 /** Formato del JSON de plantillas del alfabeto dactilológico. */
 export type FingerspellingJson = {
@@ -41,17 +42,19 @@ export function listLetters(): string[] {
   return Object.keys(source.letters).sort();
 }
 
-/** Plantillas globales cargadas desde el repo: alfabeto + signos léxicos. */
+/** Plantillas globales cargadas desde el repo: alfabeto + signos léxicos.
+ * Usa extractFeatures para que templates e inferencia pasen por la misma
+ * normalización de rotación (wrist→middle_mcp → eje -Y). */
 export function loadGlobalTemplates(): Template[] {
   const out: Template[] = [];
   for (const [letter, entry] of Object.entries(source.letters)) {
     for (const landmarks of entry.templates) {
-      out.push({ label: letter, features: flatten(landmarks) });
+      out.push({ label: letter, features: extractFeatures(landmarks) });
     }
   }
   for (const [signId, entry] of Object.entries(lexicon.signs)) {
     for (const landmarks of entry.templates) {
-      out.push({ label: signId, features: flatten(landmarks) });
+      out.push({ label: signId, features: extractFeatures(landmarks) });
     }
   }
   return out;
@@ -62,17 +65,6 @@ export function globalTemplateCount(label: string): number {
   if (source.letters[label]) return source.letters[label]!.templates.length;
   if (lexicon.signs[label]) return lexicon.signs[label]!.templates.length;
   return 0;
-}
-
-function flatten(landmarks: NormalizedLandmark[]): number[] {
-  const out: number[] = new Array(landmarks.length * 3);
-  for (let i = 0; i < landmarks.length; i++) {
-    const p = landmarks[i]!;
-    out[i * 3] = p.x;
-    out[i * 3 + 1] = p.y;
-    out[i * 3 + 2] = p.z;
-  }
-  return out;
 }
 
 // ---------------------------------------------------------------------------

@@ -21,7 +21,7 @@ export type AssemblerFrame = {
   } | null;
 };
 
-type Entry = { label: string; display: string; at: number; kind: "letter" | "word" };
+type Entry = { label: string; display: string; at: number; kind: "letter" | "word"; confidence: number };
 
 /**
  * Máquina que va construyendo texto a partir de signos reconocidos.
@@ -37,7 +37,6 @@ export class TextAssembler {
   private entries: Entry[] = [];
   private lastSignAt = 0;
   private sentenceEnded = false;
-  private lastAppendedSpace = false;
 
   consume(input: AssemblerInput): void {
     const now = input.at;
@@ -57,10 +56,10 @@ export class TextAssembler {
       display,
       at: now,
       kind: isLetter ? "letter" : "word",
+      confidence: input.confidence,
     });
     this.lastSignAt = now;
     this.sentenceEnded = false;
-    this.lastAppendedSpace = false;
   }
 
   /**
@@ -72,10 +71,6 @@ export class TextAssembler {
     const idle = now - this.lastSignAt;
     if (idle >= SENTENCE_PAUSE_MS && !this.sentenceEnded) {
       this.sentenceEnded = true;
-      return;
-    }
-    if (idle >= SPACE_PAUSE_MS && !this.lastAppendedSpace) {
-      this.lastAppendedSpace = true;
     }
   }
 
@@ -88,7 +83,6 @@ export class TextAssembler {
     this.entries = [];
     this.lastSignAt = 0;
     this.sentenceEnded = false;
-    this.lastAppendedSpace = false;
   }
 
   private render(): string {
@@ -131,7 +125,7 @@ export class TextAssembler {
   private activeSign() {
     const last = this.entries[this.entries.length - 1];
     if (!last) return null;
-    return { label: last.label, display: last.display, confidence: 1 };
+    return { label: last.label, display: last.display, confidence: last.confidence };
   }
 }
 

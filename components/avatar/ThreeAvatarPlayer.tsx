@@ -3,8 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
-import { poseFromKeyframe } from "@/lib/avatar/pose";
-import { BONE_LENGTHS, RIGHT_SHOULDER_X, SHOULDER_HEIGHT } from "@/lib/avatar/rig";
+import { poseFromKeyframe, type FingerPose } from "@/lib/avatar/pose";
+import {
+  BONE_LENGTHS,
+  KNUCKLE_RADIUS,
+  PALM_DEPTH,
+  PALM_HEIGHT,
+  PALM_WIDTH,
+  RIGHT_SHOULDER_X,
+  SHOULDER_HEIGHT,
+  THUMB_ABDUCTION,
+} from "@/lib/avatar/rig";
 
 type Props = {
   clip: AvatarClip | null;
@@ -14,19 +23,19 @@ type Props = {
 };
 
 /**
- * Renderiza el avatar en un canvas Three.js. Escena mínima:
- *  - cámara perspectiva
- *  - luz ambiental + direccional
- *  - grupo humanoide con cabeza + torso + brazo derecho + mano articulada
+ * Renderiza el avatar en un canvas Three.js. Escena centrada en la mano
+ * derecha para que los cinco dedos sean identificables:
+ *  - Palma anatómica (dorso oscuro / palma clara).
+ *  - Dedos como cápsulas con nudillos esféricos.
+ *  - Pulgar rotado 90° respecto al plano de la palma.
+ *  - Cascada de flexión progresiva por falange.
  *
  * Cuando `panduro.vrm` está disponible, la infraestructura queda preparada
- * para sustituir el rig procedimental por el VRM y mapear la pose a sus
- * bones humanoide (`RightUpperArm`, `RightLowerArm`, `RightHand`,
- * `RightThumb*`, `RightIndex*`, etc.). Ese mapa está en `mapVrmBones` abajo.
+ * para sustituir el rig procedimental por el VRM.
  */
-export function ThreeAvatarPlayer({ clip, size = 260, onReady, onFailed }: Props) {
+export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [mode, setMode] = useState<"procedural" | "vrm">("procedural");
+  const [mode] = useState<"procedural" | "vrm">("procedural");
 
   useEffect(() => {
     let disposed = false;
@@ -49,21 +58,35 @@ export function ThreeAvatarPlayer({ clip, size = 260, onReady, onFailed }: Props
       renderer.setSize(size, size, false);
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 10);
-      camera.position.set(0, 0.9, 2.4);
-      camera.lookAt(0, 0.9, 0);
+      // Cámara ortográfica centrada en la zona de alcance de la mano derecha.
+      // Marco fijo de ~0.75 unidades → la mano (0.11) ocupa ≈ 15% del canvas
+      // y sigue visible tanto arriba (HOLA) como pegada al pecho (BIEN).
+      const aspect = 1;
+      const halfH = 0.42;
+      const halfW = halfH * aspect;
+      const camera = new THREE.OrthographicCamera(
+        -halfW,
+        halfW,
+        halfH,
+        -halfH,
+        0.01,
+        10,
+      );
+      camera.position.set(RIGHT_SHOULDER_X + 0.05, 0.9, 1.5);
+      camera.lookAt(RIGHT_SHOULDER_X + 0.05, 0.9, 0);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-      const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-      dir.position.set(1.5, 3, 2);
-      scene.add(dir);
+      // Iluminación: ambiental baja + frontal + rim light detrás para volumen.
+      scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+      const key = new THREE.DirectionalLight(0xffffff, 0.9);
+      key.position.set(1.5, 3, 2);
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0xdde6ff, 0.4);
+      rim.position.set(-1, 2, -2);
+      scene.add(rim);
 
       const rig = buildProceduralRig(THREE);
       scene.add(rig.group);
 
-      // TODO(post-mvp): intentar VRM aquí; si carga, reemplazar `rig` por su
-      // humanoid y usar `mapVrmBones` para aplicar rotaciones. Por ahora solo
-      // marcamos que la infra existe.
       onReady?.("procedural");
 
       const started = performance.now();
@@ -109,31 +132,66 @@ export function ThreeAvatarPlayer({ clip, size = 260, onReady, onFailed }: Props
 // Rig procedimental
 // ----------------------------------------------------------------------------
 
+type FingerHandle = {
+  root: import("three").Group;
+  joints: [import("three").Group, import("three").Group, import("three").Group];
+};
+
 type RigHandle = {
   group: import("three").Group;
   apply: (pose: ReturnType<typeof poseFromKeyframe>) => void;
 };
 
-function buildProceduralRig(
-  THREE: typeof import("three"),
-): RigHandle {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x1a72f2, roughness: 0.55 });
-  const highlight = new THREE.MeshStandardMaterial({ color: 0xffb020, roughness: 0.4 });
+function buildProceduralRig(THREE: typeof import("three")): RigHandle {
+  const matSkin = new THREE.MeshStandardMaterial({
+    color: 0xe8b895,
+    roughness: 0.7,
+    metalness: 0,
+  });
+  const matPalm = new THREE.MeshStandardMaterial({
+    color: 0xf4d0b3,
+    roughness: 0.75,
+    metalness: 0,
+  });
+  const matShirt = new THREE.MeshStandardMaterial({
+    color: 0x1a72f2,
+    roughness: 0.55,
+    metalness: 0,
+  });
+  const matHair = new THREE.MeshStandardMaterial({
+    color: 0x3a2f24,
+    roughness: 0.8,
+    metalness: 0,
+  });
+  const matHighlight = new THREE.MeshStandardMaterial({
+    color: 0xffb020,
+    roughness: 0.45,
+    metalness: 0,
+  });
 
   const group = new THREE.Group();
 
   // Torso
   const torso = new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.11, BONE_LENGTHS.torso, 12),
-    mat,
+    matShirt,
   );
   torso.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso / 2;
   group.add(torso);
 
-  // Cabeza
-  const head = new THREE.Mesh(new THREE.SphereGeometry(BONE_LENGTHS.head / 2, 20, 16), mat);
+  // Cabeza (decoración; queda en el borde superior del frame)
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(BONE_LENGTHS.head / 2, 20, 16),
+    matSkin,
+  );
   head.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck + BONE_LENGTHS.head / 2;
   group.add(head);
+  const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(BONE_LENGTHS.head / 2 + 0.005, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2.2),
+    matHair,
+  );
+  hair.position.copy(head.position);
+  group.add(hair);
 
   // Hombro derecho — pivot del brazo
   const shoulder = new THREE.Group();
@@ -141,8 +199,8 @@ function buildProceduralRig(
   group.add(shoulder);
 
   const upperArm = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.028, 0.032, BONE_LENGTHS.upperArm, 10),
-    mat,
+    new THREE.CapsuleGeometry(0.030, BONE_LENGTHS.upperArm - 0.06, 4, 10),
+    matSkin,
   );
   upperArm.position.y = -BONE_LENGTHS.upperArm / 2;
   shoulder.add(upperArm);
@@ -151,9 +209,12 @@ function buildProceduralRig(
   elbow.position.y = -BONE_LENGTHS.upperArm;
   shoulder.add(elbow);
 
+  const elbowKnob = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), matSkin);
+  elbow.add(elbowKnob);
+
   const foreArm = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.024, 0.028, BONE_LENGTHS.foreArm, 10),
-    mat,
+    new THREE.CapsuleGeometry(0.026, BONE_LENGTHS.foreArm - 0.06, 4, 10),
+    matSkin,
   );
   foreArm.position.y = -BONE_LENGTHS.foreArm / 2;
   elbow.add(foreArm);
@@ -162,82 +223,154 @@ function buildProceduralRig(
   wrist.position.y = -BONE_LENGTHS.foreArm;
   elbow.add(wrist);
 
-  // Palma
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.08, 0.025), mat);
-  palm.position.y = -BONE_LENGTHS.hand / 2;
+  // Palma: dorso (más oscuro, atrás) + palma clara (delante) + laterales redondeados
+  const palm = new THREE.Group();
+  palm.position.y = -PALM_HEIGHT / 2;
   wrist.add(palm);
 
-  // Dedos: cada uno con tres falanges (o dos para el pulgar) apilados
-  const fingerGroups = [
-    finger(THREE, mat, "thumb1", "thumb2", "thumb3", { x: 0.035, y: -0.02, z: 0.01 }, -0.6),
-    finger(THREE, mat, "index1", "index2", "index3", { x: 0.025, y: -BONE_LENGTHS.hand, z: 0 }, 0),
-    finger(THREE, mat, "middle1", "middle2", "middle3", { x: 0, y: -BONE_LENGTHS.hand, z: 0 }, 0),
-    finger(THREE, mat, "ring1", "ring2", "ring3", { x: -0.025, y: -BONE_LENGTHS.hand, z: 0 }, 0),
-    finger(THREE, mat, "pinky1", "pinky2", "pinky3", { x: -0.05, y: -BONE_LENGTHS.hand, z: 0 }, 0),
-  ];
-  for (const fg of fingerGroups) wrist.add(fg.root);
+  const dorso = new THREE.Mesh(
+    new THREE.BoxGeometry(PALM_WIDTH, PALM_HEIGHT, PALM_DEPTH * 0.55),
+    matSkin,
+  );
+  dorso.position.z = -PALM_DEPTH * 0.22;
+  palm.add(dorso);
 
-  // Highlight en la yema del índice para pintar la mano derecha
-  fingerGroups[1]!.tip.material = highlight;
+  const palma = new THREE.Mesh(
+    new THREE.BoxGeometry(PALM_WIDTH * 0.9, PALM_HEIGHT * 0.9, PALM_DEPTH * 0.55),
+    matPalm,
+  );
+  palma.position.z = PALM_DEPTH * 0.22;
+  palm.add(palma);
+
+  // Bordes redondeados de la palma
+  for (const side of [-1, 1]) {
+    const edge = new THREE.Mesh(new THREE.SphereGeometry(PALM_DEPTH / 2, 10, 8), matSkin);
+    edge.position.set((side * PALM_WIDTH) / 2, 0, 0);
+    edge.scale.set(0.7, PALM_HEIGHT / PALM_DEPTH, 1);
+    palm.add(edge);
+  }
+
+  // Base proximal (muñeca ancha) para que la mano no salga plana del antebrazo
+  const wristBase = new THREE.Mesh(new THREE.SphereGeometry(0.028, 14, 10), matSkin);
+  wristBase.position.set(0, PALM_HEIGHT / 2, 0);
+  palm.add(wristBase);
+
+  // Dedos (index → pinky) anclados al borde distal de la palma
+  const fingerRadii: [number, number, number] = [0.014, 0.011, 0.010];
+  const spacing = PALM_WIDTH / 4;
+  const fingers: FingerHandle[] = [];
+
+  // Pulgar en el lateral radial de la palma
+  const thumbBase = new THREE.Group();
+  thumbBase.position.set(PALM_WIDTH * 0.48, -PALM_HEIGHT * 0.25, PALM_DEPTH * 0.15);
+  thumbBase.rotation.set(0, -Math.PI / 2.4, -THUMB_ABDUCTION);
+  palm.add(thumbBase);
+  const thumb = buildFinger(THREE, matSkin, "thumb", [
+    BONE_LENGTHS.thumb1,
+    BONE_LENGTHS.thumb2,
+    BONE_LENGTHS.thumb3,
+  ], fingerRadii);
+  thumbBase.add(thumb.root);
+  fingers.push(thumb);
+
+  // Cuatro dedos largos anclados al borde inferior de la palma
+  const fingerSpecs: Array<{
+    name: string;
+    x: number;
+    lens: [number, number, number];
+  }> = [
+    {
+      name: "index",
+      x: PALM_WIDTH / 2 - spacing * 0.5,
+      lens: [BONE_LENGTHS.index1, BONE_LENGTHS.index2, BONE_LENGTHS.index3],
+    },
+    {
+      name: "middle",
+      x: PALM_WIDTH / 2 - spacing * 1.5,
+      lens: [BONE_LENGTHS.middle1, BONE_LENGTHS.middle2, BONE_LENGTHS.middle3],
+    },
+    {
+      name: "ring",
+      x: PALM_WIDTH / 2 - spacing * 2.5,
+      lens: [BONE_LENGTHS.ring1, BONE_LENGTHS.ring2, BONE_LENGTHS.ring3],
+    },
+    {
+      name: "pinky",
+      x: PALM_WIDTH / 2 - spacing * 3.5,
+      lens: [BONE_LENGTHS.pinky1, BONE_LENGTHS.pinky2, BONE_LENGTHS.pinky3],
+    },
+  ];
+  for (const spec of fingerSpecs) {
+    const anchor = new THREE.Group();
+    anchor.position.set(spec.x, -PALM_HEIGHT / 2, PALM_DEPTH * 0.05);
+    palm.add(anchor);
+    // Nudillo (esfera que oculta la unión)
+    const knuckle = new THREE.Mesh(
+      new THREE.SphereGeometry(KNUCKLE_RADIUS, 12, 10),
+      matSkin,
+    );
+    anchor.add(knuckle);
+    const f = buildFinger(THREE, matSkin, spec.name, spec.lens, fingerRadii);
+    anchor.add(f.root);
+    fingers.push(f);
+  }
+
+  // Highlight en la yema del índice para pintar la mano dominante
+  const indexTipMesh = fingers[1]!.joints[2].children.find(
+    (c): c is import("three").Mesh => (c as import("three").Mesh).isMesh === true,
+  );
+  if (indexTipMesh) indexTipMesh.material = matHighlight;
 
   function apply(pose: ReturnType<typeof poseFromKeyframe>) {
     shoulder.rotation.set(pose.shoulder[0], pose.shoulder[1], pose.shoulder[2]);
     elbow.rotation.set(-pose.elbow, 0, 0);
     wrist.rotation.set(pose.wrist[0], pose.wrist[1], pose.wrist[2]);
-    for (let i = 0; i < 5; i++) {
-      const f = fingerGroups[i]!;
-      const flex = pose.fingers[i]!;
-      const bend = flex * (Math.PI / 2);
-      f.joints[0]!.rotation.x = -bend;
-      f.joints[1]!.rotation.x = -bend;
-    }
+    applyFingerFlex(fingers[0]!, pose.fingers[0]);
+    applyFingerFlex(fingers[1]!, pose.fingers[1]);
+    applyFingerFlex(fingers[2]!, pose.fingers[2]);
+    applyFingerFlex(fingers[3]!, pose.fingers[3]);
+    applyFingerFlex(fingers[4]!, pose.fingers[4]);
   }
 
   return { group, apply };
 }
 
-function finger(
+function applyFingerFlex(finger: FingerHandle, flex: FingerPose) {
+  finger.joints[0].rotation.x = -flex.proximal;
+  finger.joints[1].rotation.x = -flex.middle;
+  finger.joints[2].rotation.x = -flex.distal;
+}
+
+function buildFinger(
   THREE: typeof import("three"),
   material: import("three").Material,
-  name1: string,
-  name2: string,
-  name3: string,
-  origin: { x: number; y: number; z: number },
-  baseYaw: number,
-): {
-  root: import("three").Group;
-  tip: import("three").Mesh;
-  joints: import("three").Group[];
-} {
-  const root = new THREE.Group();
-  root.name = name1;
-  root.position.set(origin.x, origin.y, origin.z);
-  root.rotation.y = baseYaw;
-
-  const seg = (len: number) => {
-    const geo = new THREE.CylinderGeometry(0.008, 0.008, len, 8);
+  name: string,
+  lengths: [number, number, number],
+  radii: [number, number, number],
+): FingerHandle {
+  const seg = (len: number, r: number) => {
+    const geo = new THREE.CapsuleGeometry(r, Math.max(len - r * 2, 0.001), 4, 8);
     const mesh = new THREE.Mesh(geo, material);
     mesh.position.y = -len / 2;
     return mesh;
   };
 
   const g1 = new THREE.Group();
-  g1.add(seg(BONE_LENGTHS.index1));
+  g1.name = `${name}1`;
+  g1.add(seg(lengths[0], radii[0]));
+
   const g2 = new THREE.Group();
-  g2.position.y = -BONE_LENGTHS.index1;
-  g2.add(seg(BONE_LENGTHS.index2));
+  g2.name = `${name}2`;
+  g2.position.y = -lengths[0];
+  g2.add(seg(lengths[1], radii[1]));
+
   const g3 = new THREE.Group();
-  g3.position.y = -BONE_LENGTHS.index2;
-  const tipGeo = new THREE.CylinderGeometry(0.008, 0.006, BONE_LENGTHS.index3, 8);
-  const tipMat = material.clone();
-  const tip = new THREE.Mesh(tipGeo, tipMat);
-  tip.position.y = -BONE_LENGTHS.index3 / 2;
-  g3.add(tip);
+  g3.name = `${name}3`;
+  g3.position.y = -lengths[1];
+  g3.add(seg(lengths[2], radii[2]));
 
   g2.add(g3);
   g1.add(g2);
-  g1.name = name2;
-  g2.name = name3;
-  root.add(g1);
-  return { root, tip, joints: [g1, g2, g3] };
+
+  return { root: g1, joints: [g1, g2, g3] };
 }

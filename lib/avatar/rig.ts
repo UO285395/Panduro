@@ -36,14 +36,14 @@ export const BONE_LENGTHS: Record<BoneName, number> = {
   shoulder: 0.10,
   upperArm: 0.18,
   foreArm: 0.16,
-  hand: 0.08,
+  hand: 0.11,
   thumb1: 0.035,
   thumb2: 0.030,
   thumb3: 0.025,
-  index1: 0.045,
+  index1: 0.050,
   index2: 0.030,
   index3: 0.020,
-  middle1: 0.050,
+  middle1: 0.055,
   middle2: 0.035,
   middle3: 0.020,
   ring1: 0.045,
@@ -55,5 +55,16 @@ export const BONE_LENGTHS: Record<BoneName, number> = {
 };
 
 /** Origen de la escena: pies del avatar en (0,0,0), altura hacia +Y. */
-export const SHOULDER_HEIGHT = 0.85; // eje Y en unidades relativas
-export const RIGHT_SHOULDER_X = 0.10; // separación desde el eje central
+export const SHOULDER_HEIGHT = 0.85;
+export const RIGHT_SHOULDER_X = 0.10;
+
+/** Palma anatómica: ancho radio-cubital, alto proximo-distal, grosor dorso-palmar. */
+export const PALM_WIDTH = 0.075;
+export const PALM_HEIGHT = 0.095;
+export const PALM_DEPTH = 0.030;
+
+/** Radio de la esfera que cubre la articulación metacarpo-falángica. */
+export const KNUCKLE_RADIUS = 0.014;
+
+/** Abducción por defecto del pulgar (rad) respecto al plano de la palma. */
+export const THUMB_ABDUCTION = 0.6;

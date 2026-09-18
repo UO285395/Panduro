@@ -50,7 +50,7 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
     void templatesTick;
     return new KnnClassifier(
       [...loadGlobalTemplates(), ...loadLocalTemplates()],
-      5,
+      3,
     );
   }, [templatesTick]);
 

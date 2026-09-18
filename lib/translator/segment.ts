@@ -83,8 +83,13 @@ export class SegmentStream {
     return events;
   }
 
-  state(): SegmentState {
-    return { phase: this.phase, lastFrame: null, missingMs: this.missingMs };
+  state(): SegmentState & { stableMs: number } {
+    return { phase: this.phase, lastFrame: null, missingMs: this.missingMs, stableMs: this.stableMsAccum };
+  }
+
+  /** Ultimo buffer de landmarks disponible, para "Capturar ahora". */
+  lastBuffer(): NormalizedLandmark[][] {
+    return this.buffer;
   }
 
   private reset() {

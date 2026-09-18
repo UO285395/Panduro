@@ -1,20 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Level } from "@/lib/curriculum/schema";
 import type { UserSnapshot } from "@/lib/progress/queries";
 import { HeartsBar } from "@/components/gamification/HeartsBar";
 
+const ThingMascot = dynamic(
+  () => import("@/components/mascot/ThingMascot").then((m) => ({ default: m.ThingMascot })),
+  { ssr: false },
+);
+
 type SequenceEntry = { unitId: string; lessonId: string };
 
 export function DashboardView({
   level,
+  levels,
   sequence,
   snapshot,
   demo,
   onSignOut,
 }: {
   level: Level;
+  levels?: Level[];
   sequence: SequenceEntry[];
   snapshot: UserSnapshot;
   demo?: boolean;
@@ -39,11 +47,14 @@ export function DashboardView({
         </div>
       )}
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Hola, {snapshot.displayName} 👋</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Nivel {level.id} · {level.title}
-          </p>
+        <div className="flex items-center gap-3">
+          <ThingMascot state="idle" />
+          <div>
+            <h1 className="text-3xl font-bold">Hola, {snapshot.displayName}</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Nivel {level.id} · {level.title}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm">
@@ -74,7 +85,17 @@ export function DashboardView({
       </div>
 
       <div className="space-y-10">
-        {level.units.map((unit) => (
+        {(levels ?? [level]).map((lvl) => (
+          <div key={lvl.id} className="space-y-10">
+            {(levels ?? [level]).length > 1 && (
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2 dark:border-slate-700">
+                <span className="rounded bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+                  {lvl.id}
+                </span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{lvl.title}</span>
+              </div>
+            )}
+            {lvl.units.map((unit) => (
           <section key={unit.id} aria-labelledby={`unit-${unit.id}`}>
             <div className="mb-4">
               <h2
@@ -142,6 +163,8 @@ export function DashboardView({
               })}
             </ol>
           </section>
+            ))}
+          </div>
         ))}
       </div>
     </main>

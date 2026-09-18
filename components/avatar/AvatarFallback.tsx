@@ -67,8 +67,8 @@ export function AvatarFallback({
     >
       <defs>
         <radialGradient id="palm" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#1a72f2" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#1a72f2" stopOpacity="0.3" />
+          <stop offset="0%" stopColor="#ea580c" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#ea580c" stopOpacity="0.3" />
         </radialGradient>
       </defs>
 
@@ -88,7 +88,7 @@ export function AvatarFallback({
               y1={cy}
               x2={fx}
               y2={fy}
-              stroke="#1a72f2"
+              stroke="#ea580c"
               strokeWidth={4}
               strokeLinecap="round"
               opacity={0.7}
@@ -105,7 +105,7 @@ export function AvatarFallback({
           textAnchor="middle"
           fontSize={size * 0.11}
           fontWeight="bold"
-          fill="#155ade"
+          fill="#c2410c"
           fontFamily="system-ui, sans-serif"
         >
           {label}

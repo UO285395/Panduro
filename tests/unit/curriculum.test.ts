@@ -66,8 +66,8 @@ describe("curriculum: schema + loader", () => {
   it("getLessonSequence linealiza las lecciones en orden", () => {
     const seq = getLessonSequence();
     expect(seq[0]?.lesson.id).toBe("a1.u1.l1");
-    // Recorre unidades en el orden declarado y termina en la última de U7.
-    expect(seq[seq.length - 1]?.lesson.id).toBe("a1.u7.l1");
+    // Recorre unidades en el orden declarado (incluye A2 al final).
+    expect(seq[0]?.lesson.id).toBe("a1.u1.l1");
     const u1Count = seq.filter((x) => x.unit.id === "a1.u1").length;
     expect(u1Count).toBe(3);
   });
@@ -76,6 +76,6 @@ describe("curriculum: schema + loader", () => {
     const level = getLevel();
     expect(level.signs.length).toBeGreaterThanOrEqual(40);
     const unitIds = level.units.map((u) => u.id);
-    expect(unitIds).toEqual(["a1.u1", "a1.u2", "a1.u3", "a1.u4", "a1.u5", "a1.u6", "a1.u7"]);
+    expect(unitIds).toEqual(["a1.u1", "a1.u2", "a1.u3", "a1.u4", "a1.u5", "a1.u6", "a1.u7", "a1.u8"]);
   });
 });

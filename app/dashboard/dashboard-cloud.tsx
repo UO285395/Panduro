@@ -10,10 +10,12 @@ type Sequence = { unitId: string; lessonId: string }[];
 
 export function DashboardCloud({
   level,
+  levels,
   sequence,
   snapshot,
 }: {
   level: Level;
+  levels?: Level[];
   sequence: Sequence;
   snapshot: UserSnapshot;
 }) {
@@ -21,6 +23,7 @@ export function DashboardCloud({
   return (
     <DashboardView
       level={level}
+      levels={levels}
       sequence={sequence}
       snapshot={snapshot}
       onSignOut={async () => {

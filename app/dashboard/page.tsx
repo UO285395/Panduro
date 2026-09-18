@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getLevel, getLessonSequence } from "@/lib/curriculum/loader";
+import { getAllLevels, getLessonSequence } from "@/lib/curriculum/loader";
 import { getUserSnapshot } from "@/lib/progress/queries";
 import { DEMO_MODE } from "@/lib/storage/flags";
 import { DashboardCloud } from "./dashboard-cloud";
@@ -23,13 +23,13 @@ export default async function DashboardPage() {
   }
   if (!snapshot.onboardingCompleted) redirect("/onboarding");
 
-  const level = getLevel();
+  const levels = getAllLevels();
   const sequence = getLessonSequence().map(({ unit, lesson }) => ({
     unitId: unit.id,
     lessonId: lesson.id,
   }));
 
   return (
-    <DashboardCloud level={level} sequence={sequence} snapshot={snapshot} />
+    <DashboardCloud level={levels[0]!} levels={levels} sequence={sequence} snapshot={snapshot} />
   );
 }

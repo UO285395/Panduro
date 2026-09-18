@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getLevel, getLessonSequence } from "@/lib/curriculum/loader";
+import { getAllLevels, getLessonSequence } from "@/lib/curriculum/loader";
 import {
   getSnapshotDemo,
   isSignedIn,
@@ -36,7 +36,7 @@ export function DashboardDemo() {
     );
   }
 
-  const level = getLevel();
+  const levels = getAllLevels();
   const sequence = getLessonSequence().map(({ unit, lesson }) => ({
     unitId: unit.id,
     lessonId: lesson.id,
@@ -44,7 +44,8 @@ export function DashboardDemo() {
 
   return (
     <DashboardView
-      level={level}
+      level={levels[0]!}
+      levels={levels}
       sequence={sequence}
       snapshot={snapshot}
       demo

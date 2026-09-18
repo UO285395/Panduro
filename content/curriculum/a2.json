@@ -1,0 +1,168 @@
+{
+  "id": "A2",
+  "title": "LSE A2 · Comunicación cotidiana",
+  "signs": [
+    {
+      "id": "IR",
+      "gloss": "IR",
+      "translation": "Ir",
+      "description": "Índice apunta hacia adelante con movimiento de avance.",
+      "handedness": "one",
+      "tags": ["verbo", "a2"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 1, 1, 1] },
+          { "t": 500, "hand": { "x": 0.3, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 1, 1, 1] },
+          { "t": 1000, "hand": { "x": 0.5, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 1, 1, 1] }
+        ]
+      }
+    },
+    {
+      "id": "QUERER",
+      "gloss": "QUERER",
+      "translation": "Querer",
+      "description": "Mano sobre el pecho, dedos curvados con movimiento hacia el cuerpo.",
+      "handedness": "one",
+      "tags": ["verbo", "a2"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.5, 0.5, 0.5, 0.5, 0.5] },
+          { "t": 500, "hand": { "x": -0.1, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.7, 0.7, 0.7, 0.7, 0.7] },
+          { "t": 1000, "hand": { "x": 0, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.5, 0.5, 0.5, 0.5, 0.5] }
+        ]
+      }
+    },
+    {
+      "id": "PODER",
+      "gloss": "PODER",
+      "translation": "Poder",
+      "description": "Mano cerrada hacia abajo con movimiento descendente.",
+      "handedness": "one",
+      "tags": ["verbo", "a2"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.4, "z": 0, "rot": [0, 0, 0] }, "fingers": [1, 1, 1, 1, 1] },
+          { "t": 500, "hand": { "x": 0, "y": 0.1, "z": 0, "rot": [0, 0, 0] }, "fingers": [1, 1, 1, 1, 1] },
+          { "t": 1000, "hand": { "x": 0, "y": 0.4, "z": 0, "rot": [0, 0, 0] }, "fingers": [1, 1, 1, 1, 1] }
+        ]
+      }
+    },
+    {
+      "id": "TENER",
+      "gloss": "TENER",
+      "translation": "Tener",
+      "description": "Manos abiertas acercándose al pecho.",
+      "handedness": "one",
+      "tags": ["verbo", "a2"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0.3, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 0, 0, 0] },
+          { "t": 500, "hand": { "x": -0.1, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 0, 0, 0] },
+          { "t": 1000, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.5, 0.5, 0.5, 0.5, 0.5] }
+        ]
+      }
+    },
+    {
+      "id": "SABER",
+      "gloss": "SABER",
+      "translation": "Saber",
+      "description": "Dedos curvados tocando la sien.",
+      "handedness": "one",
+      "tags": ["verbo", "a2"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.5, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.3, 0.8, 0.8, 0.8, 0.8] },
+          { "t": 500, "hand": { "x": -0.2, "y": 0.6, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.3, 0.8, 0.8, 0.8, 0.8] },
+          { "t": 1000, "hand": { "x": 0, "y": 0.5, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.3, 0.8, 0.8, 0.8, 0.8] }
+        ]
+      }
+    },
+    {
+      "id": "GUSTAR",
+      "gloss": "GUSTAR",
+      "translation": "Gustar",
+      "description": "Pulgar extendido hacia arriba, movimiento de aprobación.",
+      "handedness": "one",
+      "tags": ["verbo", "a2"],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 1, 1, 1, 1] },
+          { "t": 500, "hand": { "x": 0, "y": 0.4, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 1, 1, 1, 1] },
+          { "t": 1000, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 1, 1, 1, 1] }
+        ]
+      }
+    }
+  ],
+  "units": [
+    {
+      "id": "a2.u1",
+      "title": "Unidad 1 · Verbos básicos",
+      "summary": "Aprende los verbos más usados en LSE para construir frases simples.",
+      "lessons": [
+        {
+          "id": "a2.u1.l1",
+          "title": "Verbos de acción",
+          "goal": "Conocer y usar los verbos IR, QUERER, PODER, TENER, SABER y GUSTAR.",
+          "signs": ["IR", "QUERER", "PODER", "TENER", "SABER", "GUSTAR"],
+          "exercises": [
+            {
+              "id": "a2.u1.l1.e1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este verbo?",
+              "signId": "IR",
+              "options": ["Ir", "Venir", "Salir", "Llegar"],
+              "answer": "Ir"
+            },
+            {
+              "id": "a2.u1.l1.e2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este verbo?",
+              "signId": "QUERER",
+              "options": ["Querer", "Tener", "Saber", "Poder"],
+              "answer": "Querer"
+            },
+            {
+              "id": "a2.u1.l1.e3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este verbo?",
+              "signId": "PODER",
+              "options": ["Poder", "Querer", "Ir", "Gustar"],
+              "answer": "Poder"
+            },
+            {
+              "id": "a2.u1.l1.e4",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este verbo?",
+              "signId": "GUSTAR",
+              "options": ["Gustar", "Saber", "Tener", "Poder"],
+              "answer": "Gustar"
+            },
+            {
+              "id": "a2.u1.l1.e5",
+              "type": "match_pairs",
+              "prompt": "Empareja el signo con el verbo",
+              "pairs": [
+                { "signId": "IR", "translation": "Ir" },
+                { "signId": "TENER", "translation": "Tener" },
+                { "signId": "SABER", "translation": "Saber" },
+                { "signId": "GUSTAR", "translation": "Gustar" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -54,7 +54,7 @@ export function TranslateView({ initialHistory, demo }: Props) {
   const classifier = useMemo(() => {
     const c = new KnnClassifier(
       [...loadGlobalTemplates(), ...loadLocalTemplates()],
-      5,
+      3,
     );
     classifierRef.current = c;
     return c;

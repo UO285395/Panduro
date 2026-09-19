@@ -1,10 +1,12 @@
 import type { AvatarClip, AvatarKeyframe, FingerValue } from "@/lib/curriculum/schema";
 
+/** Porción del clip usada para la transición de bucle suave (inicio→fin). */
+const LOOP_FADE = 0.12; // 12 % de la duración
+
 /**
- * Interpola linealmente entre keyframes para obtener la pose en el instante `tMs`.
- * - Antes del primer keyframe: devuelve el primero.
- * - Después del último: devuelve el último.
- * - Si el clip tiene < 2 keyframes: lanza (schema ya lo impide, pero por si acaso).
+ * Interpola entre keyframes para obtener la pose en `tMs`.
+ * Usa smoothstep por segmento y una ventana de cross-fade al final del bucle
+ * para suavizar la transición entre la última y la primera pose.
  */
 export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
   const kfs = clip.keyframes;
@@ -12,7 +14,16 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
   const first = kfs[0]!;
   const last = kfs[kfs.length - 1]!;
   if (tMs <= first.t) return first;
-  if (tMs >= last.t) return last;
+  if (tMs >= last.t) {
+    // Ventana de cross-fade: blend lineal suave del último keyframe al primero.
+    const fadeStart = last.t - clip.duration * LOOP_FADE;
+    if (tMs >= fadeStart) {
+      const raw = (tMs - fadeStart) / (clip.duration * LOOP_FADE);
+      const u = raw * raw * (3 - 2 * raw);
+      return blendKeyframes(last, first, u, tMs);
+    }
+    return last;
+  }
 
   // Buscar el segmento (a, b) tal que a.t <= t < b.t
   for (let i = 0; i < kfs.length - 1; i++) {
@@ -21,32 +32,35 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
     if (tMs >= a.t && tMs < b.t) {
       const span = b.t - a.t;
       const raw = span > 0 ? (tMs - a.t) / span : 0;
-      // Smoothstep: elimina arranques y paradas abruptas entre keyframes.
       const u = raw * raw * (3 - 2 * raw);
-      return {
-        t: tMs,
-        hand: {
-          x: lerp(a.hand.x, b.hand.x, u),
-          y: lerp(a.hand.y, b.hand.y, u),
-          z: lerp(a.hand.z, b.hand.z, u),
-          rot: [
-            lerp(a.hand.rot[0], b.hand.rot[0], u),
-            lerp(a.hand.rot[1], b.hand.rot[1], u),
-            lerp(a.hand.rot[2], b.hand.rot[2], u),
-          ],
-          forearmRoll: lerpMaybe(a.hand.forearmRoll, b.hand.forearmRoll, u),
-        },
-        fingers: [
-          lerpFinger(a.fingers[0], b.fingers[0], u),
-          lerpFinger(a.fingers[1], b.fingers[1], u),
-          lerpFinger(a.fingers[2], b.fingers[2], u),
-          lerpFinger(a.fingers[3], b.fingers[3], u),
-          lerpFinger(a.fingers[4], b.fingers[4], u),
-        ],
-      };
+      return blendKeyframes(a, b, u, tMs);
     }
   }
   return last;
+}
+
+function blendKeyframes(a: AvatarKeyframe, b: AvatarKeyframe, u: number, t: number): AvatarKeyframe {
+  return {
+    t,
+    hand: {
+      x: lerp(a.hand.x, b.hand.x, u),
+      y: lerp(a.hand.y, b.hand.y, u),
+      z: lerp(a.hand.z, b.hand.z, u),
+      rot: [
+        lerp(a.hand.rot[0], b.hand.rot[0], u),
+        lerp(a.hand.rot[1], b.hand.rot[1], u),
+        lerp(a.hand.rot[2], b.hand.rot[2], u),
+      ],
+      forearmRoll: lerpMaybe(a.hand.forearmRoll, b.hand.forearmRoll, u),
+    },
+    fingers: [
+      lerpFinger(a.fingers[0], b.fingers[0], u),
+      lerpFinger(a.fingers[1], b.fingers[1], u),
+      lerpFinger(a.fingers[2], b.fingers[2], u),
+      lerpFinger(a.fingers[3], b.fingers[3], u),
+      lerpFinger(a.fingers[4], b.fingers[4], u),
+    ],
+  };
 }
 
 function lerp(a: number, b: number, u: number): number {

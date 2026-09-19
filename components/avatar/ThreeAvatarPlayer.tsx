@@ -52,10 +52,35 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(size, size, false);
-      renderer.shadowMap.enabled = false;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.12;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xfff3e8);
+
+      // Fondo de gradiente cálido usando textura 2×2 interpolada por la GPU.
+      const gradCanvas = document.createElement("canvas");
+      gradCanvas.width = 2; gradCanvas.height = 2;
+      const gctx = gradCanvas.getContext("2d")!;
+      const grad = gctx.createLinearGradient(0, 0, 0, 2);
+      grad.addColorStop(0, "#fff4ea");
+      grad.addColorStop(1, "#ffe0c0");
+      gctx.fillStyle = grad;
+      gctx.fillRect(0, 0, 2, 2);
+      const bgTex = new THREE.CanvasTexture(gradCanvas);
+      bgTex.minFilter = THREE.LinearFilter;
+      scene.background = bgTex;
+
+      // Plano de suelo para recibir sombras (invisible excepto sombras).
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(2, 2),
+        new THREE.ShadowMaterial({ opacity: 0.18 }),
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso - 0.02;
+      floor.receiveShadow = true;
+      scene.add(floor);
 
       // Cámara ortográfica fija — encuadra el cuerpo completo (cabeza + torso + brazo).
       const halfH = 0.40;
@@ -70,8 +95,15 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       scene.add(new THREE.HemisphereLight(0xfff0e0, 0x806040, 0.50));
 
       // Key: luz principal desde arriba-derecha-delante.
-      const key = new THREE.DirectionalLight(0xfffaf0, 1.10);
+      const key = new THREE.DirectionalLight(0xfffaf0, 1.20);
       key.position.set(1.2, 3.0, 2.5);
+      key.castShadow = true;
+      key.shadow.mapSize.set(512, 512);
+      key.shadow.camera.near = 0.1;
+      key.shadow.camera.far = 8;
+      key.shadow.camera.left = key.shadow.camera.bottom = -0.6;
+      key.shadow.camera.right = key.shadow.camera.top = 0.6;
+      key.shadow.radius = 3;
       scene.add(key);
 
       // Fill: suave desde la izquierda, reduce sombras duras.
@@ -131,7 +163,9 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
           if (clip && kf) {
             const pose = poseFromKeyframe(kf);
-            rig.apply(pose);
+            rig.apply(pose, dt);
+          } else {
+            rig.applyIdle(dt);
           }
           renderer.render(scene, camera);
           raf = requestAnimationFrame(loop);
@@ -172,18 +206,19 @@ type FingerHandle = {
 
 type RigHandle = {
   group: import("three").Group;
-  apply: (pose: Pose) => void;
+  apply: (pose: Pose, tMs: number) => void;
+  applyIdle: (tMs: number) => void;
 };
 
 function buildProceduralRig(THREE: typeof import("three")): RigHandle {
-  // MeshStandardMaterial: funciona en software WebGL (Windows SwiftShader).
-  const matSkin = new THREE.MeshStandardMaterial({ color: 0xd4956a, roughness: 0.55, metalness: 0 });
-  const matPalm = new THREE.MeshStandardMaterial({ color: 0xe8b88a, roughness: 0.62, metalness: 0 });
-  const matShirt = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.55, metalness: 0 });
-  const matNail  = new THREE.MeshStandardMaterial({ color: 0xf0d5bf, roughness: 0.22, metalness: 0.05 });
-
-  const matFace  = new THREE.MeshStandardMaterial({ color: 0xd4956a, roughness: 0.50, metalness: 0 });
-  const matHair  = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.80, metalness: 0 });
+  // Materiales con envMapIntensity=0 (sin env map) — subsuperficie simulada con
+  // un color cálido + roughness media para dar sensación de translucidez de piel.
+  const matSkin  = new THREE.MeshStandardMaterial({ color: 0xc9875e, roughness: 0.48, metalness: 0.01 });
+  const matPalm  = new THREE.MeshStandardMaterial({ color: 0xe0a87a, roughness: 0.52, metalness: 0.00 });
+  const matShirt = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.50, metalness: 0.00 });
+  const matNail  = new THREE.MeshStandardMaterial({ color: 0xf2ddd0, roughness: 0.18, metalness: 0.08 });
+  const matFace  = new THREE.MeshStandardMaterial({ color: 0xc98060, roughness: 0.46, metalness: 0.00 });
+  const matHair  = new THREE.MeshStandardMaterial({ color: 0x2e1f14, roughness: 0.78, metalness: 0.00 });
 
   const group = new THREE.Group();
 
@@ -193,6 +228,8 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matShirt,
   );
   torso.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso / 2;
+  torso.castShadow = true;
+  torso.receiveShadow = true;
   group.add(torso);
 
   // Cuello
@@ -201,18 +238,21 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matSkin,
   );
   neck.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck / 2;
+  neck.castShadow = true;
   group.add(neck);
 
   // Cabeza
   const headR = BONE_LENGTHS.head / 2;
   const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 26, 20), matFace);
   head.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck + headR;
+  head.castShadow = true;
   group.add(head);
 
   // Pelo (casquete superior)
   const hair = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.01, 26, 20), matHair);
   hair.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck + headR + headR * 0.10;
   hair.scale.set(1, 0.55, 1);
+  hair.castShadow = true;
   group.add(hair);
 
   // ── Brazo ─────────────────────────────────────────────────────────────────
@@ -334,14 +374,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     fingers.push(f);
   }
 
-  function apply(pose: Pose) {
+  function apply(pose: Pose, tMs: number) {
+    // Respiración suave que se añade al movimiento del clip.
+    const breath = Math.sin(tMs * 0.0018) * 0.003;
+    shoulder.position.y = breath;
     shoulder.rotation.set(pose.shoulder[0], pose.shoulder[1], pose.shoulder[2]);
     elbow.rotation.set(-pose.elbow, 0, 0);
     foreArmGroup.rotation.y = pose.forearmRoll;
     wrist.rotation.set(pose.wrist[0], pose.wrist[1], pose.wrist[2]);
-    // Thumb: mantiene rotación x/y base, solo varía z (abducción)
     thumbBase.rotation.z = -THUMB_ABDUCTION + pose.abduction[0];
-    // 4 dedos largos: abducción lateral en z del anchor
     for (let i = 1; i < 5; i++) {
       anchors[i]!.rotation.z = pose.abduction[i];
     }
@@ -350,7 +391,27 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     }
   }
 
-  return { group, apply };
+  function applyIdle(tMs: number) {
+    // Posición de reposo: brazo colgando ligeramente hacia el lado.
+    const breath = Math.sin(tMs * 0.0018) * 0.004;
+    const sway   = Math.sin(tMs * 0.0008) * 0.008;
+    shoulder.position.y = breath;
+    shoulder.rotation.set(0.08 + sway * 0.1, 0, 0);
+    elbow.rotation.set(-0.30, 0, 0);
+    foreArmGroup.rotation.y = 0;
+    wrist.rotation.set(0, 0, 0);
+    thumbBase.rotation.z = -THUMB_ABDUCTION;
+    for (let i = 1; i < 5; i++) {
+      anchors[i]!.rotation.z = 0;
+    }
+    // Dedos ligeramente curvados en reposo.
+    const restFlex: FingerPose = { proximal: 0.15, middle: 0.12, distal: 0.08 };
+    for (let i = 0; i < 5; i++) {
+      applyFingerFlex(fingers[i]!, restFlex);
+    }
+  }
+
+  return { group, apply, applyIdle };
 }
 
 function applyFingerFlex(finger: FingerHandle, flex: FingerPose): void {

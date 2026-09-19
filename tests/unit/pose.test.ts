@@ -58,13 +58,13 @@ describe("distributeFlex", () => {
   it("clamp a [0..1]", () => {
     expect(distributeFlex(-1).middle).toBe(0);
     const capped = distributeFlex(2);
-    // Con flex=1, middle = 0.9 * π/2 ≈ 1.4137
-    expect(capped.middle).toBeCloseTo(0.9 * (Math.PI / 2), 6);
+    // Con flex=1, smoothstep(1)=1, middle = 0.95 * π/2 ≈ 1.4923
+    expect(capped.middle).toBeCloseTo(0.95 * (Math.PI / 2), 6);
   });
 
-  it("respeta el ratio proximal:middle:distal ≈ 0.55:0.90:0.60", () => {
+  it("respeta el ratio proximal:middle:distal ≈ 0.60:0.95:0.65", () => {
     const f = distributeFlex(1);
-    expect(f.proximal / f.middle).toBeCloseTo(0.55 / 0.90, 4);
-    expect(f.distal / f.middle).toBeCloseTo(0.60 / 0.90, 4);
+    expect(f.proximal / f.middle).toBeCloseTo(0.60 / 0.95, 4);
+    expect(f.distal / f.middle).toBeCloseTo(0.65 / 0.95, 4);
   });
 });

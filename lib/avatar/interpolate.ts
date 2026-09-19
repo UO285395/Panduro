@@ -14,15 +14,15 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
   const first = kfs[0]!;
   const last = kfs[kfs.length - 1]!;
   if (tMs <= first.t) return first;
-  if (tMs >= last.t) {
-    // Ventana de cross-fade: blend lineal suave del último keyframe al primero.
-    const fadeStart = last.t - clip.duration * LOOP_FADE;
-    if (tMs >= fadeStart) {
-      const raw = (tMs - fadeStart) / (clip.duration * LOOP_FADE);
-      const u = raw * raw * (3 - 2 * raw);
-      return blendKeyframes(last, first, u, tMs);
-    }
-    return last;
+  if (tMs >= last.t) return last;
+
+  // Ventana de cross-fade: blend suave del último keyframe al primero en los
+  // últimos LOOP_FADE% del clip para eliminar el salto visual al hacer loop.
+  const fadeStart = last.t - clip.duration * LOOP_FADE;
+  if (tMs >= fadeStart) {
+    const raw = (tMs - fadeStart) / (clip.duration * LOOP_FADE);
+    const u = raw * raw * (3 - 2 * raw);
+    return blendKeyframes(last, first, u, tMs);
   }
 
   // Buscar el segmento (a, b) tal que a.t <= t < b.t

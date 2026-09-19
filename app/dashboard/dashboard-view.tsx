@@ -65,6 +65,13 @@ export function DashboardView({
             <StreakBadge days={snapshot.streakDays} />
           </div>
           <HeartsBar hearts={snapshot.hearts} />
+          <Link
+            href="/stats"
+            className="rounded-full border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+            title="Mis estadísticas"
+          >
+            📊
+          </Link>
           {onSignOut && (
             <button
               type="button"

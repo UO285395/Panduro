@@ -7566,6 +7566,16 @@
                   "translation": "Amarillo"
                 }
               ]
+            },
+            {
+              "id": "a1.u5.l1.e6",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "ROJO",
+              "acceptable": [
+                "rojo",
+                "roja"
+              ]
             }
           ]
         },
@@ -7655,6 +7665,15 @@
                   "signId": "GRIS",
                   "translation": "Gris"
                 }
+              ]
+            },
+            {
+              "id": "a1.u5.l2.e6",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "NARANJA",
+              "acceptable": [
+                "naranja"
               ]
             }
           ]
@@ -7755,6 +7774,17 @@
                   "translation": "Cansado"
                 }
               ]
+            },
+            {
+              "id": "a1.u6.l1.e6",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "FELIZ",
+              "acceptable": [
+                "feliz",
+                "contento",
+                "contenta"
+              ]
             }
           ]
         },
@@ -7845,6 +7875,15 @@
                   "translation": "Sorprendido"
                 }
               ]
+            },
+            {
+              "id": "a1.u6.l2.e6",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "BIEN",
+              "acceptable": [
+                "bien"
+              ]
             }
           ]
         }
@@ -7930,6 +7969,16 @@
                   "translation": "Más despacio"
                 }
               ]
+            },
+            {
+              "id": "a1.u7.l1.e5",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "HABLAR",
+              "acceptable": [
+                "hablar",
+                "habla"
+              ]
             }
           ]
         },
@@ -8005,6 +8054,16 @@
                   "signId": "NO_ENTIENDO",
                   "translation": "No entiendo"
                 }
+              ]
+            },
+            {
+              "id": "a1.u7.l2.e5",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "ENTENDER",
+              "acceptable": [
+                "entender",
+                "entiendo"
               ]
             }
           ]
@@ -8104,6 +8163,15 @@
                   "translation": "Domingo"
                 }
               ]
+            },
+            {
+              "id": "a1.u8.l1.e6",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "LUNES",
+              "acceptable": [
+                "lunes"
+              ]
             }
           ]
         },
@@ -8193,6 +8261,15 @@
                   "signId": "MES",
                   "translation": "Mes"
                 }
+              ]
+            },
+            {
+              "id": "a1.u8.l2.e6",
+              "type": "type_word",
+              "prompt": "Escribe la traducción de este signo.",
+              "signId": "HOY",
+              "acceptable": [
+                "hoy"
               ]
             }
           ]

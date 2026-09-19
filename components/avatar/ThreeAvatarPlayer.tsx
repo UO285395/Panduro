@@ -82,13 +82,14 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       floor.receiveShadow = true;
       scene.add(floor);
 
-      // Cámara ortográfica fija — encuadra el cuerpo completo (cabeza + torso + brazo).
-      const halfH = 0.40;
-      const camera = new THREE.OrthographicCamera(-halfH, halfH, halfH, -halfH, 0.01, 10);
+      // Cámara perspectiva suave — más natural que ortográfica.
+      // fov reducido (28°) imita un tele-objetivo y minimiza la distorsión.
+      const camera = new THREE.PerspectiveCamera(28, 1, 0.01, 10);
       const CAM_X = RIGHT_SHOULDER_X;
-      const CAM_Y = 0.80;
-      camera.position.set(CAM_X, CAM_Y, 1.5);
-      camera.lookAt(CAM_X, CAM_Y, 0);
+      const CAM_Y = 0.78;
+      // Ligeramente a la derecha y elevada para un ángulo de 3/4 sutil.
+      camera.position.set(CAM_X + 0.08, CAM_Y + 0.05, 2.0);
+      camera.lookAt(CAM_X, CAM_Y - 0.02, 0);
 
       // ── Iluminación de 4 puntos ──────────────────────────────────────────
       // Hemisférica suave (cielo cálido / suelo frío) como ambient.

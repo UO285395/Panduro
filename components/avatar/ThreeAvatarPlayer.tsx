@@ -232,14 +232,33 @@ type RigHandle = {
 };
 
 function buildProceduralRig(THREE: typeof import("three")): RigHandle {
-  // Materiales con envMapIntensity=0 (sin env map) — subsuperficie simulada con
-  // un color cálido + roughness media para dar sensación de translucidez de piel.
-  const matSkin  = new THREE.MeshStandardMaterial({ color: 0xc9875e, roughness: 0.48, metalness: 0.01 });
-  const matPalm  = new THREE.MeshStandardMaterial({ color: 0xe0a87a, roughness: 0.52, metalness: 0.00 });
-  const matShirt = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.50, metalness: 0.00 });
-  const matNail  = new THREE.MeshStandardMaterial({ color: 0xf2ddd0, roughness: 0.18, metalness: 0.08 });
-  const matFace  = new THREE.MeshStandardMaterial({ color: 0xc98060, roughness: 0.46, metalness: 0.00 });
-  const matHair  = new THREE.MeshStandardMaterial({ color: 0x2e1f14, roughness: 0.78, metalness: 0.00 });
+  // MeshPhysicalMaterial con sheen (retro-dispersión subsuperficial) para simular
+  // la translucidez de la piel sin texturas adicionales.
+  const matSkin = new THREE.MeshPhysicalMaterial({
+    color: 0xc9875e, roughness: 0.45, metalness: 0.01,
+    sheen: 0.40, sheenRoughness: 0.80,
+    sheenColor: new THREE.Color(0xe8a070), envMapIntensity: 0.55,
+  });
+  const matPalm = new THREE.MeshPhysicalMaterial({
+    color: 0xe0a87a, roughness: 0.50, metalness: 0.00,
+    sheen: 0.28, sheenRoughness: 0.85,
+    sheenColor: new THREE.Color(0xf0c09a), envMapIntensity: 0.45,
+  });
+  const matShirt = new THREE.MeshPhysicalMaterial({
+    color: 0xea580c, roughness: 0.62, metalness: 0.00, envMapIntensity: 0.30,
+  });
+  const matNail = new THREE.MeshPhysicalMaterial({
+    color: 0xf2ddd0, roughness: 0.12, metalness: 0.05,
+    clearcoat: 0.35, clearcoatRoughness: 0.05, envMapIntensity: 0.85,
+  });
+  const matFace = new THREE.MeshPhysicalMaterial({
+    color: 0xc98060, roughness: 0.46, metalness: 0.00,
+    sheen: 0.20, sheenRoughness: 0.90,
+    sheenColor: new THREE.Color(0xe09060), envMapIntensity: 0.40,
+  });
+  const matHair = new THREE.MeshPhysicalMaterial({
+    color: 0x2e1f14, roughness: 0.78, metalness: 0.00, envMapIntensity: 0.20,
+  });
 
   const group = new THREE.Group();
 
@@ -398,14 +417,30 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     fingers.push(f);
   }
 
+  // Spring state para movimiento secundario — muñeca y antebrazo siguen la pose
+  // con un leve retraso (follow-through) que da naturalidad al movimiento.
+  const spring = {
+    wrist: [0, 0, 0] as [number, number, number],
+    roll: 0,
+  };
+  const KW = 0.18; // rigidez de la muñeca (≈90 ms respuesta a 60 fps)
+  const KR = 0.15; // rigidez del giro de antebrazo
+
   function apply(pose: Pose, tMs: number) {
     // Respiración suave que se añade al movimiento del clip.
     const breath = Math.sin(tMs * 0.0018) * 0.003;
     shoulder.position.y = breath;
     shoulder.rotation.set(pose.shoulder[0], pose.shoulder[1], pose.shoulder[2]);
     elbow.rotation.set(-pose.elbow, 0, 0);
-    foreArmGroup.rotation.y = pose.forearmRoll;
-    wrist.rotation.set(pose.wrist[0], pose.wrist[1], pose.wrist[2]);
+
+    // Movimiento secundario: antebrazo y muñeca siguen con inercia suave.
+    spring.roll     += (pose.forearmRoll  - spring.roll)     * KR;
+    spring.wrist[0] += (pose.wrist[0]    - spring.wrist[0]) * KW;
+    spring.wrist[1] += (pose.wrist[1]    - spring.wrist[1]) * KW;
+    spring.wrist[2] += (pose.wrist[2]    - spring.wrist[2]) * KW;
+
+    foreArmGroup.rotation.y = spring.roll;
+    wrist.rotation.set(spring.wrist[0], spring.wrist[1], spring.wrist[2]);
     thumbBase.rotation.z = -THUMB_ABDUCTION + pose.abduction[0];
     for (let i = 1; i < 5; i++) {
       anchors[i]!.rotation.z = pose.abduction[i];

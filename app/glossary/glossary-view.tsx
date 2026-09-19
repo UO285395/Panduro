@@ -131,7 +131,10 @@ function SignCard({
   levelId: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+    <Link
+      href={`/glossary/${sign.id}`}
+      className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 hover:border-brand-400 hover:shadow-md transition dark:border-slate-800 dark:bg-slate-900"
+    >
       <div className="w-full overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-800">
         <AvatarPlayer clip={sign.avatarClip} size={140} />
       </div>
@@ -147,6 +150,6 @@ function SignCard({
       <span className="self-end rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
         {levelId}
       </span>
-    </div>
+    </Link>
   );
 }

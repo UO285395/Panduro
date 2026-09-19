@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { CameraFeed } from "@/components/camera/CameraFeed";
 import { HandOverlay } from "@/components/camera/HandOverlay";
 import { PerfBadge } from "@/components/camera/PerfBadge";
@@ -18,16 +19,23 @@ import { TextAssembler } from "@/lib/translator/assembler";
 import { MIN_TRANSLATE_CONFIDENCE } from "@/lib/translator/constants";
 import { saveTranslation, listTranslations } from "@/lib/translator/persistence-client";
 import type { TranslationRow } from "@/lib/translator/persistence";
+import type { AvatarClip } from "@/lib/curriculum/schema";
 import { HistoryPanel } from "./history-panel";
+
+const AvatarPlayer = dynamic(
+  () => import("@/components/avatar/AvatarPlayer").then((m) => m.AvatarPlayer),
+  { ssr: false, loading: () => null },
+);
 
 type Status = "idle" | "loading" | "recording" | "paused" | "error";
 
 type Props = {
   initialHistory: TranslationRow[];
   demo?: boolean;
+  clipsMap?: Record<string, AvatarClip | null>;
 };
 
-export function TranslateView({ initialHistory, demo }: Props) {
+export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
   const trackerRef = useRef<HandTracker | null>(null);
   const rafRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -364,14 +372,27 @@ export function TranslateView({ initialHistory, demo }: Props) {
           {notice && <p className="text-sm text-slate-600">{notice}</p>}
         </div>
 
-        <aside className="space-y-3">
-          <h2 className="text-sm font-semibold">Historial</h2>
-          <HistoryPanel entries={history} />
-          {demo && (
-            <p className="text-xs text-slate-500">
-              (Modo demo · las traducciones viven en este navegador.)
-            </p>
+        <aside className="space-y-4">
+          {active && clipsMap[active.label] && (
+            <div className="space-y-1">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Signo detectado
+              </h2>
+              <div className="overflow-hidden rounded-xl border border-brand-200 dark:border-brand-800">
+                <AvatarPlayer clip={clipsMap[active.label]!} size={260} label={active.label} />
+              </div>
+              <p className="text-center text-sm font-semibold">{active.display}</p>
+            </div>
           )}
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold">Historial</h2>
+            <HistoryPanel entries={history} />
+            {demo && (
+              <p className="text-xs text-slate-500">
+                (Modo demo · las traducciones viven en este navegador.)
+              </p>
+            )}
+          </div>
         </aside>
       </div>
     </main>

@@ -1,13 +1,16 @@
 import a1Raw from "@/content/curriculum/a1.json";
 import a2Raw from "@/content/curriculum/a2.json";
 import b1Raw from "@/content/curriculum/b1.json";
+import b2Raw from "@/content/curriculum/b2.json";
+import c1Raw from "@/content/curriculum/c1.json";
+import c2Raw from "@/content/curriculum/c2.json";
 import { LevelSchema, validateLevel, type Level, type Lesson, type Sign, type Unit } from "./schema";
 
 let cachedLevels: Level[] | null = null;
 
 function loadAll(): Level[] {
   if (cachedLevels) return cachedLevels;
-  const raws = [a1Raw, a2Raw, b1Raw];
+  const raws = [a1Raw, a2Raw, b1Raw, b2Raw, c1Raw, c2Raw];
   const levels: Level[] = [];
   for (const raw of raws) {
     const parsed = LevelSchema.parse(raw);

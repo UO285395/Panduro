@@ -1,0 +1,3477 @@
+{
+  "id": "C2",
+  "title": "LSE C2 · Dominio pleno",
+  "units": [
+    {
+      "id": "C2.U1",
+      "title": "Matiz y precisión",
+      "summary": "Vocabulario para expresarse con exactitud y riqueza lingüística.",
+      "lessons": [
+        {
+          "id": "C2.U1.L1",
+          "title": "Registro y tono",
+          "goal": "Signar conceptos de registro y pragmática.",
+          "signs": [
+            "MATIZ",
+            "SUTILEZA",
+            "AMBIGUEDAD",
+            "EXPLICITO",
+            "IMPLICITO",
+            "CONTEXTO"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U1.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "MATIZ",
+              "options": [
+                "matiz",
+                "sutileza",
+                "ambigüedad",
+                "contexto"
+              ],
+              "answer": "matiz"
+            },
+            {
+              "id": "C2.U1.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "AMBIGUEDAD",
+              "options": [
+                "ambigüedad",
+                "explícito",
+                "implícito",
+                "matiz"
+              ],
+              "answer": "ambigüedad"
+            },
+            {
+              "id": "C2.U1.L1.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "EXPLICITO",
+              "options": [
+                "explícito",
+                "implícito",
+                "contexto",
+                "sutileza"
+              ],
+              "answer": "explícito"
+            },
+            {
+              "id": "C2.U1.L1.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "SUTILEZA",
+                  "translation": "sutileza"
+                },
+                {
+                  "signId": "IMPLICITO",
+                  "translation": "implícito"
+                },
+                {
+                  "signId": "CONTEXTO",
+                  "translation": "contexto"
+                }
+              ]
+            },
+            {
+              "id": "C2.U1.L1.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "MATIZ",
+              "acceptable": [
+                "matiz"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "C2.U1.L2",
+          "title": "Figuras del lenguaje",
+          "goal": "Signar recursos estilísticos del lenguaje.",
+          "signs": [
+            "REGISTRO_C2",
+            "FORMAL_C2",
+            "COLOQUIAL",
+            "IRONIA",
+            "METAFORA",
+            "EUFEMISMO"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U1.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "IRONIA",
+              "options": [
+                "ironía",
+                "metáfora",
+                "eufemismo",
+                "formal (lengua)"
+              ],
+              "answer": "ironía"
+            },
+            {
+              "id": "C2.U1.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "METAFORA",
+              "options": [
+                "metáfora",
+                "ironía",
+                "coloquial",
+                "registro lingüístico"
+              ],
+              "answer": "metáfora"
+            },
+            {
+              "id": "C2.U1.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "FORMAL_C2",
+              "options": [
+                "formal (lengua)",
+                "coloquial",
+                "eufemismo",
+                "ironía"
+              ],
+              "answer": "formal (lengua)"
+            },
+            {
+              "id": "C2.U1.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "REGISTRO_C2",
+                  "translation": "registro lingüístico"
+                },
+                {
+                  "signId": "COLOQUIAL",
+                  "translation": "coloquial"
+                },
+                {
+                  "signId": "EUFEMISMO",
+                  "translation": "eufemismo"
+                }
+              ]
+            },
+            {
+              "id": "C2.U1.L2.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "IRONIA",
+              "acceptable": [
+                "ironía",
+                "ironia"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2.U2",
+      "title": "Identidad y comunidad sorda",
+      "summary": "Vocabulario sobre la cultura y la identidad de la comunidad sorda.",
+      "lessons": [
+        {
+          "id": "C2.U2.L1",
+          "title": "Cultura e identidad sorda",
+          "goal": "Signar conceptos de identidad y pertenencia cultural.",
+          "signs": [
+            "CULTURA_SORDA",
+            "IDENTIDAD",
+            "COMUNIDAD",
+            "PATRIMONIO",
+            "BILINGUE",
+            "INTERPRETE_LS"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U2.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "CULTURA_SORDA",
+              "options": [
+                "cultura sorda",
+                "identidad",
+                "comunidad",
+                "bilingüe"
+              ],
+              "answer": "cultura sorda"
+            },
+            {
+              "id": "C2.U2.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "IDENTIDAD",
+              "options": [
+                "identidad",
+                "cultura sorda",
+                "patrimonio",
+                "comunidad"
+              ],
+              "answer": "identidad"
+            },
+            {
+              "id": "C2.U2.L1.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "BILINGUE",
+              "options": [
+                "bilingüe",
+                "intérprete de lengua de signos",
+                "comunidad",
+                "identidad"
+              ],
+              "answer": "bilingüe"
+            },
+            {
+              "id": "C2.U2.L1.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "COMUNIDAD",
+                  "translation": "comunidad"
+                },
+                {
+                  "signId": "PATRIMONIO",
+                  "translation": "patrimonio"
+                },
+                {
+                  "signId": "INTERPRETE_LS",
+                  "translation": "intérprete de lengua de signos"
+                }
+              ]
+            },
+            {
+              "id": "C2.U2.L1.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "CULTURA_SORDA",
+              "acceptable": [
+                "cultura sorda"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "C2.U2.L2",
+          "title": "Derechos e inclusión",
+          "goal": "Signar conceptos de accesibilidad y normalización.",
+          "signs": [
+            "ACCESIBILIDAD",
+            "ADAPTACION",
+            "NORMALIZACION",
+            "DISCRIMINACION",
+            "EMPODERAMIENTO",
+            "RECONOCIMIENTO"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U2.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "ACCESIBILIDAD",
+              "options": [
+                "accesibilidad",
+                "adaptación",
+                "normalización",
+                "discriminación"
+              ],
+              "answer": "accesibilidad"
+            },
+            {
+              "id": "C2.U2.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "DISCRIMINACION",
+              "options": [
+                "discriminación",
+                "empoderamiento",
+                "reconocimiento",
+                "accesibilidad"
+              ],
+              "answer": "discriminación"
+            },
+            {
+              "id": "C2.U2.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "EMPODERAMIENTO",
+              "options": [
+                "empoderamiento",
+                "discriminación",
+                "reconocimiento",
+                "normalización"
+              ],
+              "answer": "empoderamiento"
+            },
+            {
+              "id": "C2.U2.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "ADAPTACION",
+                  "translation": "adaptación"
+                },
+                {
+                  "signId": "NORMALIZACION",
+                  "translation": "normalización"
+                },
+                {
+                  "signId": "RECONOCIMIENTO",
+                  "translation": "reconocimiento"
+                }
+              ]
+            },
+            {
+              "id": "C2.U2.L2.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "EMPODERAMIENTO",
+              "acceptable": [
+                "empoderamiento"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2.U3",
+      "title": "Pensamiento abstracto",
+      "summary": "Vocabulario para el análisis filosófico y conceptual.",
+      "lessons": [
+        {
+          "id": "C2.U3.L1",
+          "title": "Conceptos abstractos",
+          "goal": "Signar términos del pensamiento abstracto.",
+          "signs": [
+            "ABSTRACTO",
+            "CONCRETO",
+            "CONCEPTO",
+            "SIMBOLO",
+            "PARADIGMA",
+            "PERSPECTIVA"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U3.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "ABSTRACTO",
+              "options": [
+                "abstracto",
+                "concreto",
+                "concepto",
+                "símbolo"
+              ],
+              "answer": "abstracto"
+            },
+            {
+              "id": "C2.U3.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "CONCEPTO",
+              "options": [
+                "concepto",
+                "paradigma",
+                "perspectiva",
+                "símbolo"
+              ],
+              "answer": "concepto"
+            },
+            {
+              "id": "C2.U3.L1.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "PARADIGMA",
+              "options": [
+                "paradigma",
+                "perspectiva",
+                "dimensión",
+                "coherencia"
+              ],
+              "answer": "paradigma"
+            },
+            {
+              "id": "C2.U3.L1.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "CONCRETO",
+                  "translation": "concreto"
+                },
+                {
+                  "signId": "SIMBOLO",
+                  "translation": "símbolo"
+                },
+                {
+                  "signId": "PERSPECTIVA",
+                  "translation": "perspectiva"
+                }
+              ]
+            },
+            {
+              "id": "C2.U3.L1.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "ABSTRACTO",
+              "acceptable": [
+                "abstracto"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "C2.U3.L2",
+          "title": "Análisis conceptual",
+          "goal": "Signar operaciones del razonamiento abstracto.",
+          "signs": [
+            "DIMENSION",
+            "COMPLEJIDAD",
+            "COHERENCIA",
+            "CONTRADICCION",
+            "INFERIR",
+            "SINTETIZAR"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U3.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "COMPLEJIDAD",
+              "options": [
+                "complejidad",
+                "coherencia",
+                "contradicción",
+                "dimensión"
+              ],
+              "answer": "complejidad"
+            },
+            {
+              "id": "C2.U3.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "COHERENCIA",
+              "options": [
+                "coherencia",
+                "contradicción",
+                "inferir",
+                "sintetizar"
+              ],
+              "answer": "coherencia"
+            },
+            {
+              "id": "C2.U3.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "CONTRADICCION",
+              "options": [
+                "contradicción",
+                "complejidad",
+                "coherencia",
+                "dimensión"
+              ],
+              "answer": "contradicción"
+            },
+            {
+              "id": "C2.U3.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "DIMENSION",
+                  "translation": "dimensión"
+                },
+                {
+                  "signId": "INFERIR",
+                  "translation": "inferir"
+                },
+                {
+                  "signId": "SINTETIZAR",
+                  "translation": "sintetizar"
+                }
+              ]
+            },
+            {
+              "id": "C2.U3.L2.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "SINTETIZAR",
+              "acceptable": [
+                "sintetizar"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2.U4",
+      "title": "Interpretación profesional",
+      "summary": "Vocabulario técnico de la interpretación de lengua de signos.",
+      "lessons": [
+        {
+          "id": "C2.U4.L1",
+          "title": "Modos de interpretación",
+          "goal": "Signar técnicas de interpretación simultánea y consecutiva.",
+          "signs": [
+            "SIMULTANEOUS",
+            "CONSECUTIVO",
+            "FIDELIDAD",
+            "FLUIDEZ",
+            "ACENTO",
+            "RITMO_C2"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U4.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "SIMULTANEOUS",
+              "options": [
+                "simultáneo",
+                "consecutivo",
+                "fidelidad (interpretación)",
+                "fluidez"
+              ],
+              "answer": "simultáneo"
+            },
+            {
+              "id": "C2.U4.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "CONSECUTIVO",
+              "options": [
+                "consecutivo",
+                "simultáneo",
+                "acento",
+                "ritmo"
+              ],
+              "answer": "consecutivo"
+            },
+            {
+              "id": "C2.U4.L1.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "FIDELIDAD",
+              "options": [
+                "fidelidad (interpretación)",
+                "fluidez",
+                "acento",
+                "ritmo"
+              ],
+              "answer": "fidelidad (interpretación)"
+            },
+            {
+              "id": "C2.U4.L1.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "FLUIDEZ",
+                  "translation": "fluidez"
+                },
+                {
+                  "signId": "ACENTO",
+                  "translation": "acento"
+                },
+                {
+                  "signId": "RITMO_C2",
+                  "translation": "ritmo"
+                }
+              ]
+            },
+            {
+              "id": "C2.U4.L1.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "FLUIDEZ",
+              "acceptable": [
+                "fluidez"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "C2.U4.L2",
+          "title": "Técnica y vocabulario",
+          "goal": "Signar conceptos técnicos del intérprete profesional.",
+          "signs": [
+            "PROSODIA",
+            "ESPONTANEO",
+            "PLANIFICADO",
+            "VOCABULARIO",
+            "GLOSADO",
+            "TRANSLITERACION"
+          ],
+          "exercises": [
+            {
+              "id": "C2.U4.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "PROSODIA",
+              "options": [
+                "prosodia",
+                "espontáneo",
+                "planificado",
+                "vocabulario"
+              ],
+              "answer": "prosodia"
+            },
+            {
+              "id": "C2.U4.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "ESPONTANEO",
+              "options": [
+                "espontáneo",
+                "planificado",
+                "vocabulario",
+                "glosado"
+              ],
+              "answer": "espontáneo"
+            },
+            {
+              "id": "C2.U4.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué significa este signo?",
+              "signId": "PLANIFICADO",
+              "options": [
+                "planificado",
+                "espontáneo",
+                "prosodia",
+                "transliteración"
+              ],
+              "answer": "planificado"
+            },
+            {
+              "id": "C2.U4.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada signo",
+              "pairs": [
+                {
+                  "signId": "VOCABULARIO",
+                  "translation": "vocabulario"
+                },
+                {
+                  "signId": "GLOSADO",
+                  "translation": "glosado"
+                },
+                {
+                  "signId": "TRANSLITERACION",
+                  "translation": "transliteración"
+                }
+              ]
+            },
+            {
+              "id": "C2.U4.L2.E5",
+              "type": "type_word",
+              "prompt": "Escribe la palabra que ves signar",
+              "signId": "PROSODIA",
+              "acceptable": [
+                "prosodia"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "signs": [
+    {
+      "id": "MATIZ",
+      "gloss": "MATIZ",
+      "translation": "matiz",
+      "description": "Dedos finos ajustan algo pequeño.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUTILEZA",
+      "gloss": "SUTILEZA",
+      "translation": "sutileza",
+      "description": "Índice y pulgar muy juntos.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AMBIGUEDAD",
+      "gloss": "AMBIGÜEDAD",
+      "translation": "ambigüedad",
+      "description": "Manos oscilan indecisas.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "EXPLICITO",
+      "gloss": "EXPLÍCITO",
+      "translation": "explícito",
+      "description": "Mano abierta señala claramente.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "IMPLICITO",
+      "gloss": "IMPLÍCITO",
+      "translation": "implícito",
+      "description": "Mano oculta algo bajo la otra.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONTEXTO",
+      "gloss": "CONTEXTO",
+      "translation": "contexto",
+      "description": "Manos enmarcan escena.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "REGISTRO_C2",
+      "gloss": "REGISTRO",
+      "translation": "registro lingüístico",
+      "description": "Escala con la mano.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FORMAL_C2",
+      "gloss": "FORMAL",
+      "translation": "formal (lengua)",
+      "description": "Mano se presenta rígida.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "COLOQUIAL",
+      "gloss": "COLOQUIAL",
+      "translation": "coloquial",
+      "description": "Mano relajada, dedos sueltos.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "IRONIA",
+      "gloss": "IRONÍA",
+      "translation": "ironía",
+      "description": "Gesto de comillas con índices.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "METAFORA",
+      "gloss": "METÁFORA",
+      "translation": "metáfora",
+      "description": "Objeto imaginario se transforma.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "EUFEMISMO",
+      "gloss": "EUFEMISMO",
+      "translation": "eufemismo",
+      "description": "Mano suaviza el golpe.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CULTURA_SORDA",
+      "gloss": "CULTURA_SORDA",
+      "translation": "cultura sorda",
+      "description": "Mano en la oreja, luego corazón.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.35,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.35,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "IDENTIDAD",
+      "gloss": "IDENTIDAD",
+      "translation": "identidad",
+      "description": "Índice sobre el pecho.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "COMUNIDAD",
+      "gloss": "COMUNIDAD",
+      "translation": "comunidad",
+      "description": "Círculo trazado con ambos índices.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PATRIMONIO",
+      "gloss": "PATRIMONIO",
+      "translation": "patrimonio",
+      "description": "Manos rodean y protegen.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "BILINGUE",
+      "gloss": "BILINGÜE",
+      "translation": "bilingüe",
+      "description": "Dos manos señalan dos idiomas.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "INTERPRETE_LS",
+      "gloss": "INTÉRPRETE",
+      "translation": "intérprete de lengua de signos",
+      "description": "Manos alternan dos idiomas.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ACCESIBILIDAD",
+      "gloss": "ACCESIBILIDAD",
+      "translation": "accesibilidad",
+      "description": "Silla de ruedas imaginaria.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ADAPTACION",
+      "gloss": "ADAPTACIÓN",
+      "translation": "adaptación",
+      "description": "Mano moldea algo flexible.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NORMALIZACION",
+      "gloss": "NORMALIZACIÓN",
+      "translation": "normalización",
+      "description": "Palma plana iguala.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DISCRIMINACION",
+      "gloss": "DISCRIMINACIÓN",
+      "translation": "discriminación",
+      "description": "Mano señala y separa.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "EMPODERAMIENTO",
+      "gloss": "EMPODERAMIENTO",
+      "translation": "empoderamiento",
+      "description": "Puño se alza con fuerza.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "RECONOCIMIENTO",
+      "gloss": "RECONOCIMIENTO",
+      "translation": "reconocimiento",
+      "description": "Mano en la frente, luego aplaudir.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.35,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.35,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ABSTRACTO",
+      "gloss": "ABSTRACTO",
+      "translation": "abstracto",
+      "description": "Manos se alejan del cuerpo abriendo.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONCRETO",
+      "gloss": "CONCRETO",
+      "translation": "concreto",
+      "description": "Puño golpea palma.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONCEPTO",
+      "gloss": "CONCEPTO",
+      "translation": "concepto",
+      "description": "Índice toca sien, mano se abre.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.35,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.35,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SIMBOLO",
+      "gloss": "SÍMBOLO",
+      "translation": "símbolo",
+      "description": "Índice traza figura en el aire.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PARADIGMA",
+      "gloss": "PARADIGMA",
+      "translation": "paradigma",
+      "description": "Marco de referencia con manos.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PERSPECTIVA",
+      "gloss": "PERSPECTIVA",
+      "translation": "perspectiva",
+      "description": "Índice apunta y se aleja.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DIMENSION",
+      "gloss": "DIMENSIÓN",
+      "translation": "dimensión",
+      "description": "Manos señalan profundidad.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "COMPLEJIDAD",
+      "gloss": "COMPLEJIDAD",
+      "translation": "complejidad",
+      "description": "Dedos se entrelazan.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "COHERENCIA",
+      "gloss": "COHERENCIA",
+      "translation": "coherencia",
+      "description": "Manos paralelas avanzan juntas.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONTRADICCION",
+      "gloss": "CONTRADICCIÓN",
+      "translation": "contradicción",
+      "description": "Manos chocan de frente.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "INFERIR",
+      "gloss": "INFERIR",
+      "translation": "inferir",
+      "description": "Índice traza flecha de A a B.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SINTETIZAR",
+      "gloss": "SINTETIZAR",
+      "translation": "sintetizar",
+      "description": "Manos reúnen todo al centro.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SIMULTANEOUS",
+      "gloss": "SIMULTÁNEO",
+      "translation": "simultáneo",
+      "description": "Manos en paralelo actúan a la vez.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONSECUTIVO",
+      "gloss": "CONSECUTIVO",
+      "translation": "consecutivo",
+      "description": "Manos se alternan en cadena.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FIDELIDAD",
+      "gloss": "FIDELIDAD",
+      "translation": "fidelidad (interpretación)",
+      "description": "Mano sigue exactamente la otra.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FLUIDEZ",
+      "gloss": "FLUIDEZ",
+      "translation": "fluidez",
+      "description": "Manos fluyen sin parar.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ACENTO",
+      "gloss": "ACENTO",
+      "translation": "acento",
+      "description": "Índice enfatiza punto.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "RITMO_C2",
+      "gloss": "RITMO",
+      "translation": "ritmo",
+      "description": "Manos marcan compás.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PROSODIA",
+      "gloss": "PROSODIA",
+      "translation": "prosodia",
+      "description": "Ondulación expresiva de manos.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ESPONTANEO",
+      "gloss": "ESPONTÁNEO",
+      "translation": "espontáneo",
+      "description": "Mano brota hacia arriba.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PLANIFICADO",
+      "gloss": "PLANIFICADO",
+      "translation": "planificado",
+      "description": "Cuadrícula trazada en el aire.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "VOCABULARIO",
+      "gloss": "VOCABULARIO",
+      "translation": "vocabulario",
+      "description": "Libro de palabras con dedos.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "GLOSADO",
+      "gloss": "GLOSADO",
+      "translation": "glosado",
+      "description": "Índice deletrea rápido.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TRANSLITERACION",
+      "gloss": "TRANSLITERACIÓN",
+      "translation": "transliteración",
+      "description": "Mano copia la otra.",
+      "videoUrl": null,
+      "posterUrl": null,
+      "handedness": "one",
+      "tags": [],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

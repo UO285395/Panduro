@@ -77,12 +77,13 @@ export function DashboardView({
         </div>
       </header>
 
-      <div className="mb-6 grid gap-3 md:grid-cols-2">
+      <div className="mb-6 grid gap-3 md:grid-cols-3">
         <ReviewCard
           pending={snapshot.pendingReviews.length}
           nextReviewDueAt={snapshot.nextReviewDueAt}
         />
         <TranslateCard />
+        <GlossaryCard />
       </div>
 
       <div className="space-y-10">
@@ -342,6 +343,28 @@ function TranslateCard() {
         className="shrink-0 rounded-full bg-accent-500 px-3 py-1 text-xs font-semibold text-white"
       >
         Abrir
+      </span>
+    </Link>
+  );
+}
+
+function GlossaryCard() {
+  return (
+    <Link
+      href="/glossary"
+      className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-400 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+    >
+      <div>
+        <h3 className="font-semibold">Glosario de signos</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Consulta todos los signos del currículo con animación.
+        </p>
+      </div>
+      <span
+        aria-hidden
+        className="shrink-0 rounded-full bg-slate-600 px-3 py-1 text-xs font-semibold text-white"
+      >
+        Ver
       </span>
     </Link>
   );

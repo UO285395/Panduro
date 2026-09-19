@@ -7,6 +7,16 @@ const withPWA = withPWAInit({
   disable: isDev,
   register: true,
   skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /\/models\/.*\.task$/,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "mediapipe-models",
+        expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 30 },
+      },
+    },
+  ],
 });
 
 /** @type {import('next').NextConfig} */

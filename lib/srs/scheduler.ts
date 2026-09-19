@@ -1,5 +1,5 @@
 import type { Lesson } from "@/lib/curriculum/schema";
-import { getLevel } from "@/lib/curriculum/loader";
+import { getAllUnits } from "@/lib/curriculum/loader";
 
 /**
  * Formato de las card_id que persisten los reviews:
@@ -33,7 +33,7 @@ export function cardIdsForLesson(lesson: Lesson): CardId[] {
 /** Enumera todas las card_ids únicas del currículo entero. */
 export function getAllCardIds(): CardId[] {
   const out = new Set<CardId>();
-  for (const unit of getLevel().units) {
+  for (const unit of getAllUnits()) {
     for (const lesson of unit.lessons) {
       for (const cid of cardIdsForLesson(lesson)) out.add(cid);
     }

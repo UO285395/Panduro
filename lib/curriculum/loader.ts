@@ -29,7 +29,7 @@ export function getLevel(): Level {
 }
 
 export function getAllUnits(): Unit[] {
-  return getLevel().units;
+  return getAllLevels().flatMap((lvl) => lvl.units);
 }
 
 export function getUnit(unitId: string): Unit | undefined {

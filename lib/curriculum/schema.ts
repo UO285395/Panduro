@@ -96,11 +96,19 @@ const SignThisExercise = ExerciseBase.extend({
   voteWindowMs: z.number().int().min(500).max(6000).default(2000),
 });
 
+const MotionThisExercise = ExerciseBase.extend({
+  type: z.literal("motion_this"),
+  signId: z.string().min(1),
+  gesture: z.enum(["WAVE_H", "WAVE_V", "PUSH_FORWARD"]),
+  timeoutMs: z.number().int().min(3000).max(20000).default(12000),
+});
+
 export const ExerciseSchema = z.discriminatedUnion("type", [
   MultipleChoiceExercise,
   MatchPairsExercise,
   TypeWordExercise,
   SignThisExercise,
+  MotionThisExercise,
 ]);
 export type Exercise = z.infer<typeof ExerciseSchema>;
 

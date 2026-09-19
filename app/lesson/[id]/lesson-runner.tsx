@@ -12,6 +12,7 @@ import { MultipleChoice } from "@/components/exercises/MultipleChoice";
 import { MatchPairs } from "@/components/exercises/MatchPairs";
 import { TypeWord } from "@/components/exercises/TypeWord";
 import { SignThis } from "@/components/exercises/SignThis";
+import { MotionThis } from "@/components/exercises/MotionThis";
 import type { MascotState } from "@/components/mascot/ThingMascot";
 
 const ThingMascot = dynamic(
@@ -69,7 +70,7 @@ export function LessonRunner({
     } else {
       // Los ejercicios de cámara no consumen corazones: el ruido óptico puede
       // provocar falsos negativos que frustrarían al estudiante sin motivo.
-      const consumes = current.type !== "sign_this";
+      const consumes = current.type !== "sign_this" && current.type !== "motion_this";
       if (consumes) setHeartsUsed((h) => h + 1);
       setFeedback({
         kind: "wrong",
@@ -255,6 +256,17 @@ function ExerciseView({
       return (
         <SignThis
           exercise={exercise}
+          onAnswer={onAnswer}
+          disabled={disabled}
+        />
+      );
+    }
+    case "motion_this": {
+      const sign = signs[exercise.signId];
+      return (
+        <MotionThis
+          exercise={exercise}
+          sign={sign}
           onAnswer={onAnswer}
           disabled={disabled}
         />

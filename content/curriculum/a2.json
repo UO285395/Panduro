@@ -190,6 +190,22 @@
                   "translation": "dar"
                 }
               ]
+            },
+            {
+              "id": "A2.U2.L1.EX4",
+              "type": "motion_this",
+              "signId": "IR",
+              "gesture": "PUSH_FORWARD",
+              "prompt": "Realiza el signo IR: empuja la mano hacia adelante.",
+              "timeoutMs": 12000
+            },
+            {
+              "id": "A2.U2.L1.EX5",
+              "type": "motion_this",
+              "signId": "VENIR",
+              "gesture": "WAVE_H",
+              "prompt": "Realiza el signo VENIR: mueve la mano de lado a lado hacia ti.",
+              "timeoutMs": 12000
             }
           ]
         },
@@ -249,6 +265,14 @@
                   "translation": "esperar"
                 }
               ]
+            },
+            {
+              "id": "A2.U2.L2.EX4",
+              "type": "motion_this",
+              "signId": "PEDIR",
+              "gesture": "WAVE_V",
+              "prompt": "Realiza el signo PEDIR: mueve la mano arriba y abajo.",
+              "timeoutMs": 12000
             }
           ]
         }

@@ -281,19 +281,31 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   neck.castShadow = true;
   group.add(neck);
 
-  // Cabeza
+  // Cabeza — grupo animable (permite nod/shake con spring)
   const headR = BONE_LENGTHS.head / 2;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 26, 20), matFace);
-  head.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck + headR;
-  head.castShadow = true;
-  group.add(head);
+  const headGroup = new THREE.Group();
+  headGroup.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck;
+  group.add(headGroup);
 
-  // Pelo (casquete superior)
+  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 26, 20), matFace);
+  head.position.y = headR;
+  head.castShadow = true;
+  headGroup.add(head);
+
+  // Ojos (dos pequeños círculos oscuros a los lados de la esfera)
+  const matEye = new THREE.MeshPhysicalMaterial({ color: 0x1a0a05, roughness: 0.3, metalness: 0.0 });
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.12, 10, 8), matEye);
+    eye.position.set(side * headR * 0.38, headR * 1.06, headR * 0.86);
+    headGroup.add(eye);
+  }
+
+  // Pelo (casquete superior, relativo a headGroup)
   const hair = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.01, 26, 20), matHair);
-  hair.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck + headR + headR * 0.10;
+  hair.position.y = headR + headR * 0.10;
   hair.scale.set(1, 0.55, 1);
   hair.castShadow = true;
-  group.add(hair);
+  headGroup.add(hair);
 
   // ── Brazo ─────────────────────────────────────────────────────────────────
   const shoulder = new THREE.Group();
@@ -417,23 +429,24 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     fingers.push(f);
   }
 
-  // Spring state para movimiento secundario — muñeca y antebrazo siguen la pose
-  // con un leve retraso (follow-through) que da naturalidad al movimiento.
+  // Spring state para movimiento secundario — muñeca, antebrazo y cabeza
+  // siguen la pose con leve retraso (follow-through) que da naturalidad.
   const spring = {
     wrist: [0, 0, 0] as [number, number, number],
     roll: 0,
+    headX: 0,
+    headY: 0,
   };
-  const KW = 0.18; // rigidez de la muñeca (≈90 ms respuesta a 60 fps)
-  const KR = 0.15; // rigidez del giro de antebrazo
+  const KW = 0.18; // rigidez muñeca   (≈90 ms respuesta a 60 fps)
+  const KR = 0.15; // rigidez antebrazo
+  const KH = 0.07; // rigidez cabeza   (≈200 ms — movimiento más lento)
 
   function apply(pose: Pose, tMs: number) {
-    // Respiración suave que se añade al movimiento del clip.
     const breath = Math.sin(tMs * 0.0018) * 0.003;
     shoulder.position.y = breath;
     shoulder.rotation.set(pose.shoulder[0], pose.shoulder[1], pose.shoulder[2]);
     elbow.rotation.set(-pose.elbow, 0, 0);
 
-    // Movimiento secundario: antebrazo y muñeca siguen con inercia suave.
     spring.roll     += (pose.forearmRoll  - spring.roll)     * KR;
     spring.wrist[0] += (pose.wrist[0]    - spring.wrist[0]) * KW;
     spring.wrist[1] += (pose.wrist[1]    - spring.wrist[1]) * KW;
@@ -448,10 +461,18 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     for (let i = 0; i < 5; i++) {
       applyFingerFlex(fingers[i]!, pose.fingers[i]);
     }
+
+    // Cabeza: mira ligeramente hacia la mano (solo cuando está en zona facial).
+    const handHigh = pose.shoulder[0] < -0.25;
+    const targetHX = handHigh ? pose.shoulder[0] * 0.12 : 0;
+    const targetHY = handHigh ? pose.shoulder[1] * 0.08 : 0;
+    spring.headX += (targetHX - spring.headX) * KH;
+    spring.headY += (targetHY - spring.headY) * KH;
+    headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.002;
+    headGroup.rotation.y = spring.headY;
   }
 
   function applyIdle(tMs: number) {
-    // Posición de reposo: brazo colgando ligeramente hacia el lado.
     const breath = Math.sin(tMs * 0.0018) * 0.004;
     const sway   = Math.sin(tMs * 0.0008) * 0.008;
     shoulder.position.y = breath;
@@ -463,11 +484,16 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     for (let i = 1; i < 5; i++) {
       anchors[i]!.rotation.z = 0;
     }
-    // Dedos ligeramente curvados en reposo.
     const restFlex: FingerPose = { proximal: 0.15, middle: 0.12, distal: 0.08 };
     for (let i = 0; i < 5; i++) {
       applyFingerFlex(fingers[i]!, restFlex);
     }
+    // Leve balanceo de cabeza en reposo.
+    const headSway = Math.sin(tMs * 0.00055) * 0.012;
+    spring.headX += (0 - spring.headX) * KH;
+    spring.headY += (0 - spring.headY) * KH;
+    headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.003;
+    headGroup.rotation.y = spring.headY + headSway;
   }
 
   return { group, apply, applyIdle };

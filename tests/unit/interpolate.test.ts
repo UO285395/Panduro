@@ -36,18 +36,20 @@ describe("sampleClip", () => {
     expect(k.hand.x).toBe(2);
   });
 
-  it("interpola linealmente en el primer segmento", () => {
-    const k = sampleClip(clip, 250); // 50% entre 0 y 500
-    expect(k.hand.x).toBeCloseTo(0.5);
-    expect(k.hand.y).toBeCloseTo(0.5);
-    expect(k.fingers[0]).toBeCloseTo(0.5);
+  it("interpola (Catmull-Rom) en el primer segmento", () => {
+    const k = sampleClip(clip, 250); // 50% entre kf0 y kf1
+    // CR usa kf2 y kf0 como puntos de control envolventes.
+    expect(k.hand.x).toBeCloseTo(0.3125, 4);
+    expect(k.hand.y).toBeCloseTo(0.5625, 4);
+    expect(k.fingers[0]).toBeCloseTo(0.5, 4);
   });
 
-  it("interpola linealmente en el segundo segmento", () => {
-    const k = sampleClip(clip, 750); // 50% entre 500 y 1000
-    expect(k.hand.x).toBeCloseTo(1.5);
-    expect(k.hand.y).toBeCloseTo(0.5);
-    expect(k.fingers[0]).toBeCloseTo(0.75);
+  it("interpola (Catmull-Rom) en el segundo segmento", () => {
+    const k = sampleClip(clip, 750); // 50% entre kf1 y kf2
+    // CR usa kf0 y kf0 (wrap) como puntos de control envolventes.
+    expect(k.hand.x).toBeCloseTo(1.6875, 4);
+    expect(k.hand.y).toBeCloseTo(0.5625, 4);
+    expect(k.fingers[0]).toBeCloseTo(0.8438, 3);
   });
 
   it("pasa por los keyframes exactos", () => {

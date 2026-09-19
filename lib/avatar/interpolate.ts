@@ -5,8 +5,8 @@ const LOOP_FADE = 0.12; // 12 % de la duración
 
 /**
  * Interpola entre keyframes para obtener la pose en `tMs`.
- * Usa smoothstep por segmento y una ventana de cross-fade al final del bucle
- * para suavizar la transición entre la última y la primera pose.
+ * Usa spline Catmull-Rom para trayectorias suaves con C1-continuidad
+ * y una ventana de cross-fade al final del bucle.
  */
 export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
   const kfs = clip.keyframes;
@@ -25,18 +25,61 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
     return blendKeyframes(last, first, u, tMs);
   }
 
-  // Buscar el segmento (a, b) tal que a.t <= t < b.t
-  for (let i = 0; i < kfs.length - 1; i++) {
+  // Buscar el segmento (i, i+1) tal que kfs[i].t <= t < kfs[i+1].t
+  const n = kfs.length;
+  for (let i = 0; i < n - 1; i++) {
     const a = kfs[i]!;
     const b = kfs[i + 1]!;
     if (tMs >= a.t && tMs < b.t) {
       const span = b.t - a.t;
-      const raw = span > 0 ? (tMs - a.t) / span : 0;
-      const u = raw * raw * (3 - 2 * raw);
-      return blendKeyframes(a, b, u, tMs);
+      const t01 = span > 0 ? (tMs - a.t) / span : 0;
+      // Catmull-Rom: puntos de control envolventes (loop en los extremos).
+      const p0 = kfs[(i - 1 + n) % n]!;
+      const p3 = kfs[(i + 2) % n]!;
+      return catmullRomBlend(p0, a, b, p3, t01, tMs);
     }
   }
   return last;
+}
+
+/** Interpolación Catmull-Rom entre a y b usando p0 y p3 como tangentes. */
+function catmullRomBlend(
+  p0: AvatarKeyframe, a: AvatarKeyframe, b: AvatarKeyframe, p3: AvatarKeyframe,
+  t: number, tMs: number,
+): AvatarKeyframe {
+  const cr = (v0: number, v1: number, v2: number, v3: number) => {
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return 0.5 * (
+      2 * v1 +
+      (v2 - v0) * t +
+      (2 * v0 - 5 * v1 + 4 * v2 - v3) * t2 +
+      (3 * v1 - v0 - 3 * v2 + v3) * t3
+    );
+  };
+  const crF = (v0: number, v1: number, v2: number, v3: number) =>
+    Math.max(0, Math.min(1, cr(v0, v1, v2, v3)));
+
+  const fFlex = (kf: AvatarKeyframe, i: number) =>
+    typeof kf.fingers[i] === "number" ? (kf.fingers[i] as number) : (kf.fingers[i] as { flex: number }).flex;
+
+  return {
+    t: tMs,
+    hand: {
+      x: cr(p0.hand.x, a.hand.x, b.hand.x, p3.hand.x),
+      y: cr(p0.hand.y, a.hand.y, b.hand.y, p3.hand.y),
+      z: cr(p0.hand.z, a.hand.z, b.hand.z, p3.hand.z),
+      rot: [
+        cr(p0.hand.rot[0], a.hand.rot[0], b.hand.rot[0], p3.hand.rot[0]),
+        cr(p0.hand.rot[1], a.hand.rot[1], b.hand.rot[1], p3.hand.rot[1]),
+        cr(p0.hand.rot[2], a.hand.rot[2], b.hand.rot[2], p3.hand.rot[2]),
+      ],
+      forearmRoll: lerpMaybe(a.hand.forearmRoll, b.hand.forearmRoll, t),
+    },
+    fingers: [0, 1, 2, 3, 4].map((i) =>
+      crF(fFlex(p0, i), fFlex(a, i), fFlex(b, i), fFlex(p3, i))
+    ) as [number, number, number, number, number],
+  };
 }
 
 function blendKeyframes(a: AvatarKeyframe, b: AvatarKeyframe, u: number, t: number): AvatarKeyframe {

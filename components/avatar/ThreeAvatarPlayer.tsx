@@ -56,6 +56,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.12;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
 
       const scene = new THREE.Scene();
 
@@ -71,6 +72,24 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       const bgTex = new THREE.CanvasTexture(gradCanvas);
       bgTex.minFilter = THREE.LinearFilter;
       scene.background = bgTex;
+
+      // IBL — mapa de entorno procedural para materiales PBR realistas.
+      // Un gradiente equirectangular cielo/horizonte/tierra da reflexiones naturales.
+      const envCanvas2d = document.createElement("canvas");
+      envCanvas2d.width = 256; envCanvas2d.height = 128;
+      const e2d = envCanvas2d.getContext("2d")!;
+      const eGrad = e2d.createLinearGradient(0, 0, 0, 128);
+      eGrad.addColorStop(0.00, "#b0d4f1"); // cielo
+      eGrad.addColorStop(0.45, "#fff4ea"); // horizonte
+      eGrad.addColorStop(1.00, "#c8a870"); // suelo cálido
+      e2d.fillStyle = eGrad;
+      e2d.fillRect(0, 0, 256, 128);
+      const envTex = new THREE.CanvasTexture(envCanvas2d);
+      envTex.mapping = THREE.EquirectangularReflectionMapping;
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromEquirectangular(envTex).texture;
+      envTex.dispose();
+      pmrem.dispose();
 
       // Plano de suelo para recibir sombras (invisible excepto sombras).
       const floor = new THREE.Mesh(
@@ -99,12 +118,13 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       const key = new THREE.DirectionalLight(0xfffaf0, 1.20);
       key.position.set(1.2, 3.0, 2.5);
       key.castShadow = true;
-      key.shadow.mapSize.set(512, 512);
-      key.shadow.camera.near = 0.1;
-      key.shadow.camera.far = 8;
-      key.shadow.camera.left = key.shadow.camera.bottom = -0.6;
-      key.shadow.camera.right = key.shadow.camera.top = 0.6;
-      key.shadow.radius = 3;
+      key.shadow.mapSize.set(1024, 1024);
+      key.shadow.camera.near = 0.5;
+      key.shadow.camera.far = 6;
+      key.shadow.camera.left = key.shadow.camera.bottom = -0.4;
+      key.shadow.camera.right = key.shadow.camera.top = 0.4;
+      key.shadow.radius = 4;
+      key.shadow.bias = -0.001;
       scene.add(key);
 
       // Fill: suave desde la izquierda, reduce sombras duras.
@@ -304,12 +324,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   // Cuerpo principal: esfera unidad escalada a proporciones de palma.
   const palmBody = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matSkin);
   palmBody.scale.set(PALM_WIDTH * 0.52, PALM_HEIGHT * 0.50, PALM_DEPTH * 0.30);
+  palmBody.castShadow = true;
+  palmBody.receiveShadow = true;
   palm.add(palmBody);
 
   // Capa palmar (más clara, ligeramente desplazada hacia el espectador).
   const palmFace = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matPalm);
   palmFace.scale.set(PALM_WIDTH * 0.44, PALM_HEIGHT * 0.45, PALM_DEPTH * 0.20);
   palmFace.position.z = PALM_DEPTH * 0.16;
+  palmFace.castShadow = true;
   palm.add(palmFace);
 
   // Eminencia tenar (músculo de la base del pulgar).
@@ -461,6 +484,7 @@ function buildFinger(
     new THREE.BoxGeometry(r2 * 1.5, r2 * 0.28, len3 * 0.44),
     matNail,
   );
+  nail.castShadow = true;
   nail.position.set(0, -len3 * 0.52, r2 * 0.82);
   g3.add(nail);
 
@@ -518,6 +542,8 @@ function makeLatheSegment(
   const totalH = len; // altura total del perfil
   const geo = new THREE.LatheGeometry(pts, 18);
   const mesh = new THREE.Mesh(geo, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   // Perfil: y=0 (punta) → y=totalH (base). Mover -totalH en Y:
   // articulación queda en y=0, punta en y=-totalH.
   mesh.position.y = -totalH;

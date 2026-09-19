@@ -61,6 +61,22 @@
                   "translation": "dónde"
                 }
               ]
+            },
+            {
+              "id": "A2.U1.L1.E4",
+              "type": "sign_word",
+              "signId": "QUIEN",
+              "prompt": "Signa el signo para «quién»",
+              "minConfidence": 0.45,
+              "voteWindowMs": 2500
+            },
+            {
+              "id": "A2.U1.L1.E5",
+              "type": "sign_word",
+              "signId": "QUE",
+              "prompt": "Signa el signo para «qué»",
+              "minConfidence": 0.45,
+              "voteWindowMs": 2500
             }
           ]
         },
@@ -120,6 +136,22 @@
                   "translation": "para"
                 }
               ]
+            },
+            {
+              "id": "A2.U1.L2.E4",
+              "type": "sign_word",
+              "signId": "CUANDO",
+              "prompt": "Signa el signo para «cuándo»",
+              "minConfidence": 0.45,
+              "voteWindowMs": 2500
+            },
+            {
+              "id": "A2.U1.L2.E5",
+              "type": "sign_word",
+              "signId": "COMO",
+              "prompt": "Signa el signo para «cómo»",
+              "minConfidence": 0.45,
+              "voteWindowMs": 2500
             }
           ]
         }

@@ -1,168 +1,2395 @@
 {
   "id": "A2",
   "title": "LSE A2 · Comunicación cotidiana",
-  "signs": [
-    {
-      "id": "IR",
-      "gloss": "IR",
-      "translation": "Ir",
-      "description": "Índice apunta hacia adelante con movimiento de avance.",
-      "handedness": "one",
-      "tags": ["verbo", "a2"],
-      "avatarClip": {
-        "handedness": "one",
-        "duration": 1000,
-        "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 1, 1, 1] },
-          { "t": 500, "hand": { "x": 0.3, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 1, 1, 1] },
-          { "t": 1000, "hand": { "x": 0.5, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 1, 1, 1] }
-        ]
-      }
-    },
-    {
-      "id": "QUERER",
-      "gloss": "QUERER",
-      "translation": "Querer",
-      "description": "Mano sobre el pecho, dedos curvados con movimiento hacia el cuerpo.",
-      "handedness": "one",
-      "tags": ["verbo", "a2"],
-      "avatarClip": {
-        "handedness": "one",
-        "duration": 1000,
-        "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.5, 0.5, 0.5, 0.5, 0.5] },
-          { "t": 500, "hand": { "x": -0.1, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.7, 0.7, 0.7, 0.7, 0.7] },
-          { "t": 1000, "hand": { "x": 0, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.5, 0.5, 0.5, 0.5, 0.5] }
-        ]
-      }
-    },
-    {
-      "id": "PODER",
-      "gloss": "PODER",
-      "translation": "Poder",
-      "description": "Mano cerrada hacia abajo con movimiento descendente.",
-      "handedness": "one",
-      "tags": ["verbo", "a2"],
-      "avatarClip": {
-        "handedness": "one",
-        "duration": 1000,
-        "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.4, "z": 0, "rot": [0, 0, 0] }, "fingers": [1, 1, 1, 1, 1] },
-          { "t": 500, "hand": { "x": 0, "y": 0.1, "z": 0, "rot": [0, 0, 0] }, "fingers": [1, 1, 1, 1, 1] },
-          { "t": 1000, "hand": { "x": 0, "y": 0.4, "z": 0, "rot": [0, 0, 0] }, "fingers": [1, 1, 1, 1, 1] }
-        ]
-      }
-    },
-    {
-      "id": "TENER",
-      "gloss": "TENER",
-      "translation": "Tener",
-      "description": "Manos abiertas acercándose al pecho.",
-      "handedness": "one",
-      "tags": ["verbo", "a2"],
-      "avatarClip": {
-        "handedness": "one",
-        "duration": 1000,
-        "keyframes": [
-          { "t": 0, "hand": { "x": 0.3, "y": 0.3, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 0, 0, 0] },
-          { "t": 500, "hand": { "x": -0.1, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 0, 0, 0, 0] },
-          { "t": 1000, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.5, 0.5, 0.5, 0.5, 0.5] }
-        ]
-      }
-    },
-    {
-      "id": "SABER",
-      "gloss": "SABER",
-      "translation": "Saber",
-      "description": "Dedos curvados tocando la sien.",
-      "handedness": "one",
-      "tags": ["verbo", "a2"],
-      "avatarClip": {
-        "handedness": "one",
-        "duration": 1000,
-        "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.5, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.3, 0.8, 0.8, 0.8, 0.8] },
-          { "t": 500, "hand": { "x": -0.2, "y": 0.6, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.3, 0.8, 0.8, 0.8, 0.8] },
-          { "t": 1000, "hand": { "x": 0, "y": 0.5, "z": 0, "rot": [0, 0, 0] }, "fingers": [0.3, 0.8, 0.8, 0.8, 0.8] }
-        ]
-      }
-    },
-    {
-      "id": "GUSTAR",
-      "gloss": "GUSTAR",
-      "translation": "Gustar",
-      "description": "Pulgar extendido hacia arriba, movimiento de aprobación.",
-      "handedness": "one",
-      "tags": ["verbo", "a2"],
-      "avatarClip": {
-        "handedness": "one",
-        "duration": 1000,
-        "keyframes": [
-          { "t": 0, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 1, 1, 1, 1] },
-          { "t": 500, "hand": { "x": 0, "y": 0.4, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 1, 1, 1, 1] },
-          { "t": 1000, "hand": { "x": 0, "y": 0.2, "z": 0, "rot": [0, 0, 0] }, "fingers": [0, 1, 1, 1, 1] }
-        ]
-      }
-    }
-  ],
   "units": [
     {
-      "id": "a2.u1",
-      "title": "Unidad 1 · Verbos básicos",
-      "summary": "Aprende los verbos más usados en LSE para construir frases simples.",
+      "id": "A2.U1",
+      "title": "Estructura de frase LSE",
+      "summary": "Orden SOV, negación al final, preguntas con cejas arqueadas",
       "lessons": [
         {
-          "id": "a2.u1.l1",
-          "title": "Verbos de acción",
-          "goal": "Conocer y usar los verbos IR, QUERER, PODER, TENER, SABER y GUSTAR.",
-          "signs": ["IR", "QUERER", "PODER", "TENER", "SABER", "GUSTAR"],
+          "id": "A2.U1.L1",
+          "title": "Pronombres interrogativos I",
+          "goal": "Distinguir las wh-palabras básicas en LSE",
+          "signs": [
+            "QUIEN",
+            "QUE",
+            "DONDE"
+          ],
           "exercises": [
             {
-              "id": "a2.u1.l1.e1",
+              "id": "A2.U1.L1.E1",
               "type": "multiple_choice",
-              "prompt": "¿Qué significa este verbo?",
-              "signId": "IR",
-              "options": ["Ir", "Venir", "Salir", "Llegar"],
-              "answer": "Ir"
+              "prompt": "¿Qué signo significa «quién»?",
+              "signId": "QUIEN",
+              "options": [
+                "quién",
+                "qué",
+                "dónde",
+                "cuándo"
+              ],
+              "answer": "quién"
             },
             {
-              "id": "a2.u1.l1.e2",
+              "id": "A2.U1.L1.E2",
               "type": "multiple_choice",
-              "prompt": "¿Qué significa este verbo?",
-              "signId": "QUERER",
-              "options": ["Querer", "Tener", "Saber", "Poder"],
-              "answer": "Querer"
+              "prompt": "¿Qué signo significa «qué»?",
+              "signId": "QUE",
+              "options": [
+                "qué",
+                "quién",
+                "dónde",
+                "cómo"
+              ],
+              "answer": "qué"
             },
             {
-              "id": "a2.u1.l1.e3",
-              "type": "multiple_choice",
-              "prompt": "¿Qué significa este verbo?",
-              "signId": "PODER",
-              "options": ["Poder", "Querer", "Ir", "Gustar"],
-              "answer": "Poder"
-            },
-            {
-              "id": "a2.u1.l1.e4",
-              "type": "multiple_choice",
-              "prompt": "¿Qué significa este verbo?",
-              "signId": "GUSTAR",
-              "options": ["Gustar", "Saber", "Tener", "Poder"],
-              "answer": "Gustar"
-            },
-            {
-              "id": "a2.u1.l1.e5",
+              "id": "A2.U1.L1.E3",
               "type": "match_pairs",
-              "prompt": "Empareja el signo con el verbo",
+              "prompt": "Empareja cada signo con su significado",
               "pairs": [
-                { "signId": "IR", "translation": "Ir" },
-                { "signId": "TENER", "translation": "Tener" },
-                { "signId": "SABER", "translation": "Saber" },
-                { "signId": "GUSTAR", "translation": "Gustar" }
+                {
+                  "signId": "QUIEN",
+                  "translation": "quién"
+                },
+                {
+                  "signId": "QUE",
+                  "translation": "qué"
+                },
+                {
+                  "signId": "DONDE",
+                  "translation": "dónde"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "A2.U1.L2",
+          "title": "Pronombres interrogativos II",
+          "goal": "Completar el conjunto de wh-palabras",
+          "signs": [
+            "CUANDO",
+            "COMO",
+            "CUANTO",
+            "PORQUE",
+            "PARA"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U1.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «cuándo»?",
+              "signId": "CUANDO",
+              "options": [
+                "cuándo",
+                "cómo",
+                "cuánto",
+                "para"
+              ],
+              "answer": "cuándo"
+            },
+            {
+              "id": "A2.U1.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «cómo»?",
+              "signId": "COMO",
+              "options": [
+                "cómo",
+                "cuándo",
+                "por qué",
+                "cuánto"
+              ],
+              "answer": "cómo"
+            },
+            {
+              "id": "A2.U1.L2.E3",
+              "type": "match_pairs",
+              "prompt": "Empareja signos con significados",
+              "pairs": [
+                {
+                  "signId": "CUANTO",
+                  "translation": "cuánto"
+                },
+                {
+                  "signId": "PORQUE",
+                  "translation": "porque"
+                },
+                {
+                  "signId": "PARA",
+                  "translation": "para"
+                }
               ]
             }
           ]
         }
       ]
+    },
+    {
+      "id": "A2.U2",
+      "title": "Verbos direccionales",
+      "summary": "Verbos de movimiento y dirección en LSE",
+      "lessons": [
+        {
+          "id": "A2.U2.L1",
+          "title": "Movimiento y traslado",
+          "goal": "Expresar acciones de ir, venir y trasladar objetos",
+          "signs": [
+            "IR",
+            "VENIR",
+            "LLEVAR",
+            "TRAER",
+            "DAR"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U2.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «ir»?",
+              "signId": "IR",
+              "options": [
+                "ir",
+                "venir",
+                "llevar",
+                "traer"
+              ],
+              "answer": "ir"
+            },
+            {
+              "id": "A2.U2.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «venir»?",
+              "signId": "VENIR",
+              "options": [
+                "venir",
+                "ir",
+                "dar",
+                "traer"
+              ],
+              "answer": "venir"
+            },
+            {
+              "id": "A2.U2.L1.E3",
+              "type": "match_pairs",
+              "prompt": "Empareja el signo con su acción",
+              "pairs": [
+                {
+                  "signId": "IR",
+                  "translation": "ir"
+                },
+                {
+                  "signId": "LLEVAR",
+                  "translation": "llevar"
+                },
+                {
+                  "signId": "TRAER",
+                  "translation": "traer"
+                },
+                {
+                  "signId": "DAR",
+                  "translation": "dar"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "A2.U2.L2",
+          "title": "Verbos de comunicación",
+          "goal": "Preguntar, responder y pedir en LSE",
+          "signs": [
+            "PEDIR",
+            "PREGUNTAR",
+            "RESPONDER",
+            "AYUDAR",
+            "ESPERAR"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U2.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «pedir»?",
+              "signId": "PEDIR",
+              "options": [
+                "pedir",
+                "preguntar",
+                "responder",
+                "ayudar"
+              ],
+              "answer": "pedir"
+            },
+            {
+              "id": "A2.U2.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «ayudar»?",
+              "signId": "AYUDAR",
+              "options": [
+                "ayudar",
+                "esperar",
+                "pedir",
+                "responder"
+              ],
+              "answer": "ayudar"
+            },
+            {
+              "id": "A2.U2.L2.E3",
+              "type": "match_pairs",
+              "prompt": "Empareja verbos de comunicación",
+              "pairs": [
+                {
+                  "signId": "PREGUNTAR",
+                  "translation": "preguntar"
+                },
+                {
+                  "signId": "RESPONDER",
+                  "translation": "responder"
+                },
+                {
+                  "signId": "ESPERAR",
+                  "translation": "esperar"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A2.U3",
+      "title": "Tiempo y narración",
+      "summary": "Expresar cuándo ocurren las cosas usando la línea temporal LSE",
+      "lessons": [
+        {
+          "id": "A2.U3.L1",
+          "title": "La línea del tiempo",
+          "goal": "Situar eventos en el pasado, presente y futuro",
+          "signs": [
+            "ANTES",
+            "DESPUES",
+            "SIEMPRE",
+            "NUNCA"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U3.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «antes»?",
+              "signId": "ANTES",
+              "options": [
+                "antes",
+                "después",
+                "siempre",
+                "nunca"
+              ],
+              "answer": "antes"
+            },
+            {
+              "id": "A2.U3.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «siempre»?",
+              "signId": "SIEMPRE",
+              "options": [
+                "siempre",
+                "nunca",
+                "a veces",
+                "después"
+              ],
+              "answer": "siempre"
+            },
+            {
+              "id": "A2.U3.L1.E3",
+              "type": "match_pairs",
+              "prompt": "Relaciona cada signo con su temporalidad",
+              "pairs": [
+                {
+                  "signId": "ANTES",
+                  "translation": "antes"
+                },
+                {
+                  "signId": "DESPUES",
+                  "translation": "después"
+                },
+                {
+                  "signId": "NUNCA",
+                  "translation": "nunca"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "A2.U3.L2",
+          "title": "Frecuencia y urgencia",
+          "goal": "Expresar con qué frecuencia y cuándo exactamente",
+          "signs": [
+            "A_VECES",
+            "PRONTO",
+            "TARDE",
+            "YA"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U3.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «a veces»?",
+              "signId": "A_VECES",
+              "options": [
+                "a veces",
+                "siempre",
+                "nunca",
+                "pronto"
+              ],
+              "answer": "a veces"
+            },
+            {
+              "id": "A2.U3.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «ya»?",
+              "signId": "YA",
+              "options": [
+                "ya",
+                "tarde",
+                "pronto",
+                "antes"
+              ],
+              "answer": "ya"
+            },
+            {
+              "id": "A2.U3.L2.E3",
+              "type": "match_pairs",
+              "prompt": "Empareja los signos de frecuencia",
+              "pairs": [
+                {
+                  "signId": "A_VECES",
+                  "translation": "a veces"
+                },
+                {
+                  "signId": "PRONTO",
+                  "translation": "pronto"
+                },
+                {
+                  "signId": "TARDE",
+                  "translation": "tarde"
+                },
+                {
+                  "signId": "YA",
+                  "translation": "ya"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "signs": [
+    {
+      "id": "QUIEN",
+      "gloss": "QUIEN",
+      "translation": "quién",
+      "handedness": "one",
+      "tags": [
+        "pregunta",
+        "pronombre"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.45,
+              "z": 0,
+              "rot": [
+                0,
+                0.16000000000000003,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "QUE",
+      "gloss": "QUE",
+      "translation": "qué",
+      "handedness": "one",
+      "tags": [
+        "pregunta"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DONDE",
+      "gloss": "DONDE",
+      "translation": "dónde",
+      "handedness": "one",
+      "tags": [
+        "pregunta",
+        "lugar"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.1,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": -0.09000000000000001,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.24,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.1,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CUANDO",
+      "gloss": "CUANDO",
+      "translation": "cuándo",
+      "handedness": "one",
+      "tags": [
+        "pregunta",
+        "tiempo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.39999999999999997,
+              "z": 0,
+              "rot": [
+                0,
+                0.08000000000000002,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "COMO",
+      "gloss": "COMO",
+      "translation": "cómo",
+      "handedness": "one",
+      "tags": [
+        "pregunta"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.09000000000000001,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CUANTO",
+      "gloss": "CUANTO",
+      "translation": "cuánto",
+      "handedness": "one",
+      "tags": [
+        "pregunta",
+        "cantidad"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PORQUE",
+      "gloss": "PORQUE",
+      "translation": "porque",
+      "handedness": "one",
+      "tags": [
+        "conector"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.45,
+              "z": 0,
+              "rot": [
+                0,
+                0.16000000000000003,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PARA",
+      "gloss": "PARA",
+      "translation": "para",
+      "handedness": "one",
+      "tags": [
+        "conector"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.18000000000000002,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.08000000000000002,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "IR",
+      "gloss": "IR",
+      "translation": "ir",
+      "handedness": "one",
+      "tags": [
+        "verbo",
+        "movimiento"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.4,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.6,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                -0.4,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "VENIR",
+      "gloss": "VENIR",
+      "translation": "venir",
+      "handedness": "one",
+      "tags": [
+        "verbo",
+        "movimiento"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.4,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "LLEVAR",
+      "gloss": "LLEVAR",
+      "translation": "llevar",
+      "handedness": "one",
+      "tags": [
+        "verbo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.1,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.4,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TRAER",
+      "gloss": "TRAER",
+      "translation": "traer",
+      "handedness": "one",
+      "tags": [
+        "verbo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.4,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                -0.1,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DAR",
+      "gloss": "DAR",
+      "translation": "dar",
+      "handedness": "one",
+      "tags": [
+        "verbo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.3,
+              "y": 0.2,
+              "z": 0.1,
+              "rot": [
+                0.2,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.4,
+              "y": 0.2,
+              "z": 0.2,
+              "rot": [
+                0.3,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PEDIR",
+      "gloss": "PEDIR",
+      "translation": "pedir",
+      "handedness": "one",
+      "tags": [
+        "verbo",
+        "comunicacion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                -0.2,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0.2,
+              "rot": [
+                -0.3,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                -0.2,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PREGUNTAR",
+      "gloss": "PREGUNTAR",
+      "translation": "preguntar",
+      "handedness": "one",
+      "tags": [
+        "verbo",
+        "comunicacion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.39999999999999997,
+              "z": 0,
+              "rot": [
+                0,
+                0.16000000000000003,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "RESPONDER",
+      "gloss": "RESPONDER",
+      "translation": "responder",
+      "handedness": "one",
+      "tags": [
+        "verbo",
+        "comunicacion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.09000000000000001,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.16000000000000003,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AYUDAR",
+      "gloss": "AYUDAR",
+      "translation": "ayudar",
+      "handedness": "two",
+      "tags": [
+        "verbo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.15,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ESPERAR",
+      "gloss": "ESPERAR",
+      "translation": "esperar",
+      "handedness": "one",
+      "tags": [
+        "verbo",
+        "tiempo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.25,
+              "z": 0.1,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ANTES",
+      "gloss": "ANTES",
+      "translation": "antes",
+      "handedness": "one",
+      "tags": [
+        "tiempo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": -0.2,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.3,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DESPUES",
+      "gloss": "DESPUES",
+      "translation": "después",
+      "handedness": "one",
+      "tags": [
+        "tiempo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.1,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.3,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SIEMPRE",
+      "gloss": "SIEMPRE",
+      "translation": "siempre",
+      "handedness": "one",
+      "tags": [
+        "tiempo",
+        "frecuencia"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1200,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0.3
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 600,
+            "hand": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                -0.3
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 1200,
+            "hand": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0.3
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUNCA",
+      "gloss": "NUNCA",
+      "translation": "nunca",
+      "handedness": "one",
+      "tags": [
+        "tiempo",
+        "negacion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                0.24,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "A_VECES",
+      "gloss": "A_VECES",
+      "translation": "a veces",
+      "handedness": "one",
+      "tags": [
+        "tiempo",
+        "frecuencia"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0.3,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0.3,
+                0
+              ]
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRONTO",
+      "gloss": "PRONTO",
+      "translation": "pronto",
+      "handedness": "one",
+      "tags": [
+        "tiempo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.09000000000000001,
+              "y": 0.39999999999999997,
+              "z": 0,
+              "rot": [
+                0,
+                -0.16000000000000003,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TARDE",
+      "gloss": "TARDE",
+      "translation": "tarde",
+      "handedness": "one",
+      "tags": [
+        "tiempo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.1,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": -0.09000000000000001,
+              "y": 0.3,
+              "z": 0,
+              "rot": [
+                0,
+                0.16000000000000003,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.1,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "YA",
+      "gloss": "YA",
+      "translation": "ya",
+      "handedness": "one",
+      "tags": [
+        "tiempo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0.0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
     }
   ]
 }

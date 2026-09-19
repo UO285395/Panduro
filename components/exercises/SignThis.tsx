@@ -61,6 +61,10 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
 
   // Buffer de votos para la fase de evaluación.
   const votesRef = useRef<{ label: string; confidence: number }[]>([]);
+  // Votación adaptativa: momento en que la confianza superó el umbral alto.
+  const highConfSinceRef = useRef<number | null>(null);
+  const EARLY_EXIT_CONF = 0.85;
+  const EARLY_EXIT_MS = 300;
 
   const finishEvaluation = useCallback(() => {
     const votes = votesRef.current;
@@ -121,9 +125,22 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
           const features = extractFeatures(detected.normalized);
           const raw = classifier.predict(features);
           const pred = refineWithRules(raw, detected.normalized);
-          if (pred) votesRef.current.push({ label: pred.label, confidence: pred.confidence });
+          if (pred) {
+            votesRef.current.push({ label: pred.label, confidence: pred.confidence });
+            // Salida anticipada: confianza alta sostenida >= EARLY_EXIT_MS
+            if (pred.label === exercise.letterId && pred.confidence >= EARLY_EXIT_CONF) {
+              if (highConfSinceRef.current === null) highConfSinceRef.current = now;
+              if (now - highConfSinceRef.current >= EARLY_EXIT_MS) {
+                queueMicrotask(finishEvaluation);
+                return { kind: "done", correct: false };
+              }
+            } else {
+              highConfSinceRef.current = null;
+            }
+          } else {
+            highConfSinceRef.current = null;
+          }
           if (now - prev.startedAt >= exercise.voteWindowMs) {
-            // Terminar en el siguiente tick sincrónico:
             queueMicrotask(finishEvaluation);
             return { kind: "done", correct: false };
           }
@@ -156,6 +173,7 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
       }
     }
     votesRef.current = [];
+    highConfSinceRef.current = null;
     if (availableTemplates < MIN_TEMPLATES_PER_LETTER) {
       setPhase({ kind: "calibrating", captured: 0 });
     } else {

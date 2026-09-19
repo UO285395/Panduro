@@ -300,15 +300,22 @@ export function TranslateView({ initialHistory, demo }: Props) {
             </div>
             <p className="mt-1 text-lg font-medium">{text || "…"}</p>
             {active && (
-              <p className="mt-2 text-xs text-slate-500">
-                Último signo:{" "}
-                <b>{active.display}</b> ({active.label}) ·{" "}
-                <span
-                  className={active.confidence < 0.7 ? "text-amber-600 dark:text-amber-400" : ""}
-                >
-                  {(active.confidence * 100).toFixed(0)}%
-                </span>
-              </p>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>
+                    Último signo: <b>{active.display}</b> ({active.label})
+                  </span>
+                  <span className={confidenceTextClass(active.confidence)}>
+                    {(active.confidence * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                  <div
+                    className={`h-full rounded-full transition-all duration-200 ${confidenceBarClass(active.confidence)}`}
+                    style={{ width: `${Math.round(active.confidence * 100)}%` }}
+                  />
+                </div>
+              </div>
             )}
           </section>
 
@@ -369,6 +376,18 @@ export function TranslateView({ initialHistory, demo }: Props) {
       </div>
     </main>
   );
+}
+
+function confidenceTextClass(c: number) {
+  if (c < 0.40) return "text-red-600 dark:text-red-400";
+  if (c < 0.70) return "text-amber-600 dark:text-amber-400";
+  return "text-green-600 dark:text-green-400";
+}
+
+function confidenceBarClass(c: number) {
+  if (c < 0.40) return "bg-red-500";
+  if (c < 0.70) return "bg-amber-500";
+  return "bg-green-500";
 }
 
 function averageBuf(

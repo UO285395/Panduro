@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
-import { poseFromKeyframe, type FingerPose } from "@/lib/avatar/pose";
+import { poseFromKeyframe, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
 import { applyPoseToVrm } from "@/lib/avatar/vrmMapper";
 import {
@@ -172,7 +172,7 @@ type FingerHandle = {
 
 type RigHandle = {
   group: import("three").Group;
-  apply: (pose: ReturnType<typeof poseFromKeyframe>) => void;
+  apply: (pose: Pose) => void;
 };
 
 function buildProceduralRig(THREE: typeof import("three")): RigHandle {
@@ -232,16 +232,28 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   shoulder.add(elbow);
   elbow.add(new THREE.Mesh(new THREE.SphereGeometry(0.028, 18, 14), matSkin));
 
+  // Grupo de pronación/supinación del antebrazo (rota en eje Y local).
+  const foreArmGroup = new THREE.Group();
+  elbow.add(foreArmGroup);
+
   const foreArm = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.025, BONE_LENGTHS.foreArm - 0.06, 8, 18),
     matSkin,
   );
   foreArm.position.y = -BONE_LENGTHS.foreArm / 2;
-  elbow.add(foreArm);
+  foreArmGroup.add(foreArm);
 
   const wrist = new THREE.Group();
   wrist.position.y = -BONE_LENGTHS.foreArm;
-  elbow.add(wrist);
+  foreArmGroup.add(wrist);
+
+  // Contact shadow — disco translúcido detrás de la palma para profundidad visual.
+  const shadowDisc = new THREE.Mesh(
+    new THREE.CircleGeometry(0.068, 24),
+    new THREE.MeshBasicMaterial({ color: 0x7a4c2b, transparent: true, opacity: 0.14, depthWrite: false }),
+  );
+  shadowDisc.position.set(0, -(BONE_LENGTHS.foreArm * 0.55), -0.016);
+  wrist.add(shadowDisc);
 
   // ── Palma elipsoidal ──────────────────────────────────────────────────────
   const palm = new THREE.Group();
@@ -281,12 +293,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const radii: [number, number, number] = [0.0158, 0.0132, 0.0108];
   const spacing = PALM_WIDTH / 4;
   const fingers: FingerHandle[] = [];
+  // anchors[0]=thumbBase, anchors[1..4]=finger anchors (para abducción lateral)
+  const anchors: import("three").Group[] = [];
 
   // Pulgar — nace en el lateral radial de la palma.
   const thumbBase = new THREE.Group();
   thumbBase.position.set(PALM_WIDTH * 0.46, PALM_HEIGHT * 0.05, PALM_DEPTH * 0.10);
   thumbBase.rotation.set(-0.25, -Math.PI / 2.4, -THUMB_ABDUCTION);
   palm.add(thumbBase);
+  anchors.push(thumbBase);
 
   const thumb = buildFinger(THREE, matSkin, matNail, "thumb",
     [BONE_LENGTHS.thumb1, BONE_LENGTHS.thumb2, BONE_LENGTHS.thumb3], radii);
@@ -309,6 +324,7 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     const anchor = new THREE.Group();
     anchor.position.set(spec.x, -PALM_HEIGHT / 2, PALM_DEPTH * 0.04);
     palm.add(anchor);
+    anchors.push(anchor);
 
     // Nudillo MCP (articulación metacarpofalángica).
     anchor.add(new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.2, 14, 12), matSkin));
@@ -318,10 +334,17 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     fingers.push(f);
   }
 
-  function apply(pose: ReturnType<typeof poseFromKeyframe>) {
+  function apply(pose: Pose) {
     shoulder.rotation.set(pose.shoulder[0], pose.shoulder[1], pose.shoulder[2]);
     elbow.rotation.set(-pose.elbow, 0, 0);
+    foreArmGroup.rotation.y = pose.forearmRoll;
     wrist.rotation.set(pose.wrist[0], pose.wrist[1], pose.wrist[2]);
+    // Thumb: mantiene rotación x/y base, solo varía z (abducción)
+    thumbBase.rotation.z = -THUMB_ABDUCTION + pose.abduction[0];
+    // 4 dedos largos: abducción lateral en z del anchor
+    for (let i = 1; i < 5; i++) {
+      anchors[i]!.rotation.z = pose.abduction[i];
+    }
     for (let i = 0; i < 5; i++) {
       applyFingerFlex(fingers[i]!, pose.fingers[i]);
     }
@@ -330,7 +353,7 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   return { group, apply };
 }
 
-function applyFingerFlex(finger: FingerHandle, flex: FingerPose) {
+function applyFingerFlex(finger: FingerHandle, flex: FingerPose): void {
   finger.joints[0].rotation.x = -flex.proximal;
   finger.joints[1].rotation.x = -flex.middle;
   finger.joints[2].rotation.x = -flex.distal;

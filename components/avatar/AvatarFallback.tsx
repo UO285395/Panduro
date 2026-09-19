@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
+import { getFingerFlex } from "@/lib/avatar/pose";
 
 /**
  * Fallback estilizado en SVG. Representa una mano como cinco círculos
@@ -76,7 +77,8 @@ export function AvatarFallback({
       <circle cx={cx} cy={cy} r={size * 0.12} fill="url(#palm)" />
 
       {/* dedos */}
-      {pose.fingers.map((flex, i) => {
+      {pose.fingers.map((fv, i) => {
+        const flex = getFingerFlex(fv);
         const angle = (-Math.PI / 3) + (i * Math.PI / 6);
         const len = size * 0.18 * (1 - 0.5 * flex);
         const fx = cx + Math.cos(angle) * len;

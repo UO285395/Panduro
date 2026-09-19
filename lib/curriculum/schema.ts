@@ -3,6 +3,14 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 // Avatar clip (keyframes ligeros interpretados por AvatarPlayer)
 // ---------------------------------------------------------------------------
+
+// Un dedo puede ser un número simple (flexión 0..1) o un objeto con abducción.
+const FingerValueSchema = z.union([
+  z.number(),
+  z.object({ flex: z.number(), abduction: z.number().optional() }),
+]);
+export type FingerValue = z.infer<typeof FingerValueSchema>;
+
 const AvatarKeyframeSchema = z.object({
   t: z.number().min(0), // ms desde el inicio
   hand: z.object({
@@ -10,9 +18,16 @@ const AvatarKeyframeSchema = z.object({
     y: z.number(),
     z: z.number(),
     rot: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
+    forearmRoll: z.number().optional(), // supinación/pronación del antebrazo (rad)
   }),
   fingers: z
-    .tuple([z.number(), z.number(), z.number(), z.number(), z.number()])
+    .tuple([
+      FingerValueSchema,
+      FingerValueSchema,
+      FingerValueSchema,
+      FingerValueSchema,
+      FingerValueSchema,
+    ])
     .default([0, 0, 0, 0, 0]),
 });
 export type AvatarKeyframe = z.infer<typeof AvatarKeyframeSchema>;

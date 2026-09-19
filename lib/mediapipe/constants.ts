@@ -1,14 +1,23 @@
 /**
- * URLs y constantes del pipeline. En Hito 6 pasaremos a alojar el modelo
- * localmente en /public/models/ para funcionar offline.
+ * URLs y constantes del pipeline.
+ * El modelo se sirve localmente desde /public/models/ cuando está disponible,
+ * con fallback al CDN de Google para la primera carga o si el archivo local falta.
  */
 
 export const MEDIAPIPE_TASKS_VISION_VERSION = "0.10.14";
 
 export const WASM_BASE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
 
-export const HAND_LANDMARKER_MODEL_URL =
+const REMOTE_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+
+const LOCAL_MODEL_PATH = "/models/hand_landmarker.task";
+
+// Servir el modelo local cuando el navegador está offline; de lo contrario CDN.
+export const HAND_LANDMARKER_MODEL_URL =
+  typeof window !== "undefined" && !navigator.onLine
+    ? LOCAL_MODEL_PATH
+    : REMOTE_MODEL_URL;
 
 /**
  * Conexiones entre landmarks para pintar el esqueleto de la mano.

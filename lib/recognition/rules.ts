@@ -91,7 +91,128 @@ const iRule: Rule = (lm) => {
   return null;
 };
 
-const RULES: Rule[] = [thumbOrientationRule, yRule, iRule];
+// ---------------------------------------------------------------------------
+// Nuevas reglas para pares ambiguos del abecedario LSE
+// ---------------------------------------------------------------------------
+
+const INDEX_PIP = 6;
+const MIDDLE_PIP = 10;
+const RING_MCP = 13;
+const RING_PIP = 14;
+const PINKY_PIP = 18;
+
+function fingerCurlY(lm: NormalizedLandmark[], tipIdx: number, pipIdx: number): number {
+  // Curl estimado: distancia vertical tip–pip (positivo = más flexionado)
+  return lm[pipIdx]!.y - lm[tipIdx]!.y;
+}
+
+function thumbIndexDistance(lm: NormalizedLandmark[]): number {
+  const tip = lm[THUMB_TIP]!;
+  const idx = lm[INDEX_TIP]!;
+  return Math.hypot(tip.x - idx.x, tip.y - idx.y);
+}
+
+/** Regla C vs O: C tiene espacio entre pulgar e índice; O los une. */
+const cRule: Rule = (lm) => {
+  const allFingersPartlyBent =
+    !isFingerExtended(lm, INDEX_TIP, INDEX_MCP) &&
+    !isFingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP) &&
+    !isFingerExtended(lm, RING_TIP, RING_MCP) &&
+    !isFingerExtended(lm, PINKY_TIP, PINKY_MCP);
+  if (!allFingersPartlyBent) return null;
+  const gap = thumbIndexDistance(lm);
+  if (gap > 0.14) return "C";
+  if (gap < 0.06) return "O";
+  return null;
+};
+
+/** Regla D: índice extendido, otros cerrados, pulgar toca el lado del índice. */
+const dRule: Rule = (lm) => {
+  const indexExt = isFingerExtended(lm, INDEX_TIP, INDEX_MCP);
+  const middleExt = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP);
+  const ringExt = isFingerExtended(lm, RING_TIP, RING_MCP);
+  const pinkyExt = isFingerExtended(lm, PINKY_TIP, PINKY_MCP);
+  if (!indexExt || middleExt || ringExt || pinkyExt) return null;
+  const thumbX = lm[THUMB_TIP]!.x;
+  const indexX = lm[INDEX_MCP]!.x;
+  // Pulgar cerca del lateral del índice (en X)
+  if (Math.abs(thumbX - indexX) < 0.08) return "D";
+  return null;
+};
+
+/** Regla E: todos los dedos curvados juntos hacia la palma. */
+const eRule: Rule = (lm) => {
+  const iBent = fingerCurlY(lm, INDEX_TIP, INDEX_PIP) < -0.05;
+  const mBent = fingerCurlY(lm, MIDDLE_TIP, MIDDLE_PIP) < -0.05;
+  const rBent = fingerCurlY(lm, RING_TIP, RING_PIP) < -0.05;
+  const pBent = fingerCurlY(lm, PINKY_TIP, PINKY_PIP) < -0.05;
+  const thumbLow = lm[THUMB_TIP]!.y > lm[INDEX_MCP]!.y;
+  if (iBent && mBent && rBent && pBent && thumbLow) return "E";
+  return null;
+};
+
+/** Regla F: pulgar toca el índice formando una O pequeña, otros 3 extendidos. */
+const fRule: Rule = (lm) => {
+  const middleExt = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP);
+  const ringExt = isFingerExtended(lm, RING_TIP, RING_MCP);
+  const pinkyExt = isFingerExtended(lm, PINKY_TIP, PINKY_MCP);
+  if (!middleExt || !ringExt || !pinkyExt) return null;
+  if (thumbIndexDistance(lm) < 0.07) return "F";
+  return null;
+};
+
+/** Regla W: índice+medio+anular extendidos, meñique y pulgar cerrados. */
+const wRule: Rule = (lm) => {
+  const indexExt = isFingerExtended(lm, INDEX_TIP, INDEX_MCP);
+  const middleExt = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP);
+  const ringExt = isFingerExtended(lm, RING_TIP, RING_MCP);
+  const pinkyExt = isFingerExtended(lm, PINKY_TIP, PINKY_MCP);
+  const thumbExt = Math.abs(lm[THUMB_TIP]!.y - lm[0]!.y) > 0.3;
+  if (indexExt && middleExt && ringExt && !pinkyExt && !thumbExt) return "W";
+  return null;
+};
+
+/** Regla X: índice en gancho (curvado pero no extendido), resto cerrados. */
+const xRule: Rule = (lm) => {
+  const indexExt = isFingerExtended(lm, INDEX_TIP, INDEX_MCP);
+  const middleExt = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP);
+  const ringExt = isFingerExtended(lm, RING_TIP, RING_MCP);
+  const pinkyExt = isFingerExtended(lm, PINKY_TIP, PINKY_MCP);
+  if (middleExt || ringExt || pinkyExt) return null;
+  // Índice curvado: pip más alto que tip (en imagen Y crece abajo)
+  const indexHook = !indexExt && lm[INDEX_TIP]!.y > lm[INDEX_PIP]!.y - 0.02;
+  if (indexHook) return "X";
+  return null;
+};
+
+/** Regla N: índice+medio cerrados sobre el pulgar, resto extendidos. */
+const nRule: Rule = (lm) => {
+  const indexExt = isFingerExtended(lm, INDEX_TIP, INDEX_MCP);
+  const middleExt = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP);
+  const ringExt = isFingerExtended(lm, RING_TIP, RING_MCP);
+  const pinkyExt = isFingerExtended(lm, PINKY_TIP, PINKY_MCP);
+  if (indexExt || middleExt || !ringExt || !pinkyExt) return null;
+  // Pulgar entre índice y medio (por encima de ellos)
+  const thumbY = lm[THUMB_TIP]!.y;
+  const indexPipY = lm[INDEX_PIP]!.y;
+  if (thumbY > indexPipY) return "N";
+  return null;
+};
+
+/** Regla M: índice+medio+anular cerrados sobre el pulgar. */
+const mRule: Rule = (lm) => {
+  const indexExt = isFingerExtended(lm, INDEX_TIP, INDEX_MCP);
+  const middleExt = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP);
+  const ringExt = isFingerExtended(lm, RING_TIP, RING_MCP);
+  const pinkyExt = isFingerExtended(lm, PINKY_TIP, PINKY_MCP);
+  if (indexExt || middleExt || ringExt || !pinkyExt) return null;
+  const thumbY = lm[THUMB_TIP]!.y;
+  const middlePipY = lm[MIDDLE_PIP]!.y;
+  if (thumbY > middlePipY) return "M";
+  return null;
+};
+
+const RULES: Rule[] = [thumbOrientationRule, yRule, iRule, cRule, dRule, eRule, fRule, wRule, xRule, nRule, mRule];
 
 export function pureRule(lm: NormalizedLandmark[]): string | null {
   for (const r of RULES) {

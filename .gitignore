@@ -38,6 +38,9 @@ public/worker-*.js
 # Avatares VRM (binarios grandes, licencia de terceros — ver README)
 public/avatars/*.vrm
 
+# Modelos MediaPipe (binarios grandes — descargar con scripts/download-mediapipe.sh)
+public/models/*.task
+
 # misc
 .DS_Store
 *.pem

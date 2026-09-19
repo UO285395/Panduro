@@ -26,7 +26,8 @@
                 0,
                 0.35,
                 0
-              ]
+              ],
+              "forearmRoll": 0.0
             },
             "fingers": [
               0,
@@ -46,7 +47,8 @@
                 0,
                 -0.2,
                 0
-              ]
+              ],
+              "forearmRoll": 0.3
             },
             "fingers": [
               0,
@@ -66,7 +68,8 @@
                 0,
                 0.15,
                 0
-              ]
+              ],
+              "forearmRoll": 0.0
             },
             "fingers": [
               0,
@@ -103,7 +106,8 @@
                 0,
                 0.4,
                 0
-              ]
+              ],
+              "forearmRoll": 0.0
             },
             "fingers": [
               0,
@@ -123,7 +127,8 @@
                 0.1,
                 0.05,
                 0.3
-              ]
+              ],
+              "forearmRoll": 0.35
             },
             "fingers": [
               0,
@@ -143,7 +148,8 @@
                 0,
                 -0.3,
                 0
-              ]
+              ],
+              "forearmRoll": 0.0
             },
             "fingers": [
               0,
@@ -163,7 +169,8 @@
                 0,
                 0.1,
                 0
-              ]
+              ],
+              "forearmRoll": 0.35
             },
             "fingers": [
               0,
@@ -1440,7 +1447,7 @@
       ],
       "avatarClip": {
         "handedness": "one",
-        "duration": 600,
+        "duration": 800,
         "keyframes": [
           {
             "t": 0,
@@ -1455,18 +1462,33 @@
               ]
             },
             "fingers": [
-              0,
-              0,
-              0,
-              1,
-              1
+              {
+                "flex": 0,
+                "abduction": -0.08
+              },
+              {
+                "flex": 0,
+                "abduction": 0.1
+              },
+              {
+                "flex": 0,
+                "abduction": 0.0
+              },
+              {
+                "flex": 1,
+                "abduction": 0
+              },
+              {
+                "flex": 1,
+                "abduction": 0
+              }
             ]
           },
           {
-            "t": 600,
+            "t": 400,
             "hand": {
               "x": 0,
-              "y": 0.28,
+              "y": 0.3,
               "z": 0,
               "rot": [
                 0,
@@ -1475,11 +1497,61 @@
               ]
             },
             "fingers": [
-              0,
-              0,
-              0,
-              1,
-              1
+              {
+                "flex": 0,
+                "abduction": -0.08
+              },
+              {
+                "flex": 0,
+                "abduction": 0.1
+              },
+              {
+                "flex": 0,
+                "abduction": 0.0
+              },
+              {
+                "flex": 1,
+                "abduction": 0
+              },
+              {
+                "flex": 1,
+                "abduction": 0
+              }
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              {
+                "flex": 0,
+                "abduction": -0.08
+              },
+              {
+                "flex": 0,
+                "abduction": 0.1
+              },
+              {
+                "flex": 0,
+                "abduction": 0.0
+              },
+              {
+                "flex": 1,
+                "abduction": 0
+              },
+              {
+                "flex": 1,
+                "abduction": 0
+              }
             ]
           }
         ]
@@ -1497,7 +1569,7 @@
       ],
       "avatarClip": {
         "handedness": "one",
-        "duration": 600,
+        "duration": 800,
         "keyframes": [
           {
             "t": 0,
@@ -1512,18 +1584,33 @@
               ]
             },
             "fingers": [
-              1,
-              0,
-              0,
-              0,
-              0
+              {
+                "flex": 1,
+                "abduction": 0
+              },
+              {
+                "flex": 0,
+                "abduction": 0.1
+              },
+              {
+                "flex": 0,
+                "abduction": 0.03
+              },
+              {
+                "flex": 0,
+                "abduction": -0.03
+              },
+              {
+                "flex": 0,
+                "abduction": -0.1
+              }
             ]
           },
           {
-            "t": 600,
+            "t": 400,
             "hand": {
               "x": 0,
-              "y": 0.28,
+              "y": 0.3,
               "z": 0,
               "rot": [
                 0,
@@ -1532,11 +1619,61 @@
               ]
             },
             "fingers": [
-              1,
-              0,
-              0,
-              0,
-              0
+              {
+                "flex": 1,
+                "abduction": 0
+              },
+              {
+                "flex": 0,
+                "abduction": 0.1
+              },
+              {
+                "flex": 0,
+                "abduction": 0.03
+              },
+              {
+                "flex": 0,
+                "abduction": -0.03
+              },
+              {
+                "flex": 0,
+                "abduction": -0.1
+              }
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              {
+                "flex": 1,
+                "abduction": 0
+              },
+              {
+                "flex": 0,
+                "abduction": 0.1
+              },
+              {
+                "flex": 0,
+                "abduction": 0.03
+              },
+              {
+                "flex": 0,
+                "abduction": -0.03
+              },
+              {
+                "flex": 0,
+                "abduction": -0.1
+              }
             ]
           }
         ]
@@ -1554,7 +1691,7 @@
       ],
       "avatarClip": {
         "handedness": "one",
-        "duration": 600,
+        "duration": 800,
         "keyframes": [
           {
             "t": 0,
@@ -1569,18 +1706,33 @@
               ]
             },
             "fingers": [
-              0,
-              0,
-              0,
-              0,
-              0
+              {
+                "flex": 0,
+                "abduction": -0.18
+              },
+              {
+                "flex": 0,
+                "abduction": 0.12
+              },
+              {
+                "flex": 0,
+                "abduction": 0.04
+              },
+              {
+                "flex": 0,
+                "abduction": -0.04
+              },
+              {
+                "flex": 0,
+                "abduction": -0.12
+              }
             ]
           },
           {
-            "t": 600,
+            "t": 400,
             "hand": {
               "x": 0,
-              "y": 0.28,
+              "y": 0.3,
               "z": 0,
               "rot": [
                 0,
@@ -1589,11 +1741,61 @@
               ]
             },
             "fingers": [
-              0,
-              0,
-              0,
-              0,
-              0
+              {
+                "flex": 0,
+                "abduction": -0.18
+              },
+              {
+                "flex": 0,
+                "abduction": 0.12
+              },
+              {
+                "flex": 0,
+                "abduction": 0.04
+              },
+              {
+                "flex": 0,
+                "abduction": -0.04
+              },
+              {
+                "flex": 0,
+                "abduction": -0.12
+              }
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0,
+              "y": 0.25,
+              "z": 0,
+              "rot": [
+                0,
+                0,
+                0
+              ]
+            },
+            "fingers": [
+              {
+                "flex": 0,
+                "abduction": -0.18
+              },
+              {
+                "flex": 0,
+                "abduction": 0.12
+              },
+              {
+                "flex": 0,
+                "abduction": 0.04
+              },
+              {
+                "flex": 0,
+                "abduction": -0.04
+              },
+              {
+                "flex": 0,
+                "abduction": -0.12
+              }
             ]
           }
         ]

@@ -13,6 +13,9 @@ export type Prediction = {
   distance: number;
 };
 
+/** Confianza mínima para reportar una predicción; por debajo se devuelve null. */
+export const REJECT_THRESHOLD = 0.30;
+
 /**
  * Clasificador k-NN con voto ponderado por 1/(d+ε).
  *
@@ -47,7 +50,13 @@ export class KnnClassifier {
    * Devuelve null si no hay plantillas cargadas.
    */
   predict(features: number[]): Prediction | null {
-    if (this.templates.length === 0) return null;
+    const top = this.predictTopN(features, 1);
+    return top[0] ?? null;
+  }
+
+  /** Devuelve los N mejores candidatos (por confianza decreciente), filtrados por REJECT_THRESHOLD. */
+  predictTopN(features: number[], n = 3): Prediction[] {
+    if (this.templates.length === 0) return [];
     const dists: { label: string; d: number }[] = new Array(this.templates.length);
     for (let i = 0; i < this.templates.length; i++) {
       const t = this.templates[i]!;
@@ -58,7 +67,6 @@ export class KnnClassifier {
     const kEff = Math.min(this.k, dists.length);
     const top = dists.slice(0, kEff);
 
-    // Voto ponderado 1/(d+eps)
     const eps = 1e-6;
     const votes = new Map<string, number>();
     let total = 0;
@@ -68,23 +76,16 @@ export class KnnClassifier {
       total += w;
     }
 
-    let bestLabel = top[0]!.label;
-    let bestScore = -Infinity;
+    const results: Prediction[] = [];
     for (const [label, score] of votes) {
-      if (score > bestScore) {
-        bestScore = score;
-        bestLabel = label;
-      }
+      const confidence = total > 0 ? score / total : 0;
+      if (confidence < REJECT_THRESHOLD) continue;
+      const winners = top.filter((t) => t.label === label);
+      const meds = medianOfNumbers(winners.map((w) => w.d));
+      results.push({ label, confidence, distance: meds });
     }
-
-    const winners = top.filter((t) => t.label === bestLabel);
-    const meds = medianOfNumbers(winners.map((w) => w.d));
-
-    return {
-      label: bestLabel,
-      confidence: total > 0 ? bestScore / total : 0,
-      distance: meds,
-    };
+    results.sort((a, b) => b.confidence - a.confidence);
+    return results.slice(0, n);
   }
 }
 

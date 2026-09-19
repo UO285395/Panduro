@@ -5,6 +5,7 @@ import { THING_CLIPS } from "@/lib/mascot/clips";
 import { sampleClip } from "@/lib/avatar/interpolate";
 import { distributeFlex } from "@/lib/avatar/pose";
 import type { AvatarKeyframe } from "@/lib/curriculum/schema";
+import { getFingerFlex } from "@/lib/avatar/pose";
 import {
   BONE_LENGTHS,
   KNUCKLE_RADIUS,
@@ -212,7 +213,7 @@ function buildThingRig(THREE: typeof import("three")): ThingRig {
     group.rotation.set(kf.hand.rot[0], kf.hand.rot[1], kf.hand.rot[2]);
     for (let i = 0; i < 5; i++) {
       const f = fingers[i]!;
-      const fp = distributeFlex(kf.fingers[i]);
+      const fp = distributeFlex(getFingerFlex(kf.fingers[i]));
       // Flexión positiva alrededor de X curva los dedos hacia el espectador (+Z).
       f.joints[0].rotation.x = fp.proximal;
       f.joints[1].rotation.x = fp.middle;

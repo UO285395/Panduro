@@ -1,4 +1,4 @@
-import type { AvatarKeyframe } from "@/lib/curriculum/schema";
+import type { AvatarKeyframe, FingerValue } from "@/lib/curriculum/schema";
 import { BONE_LENGTHS, RIGHT_SHOULDER_X, SHOULDER_HEIGHT } from "./rig";
 
 /** Rotación acumulada por falange (rad, alrededor del eje X local del hueso). */
@@ -15,9 +15,23 @@ export type Pose = {
   elbow: number;
   /** Rotación de la mano (heredada del clip). */
   wrist: [number, number, number];
+  /** Supinación/pronación del antebrazo (rad, eje Y del hueso). */
+  forearmRoll: number;
   /** Flexión desglosada por dedo (MCP, PIP, DIP en rad). */
   fingers: [FingerPose, FingerPose, FingerPose, FingerPose, FingerPose];
+  /** Abducción lateral de cada dedo (rad, eje Z del anclaje). */
+  abduction: [number, number, number, number, number];
 };
+
+/** Extrae el valor de flexión de un FingerValue (número o {flex, abduction?}). */
+export function getFingerFlex(v: FingerValue): number {
+  return typeof v === "number" ? v : v.flex;
+}
+
+/** Extrae la abducción de un FingerValue (0 si es número simple). */
+export function getFingerAbduction(v: FingerValue): number {
+  return typeof v === "number" ? 0 : (v.abduction ?? 0);
+}
 
 const ARM_LENGTH = BONE_LENGTHS.upperArm + BONE_LENGTHS.foreArm;
 
@@ -78,12 +92,20 @@ export function poseFromKeyframe(kf: AvatarKeyframe): Pose {
     shoulder: [shoulderPitch, shoulderYaw, 0],
     elbow,
     wrist: [kf.hand.rot[0], kf.hand.rot[1], kf.hand.rot[2]],
+    forearmRoll: kf.hand.forearmRoll ?? 0,
     fingers: [
-      distributeFlex(kf.fingers[0]),
-      distributeFlex(kf.fingers[1]),
-      distributeFlex(kf.fingers[2]),
-      distributeFlex(kf.fingers[3]),
-      distributeFlex(kf.fingers[4]),
+      distributeFlex(getFingerFlex(kf.fingers[0])),
+      distributeFlex(getFingerFlex(kf.fingers[1])),
+      distributeFlex(getFingerFlex(kf.fingers[2])),
+      distributeFlex(getFingerFlex(kf.fingers[3])),
+      distributeFlex(getFingerFlex(kf.fingers[4])),
+    ],
+    abduction: [
+      getFingerAbduction(kf.fingers[0]),
+      getFingerAbduction(kf.fingers[1]),
+      getFingerAbduction(kf.fingers[2]),
+      getFingerAbduction(kf.fingers[3]),
+      getFingerAbduction(kf.fingers[4]),
     ],
   };
 }

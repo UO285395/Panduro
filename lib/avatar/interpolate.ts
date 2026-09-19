@@ -1,4 +1,4 @@
-import type { AvatarClip, AvatarKeyframe } from "@/lib/curriculum/schema";
+import type { AvatarClip, AvatarKeyframe, FingerValue } from "@/lib/curriculum/schema";
 
 /**
  * Interpola linealmente entre keyframes para obtener la pose en el instante `tMs`.
@@ -34,13 +34,14 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
             lerp(a.hand.rot[1], b.hand.rot[1], u),
             lerp(a.hand.rot[2], b.hand.rot[2], u),
           ],
+          forearmRoll: lerpMaybe(a.hand.forearmRoll, b.hand.forearmRoll, u),
         },
         fingers: [
-          lerp(a.fingers[0], b.fingers[0], u),
-          lerp(a.fingers[1], b.fingers[1], u),
-          lerp(a.fingers[2], b.fingers[2], u),
-          lerp(a.fingers[3], b.fingers[3], u),
-          lerp(a.fingers[4], b.fingers[4], u),
+          lerpFinger(a.fingers[0], b.fingers[0], u),
+          lerpFinger(a.fingers[1], b.fingers[1], u),
+          lerpFinger(a.fingers[2], b.fingers[2], u),
+          lerpFinger(a.fingers[3], b.fingers[3], u),
+          lerpFinger(a.fingers[4], b.fingers[4], u),
         ],
       };
     }
@@ -50,6 +51,22 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
 
 function lerp(a: number, b: number, u: number): number {
   return a + (b - a) * u;
+}
+
+function lerpMaybe(a: number | undefined, b: number | undefined, u: number): number | undefined {
+  if (a === undefined && b === undefined) return undefined;
+  return lerp(a ?? 0, b ?? 0, u) || undefined;
+}
+
+function lerpFinger(a: FingerValue, b: FingerValue, u: number): FingerValue {
+  const af = typeof a === "number" ? a : a.flex;
+  const bf = typeof b === "number" ? b : b.flex;
+  const aa = typeof a === "number" ? 0 : (a.abduction ?? 0);
+  const ba = typeof b === "number" ? 0 : (b.abduction ?? 0);
+  const flex = lerp(af, bf, u);
+  const abduction = lerp(aa, ba, u);
+  if (aa === 0 && ba === 0) return flex;
+  return { flex, abduction };
 }
 
 /**

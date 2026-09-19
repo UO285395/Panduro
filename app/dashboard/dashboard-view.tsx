@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import type { Level } from "@/lib/curriculum/schema";
 import type { UserSnapshot } from "@/lib/progress/queries";
 import { HeartsBar } from "@/components/gamification/HeartsBar";
@@ -59,9 +60,9 @@ export function DashboardView({
         <div className="flex items-center gap-4">
           <div className="text-sm">
             <div className="font-semibold text-brand-700">
-              {snapshot.xpTotal} XP
+              <XPCounter value={snapshot.xpTotal} /> XP
             </div>
-            <div className="text-slate-500">🔥 {snapshot.streakDays} d</div>
+            <StreakBadge days={snapshot.streakDays} />
           </div>
           <HeartsBar hearts={snapshot.hearts} />
           {onSignOut && (
@@ -278,6 +279,49 @@ function ReviewCard({
         {has ? "Repasar" : "Sin pendientes"}
       </span>
     </Link>
+  );
+}
+
+function XPCounter({ value }: { value: number }) {
+  const [displayed, setDisplayed] = useState(value);
+  const prevRef = useRef(value);
+
+  useEffect(() => {
+    const from = prevRef.current;
+    const to = value;
+    if (from === to) return;
+    prevRef.current = to;
+    const start = performance.now();
+    const duration = 700;
+    let rafId: number;
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = t * t * (3 - 2 * t);
+      setDisplayed(Math.round(from + (to - from) * ease));
+      if (t < 1) rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [value]);
+
+  return <span className="tabular-nums">{displayed}</span>;
+}
+
+function StreakBadge({ days }: { days: number }) {
+  const active = days > 0;
+  return (
+    <div className="flex items-center gap-1 text-slate-500">
+      <span
+        className={active ? "animate-bounce inline-block" : "inline-block opacity-50"}
+        style={{ animationDuration: "1.2s" }}
+      >
+        🔥
+      </span>
+      <span className={active ? "font-semibold text-orange-600 dark:text-orange-400" : ""}>
+        {days}
+      </span>
+      <span className="text-xs">días</span>
+    </div>
   );
 }
 

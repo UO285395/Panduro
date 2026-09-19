@@ -436,6 +436,717 @@
           ]
         }
       ]
+    },
+    {
+      "id": "A2.U4",
+      "title": "Lugares y transportes",
+      "summary": "Vocabulario de lugares de la ciudad y medios de transporte en LSE",
+      "lessons": [
+        {
+          "id": "A2.U4.L1",
+          "title": "Lugares de la ciudad",
+          "goal": "Nombrar los lugares más habituales de una ciudad",
+          "signs": [
+            "TIENDA",
+            "HOSPITAL",
+            "PARQUE",
+            "TRABAJO",
+            "BANCO",
+            "FARMACIA",
+            "RESTAURANTE"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U4.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «tienda»?",
+              "signId": "TIENDA",
+              "options": [
+                "tienda",
+                "banco",
+                "parque",
+                "hospital"
+              ],
+              "answer": "tienda"
+            },
+            {
+              "id": "A2.U4.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «hospital»?",
+              "signId": "HOSPITAL",
+              "options": [
+                "hospital",
+                "farmacia",
+                "restaurante",
+                "trabajo"
+              ],
+              "answer": "hospital"
+            },
+            {
+              "id": "A2.U4.L1.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «restaurante»?",
+              "signId": "RESTAURANTE",
+              "options": [
+                "restaurante",
+                "tienda",
+                "parque",
+                "banco"
+              ],
+              "answer": "restaurante"
+            },
+            {
+              "id": "A2.U4.L1.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada lugar con su nombre",
+              "pairs": [
+                {
+                  "signId": "PARQUE",
+                  "translation": "parque"
+                },
+                {
+                  "signId": "BANCO",
+                  "translation": "banco"
+                },
+                {
+                  "signId": "FARMACIA",
+                  "translation": "farmacia"
+                },
+                {
+                  "signId": "TRABAJO",
+                  "translation": "trabajo"
+                }
+              ]
+            },
+            {
+              "id": "A2.U4.L1.E5",
+              "type": "type_word",
+              "signId": "HOSPITAL",
+              "prompt": "¿Cómo se llama este lugar?",
+              "acceptable": [
+                "hospital"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "A2.U4.L2",
+          "title": "Medios de transporte",
+          "goal": "Expresar cómo te desplazas por la ciudad",
+          "signs": [
+            "AUTOBUS",
+            "METRO",
+            "TAXI",
+            "COCHE",
+            "BICICLETA",
+            "TREN",
+            "AVION"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U4.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «autobús»?",
+              "signId": "AUTOBUS",
+              "options": [
+                "autobús",
+                "metro",
+                "taxi",
+                "tren"
+              ],
+              "answer": "autobús"
+            },
+            {
+              "id": "A2.U4.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «avión»?",
+              "signId": "AVION",
+              "options": [
+                "avión",
+                "tren",
+                "coche",
+                "bicicleta"
+              ],
+              "answer": "avión"
+            },
+            {
+              "id": "A2.U4.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «bicicleta»?",
+              "signId": "BICICLETA",
+              "options": [
+                "bicicleta",
+                "metro",
+                "taxi",
+                "coche"
+              ],
+              "answer": "bicicleta"
+            },
+            {
+              "id": "A2.U4.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja el transporte con su nombre",
+              "pairs": [
+                {
+                  "signId": "METRO",
+                  "translation": "metro"
+                },
+                {
+                  "signId": "TAXI",
+                  "translation": "taxi"
+                },
+                {
+                  "signId": "COCHE",
+                  "translation": "coche"
+                },
+                {
+                  "signId": "TREN",
+                  "translation": "tren"
+                }
+              ]
+            },
+            {
+              "id": "A2.U4.L2.E5",
+              "type": "type_word",
+              "signId": "AVION",
+              "prompt": "¿Cómo se llama este medio de transporte?",
+              "acceptable": [
+                "avión",
+                "avion"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A2.U5",
+      "title": "El cuerpo y la salud",
+      "summary": "Partes del cuerpo y vocabulario básico de salud en LSE",
+      "lessons": [
+        {
+          "id": "A2.U5.L1",
+          "title": "Partes del cuerpo",
+          "goal": "Nombrar las partes principales del cuerpo",
+          "signs": [
+            "CABEZA",
+            "MANO_CUERPO",
+            "PIE",
+            "ESPALDA",
+            "OJO",
+            "OREJA",
+            "NARIZ"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U5.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «cabeza»?",
+              "signId": "CABEZA",
+              "options": [
+                "cabeza",
+                "mano",
+                "pie",
+                "espalda"
+              ],
+              "answer": "cabeza"
+            },
+            {
+              "id": "A2.U5.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «ojo»?",
+              "signId": "OJO",
+              "options": [
+                "ojo",
+                "oreja",
+                "nariz",
+                "pie"
+              ],
+              "answer": "ojo"
+            },
+            {
+              "id": "A2.U5.L1.E3",
+              "type": "match_pairs",
+              "prompt": "Empareja cada parte del cuerpo",
+              "pairs": [
+                {
+                  "signId": "OREJA",
+                  "translation": "oreja"
+                },
+                {
+                  "signId": "NARIZ",
+                  "translation": "nariz"
+                },
+                {
+                  "signId": "ESPALDA",
+                  "translation": "espalda"
+                },
+                {
+                  "signId": "MANO_CUERPO",
+                  "translation": "mano"
+                }
+              ]
+            },
+            {
+              "id": "A2.U5.L1.E4",
+              "type": "type_word",
+              "signId": "CABEZA",
+              "prompt": "¿Qué parte del cuerpo es esta?",
+              "acceptable": [
+                "cabeza"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "A2.U5.L2",
+          "title": "Salud y enfermedad",
+          "goal": "Comunicar cómo te encuentras y pedir ayuda médica",
+          "signs": [
+            "ENFERMO",
+            "MEDICO",
+            "DOLOR",
+            "FIEBRE",
+            "PASTILLA",
+            "MEJOR",
+            "PEOR"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U5.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «enfermo»?",
+              "signId": "ENFERMO",
+              "options": [
+                "enfermo",
+                "médico",
+                "dolor",
+                "mejor"
+              ],
+              "answer": "enfermo"
+            },
+            {
+              "id": "A2.U5.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «fiebre»?",
+              "signId": "FIEBRE",
+              "options": [
+                "fiebre",
+                "pastilla",
+                "dolor",
+                "peor"
+              ],
+              "answer": "fiebre"
+            },
+            {
+              "id": "A2.U5.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «mejor»?",
+              "signId": "MEJOR",
+              "options": [
+                "mejor",
+                "peor",
+                "enfermo",
+                "médico"
+              ],
+              "answer": "mejor"
+            },
+            {
+              "id": "A2.U5.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja el signo con su significado",
+              "pairs": [
+                {
+                  "signId": "MEDICO",
+                  "translation": "médico"
+                },
+                {
+                  "signId": "DOLOR",
+                  "translation": "dolor"
+                },
+                {
+                  "signId": "PASTILLA",
+                  "translation": "pastilla"
+                },
+                {
+                  "signId": "PEOR",
+                  "translation": "peor"
+                }
+              ]
+            },
+            {
+              "id": "A2.U5.L2.E5",
+              "type": "type_word",
+              "signId": "FIEBRE",
+              "prompt": "¿Qué enfermedad muestra este signo?",
+              "acceptable": [
+                "fiebre"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A2.U6",
+      "title": "Números avanzados",
+      "summary": "Del 11 al 100 y cantidades en LSE",
+      "lessons": [
+        {
+          "id": "A2.U6.L1",
+          "title": "Del 11 al 20",
+          "goal": "Contar y usar números del 11 al 20",
+          "signs": [
+            "NUM_11",
+            "NUM_12",
+            "NUM_13",
+            "NUM_14",
+            "NUM_15",
+            "NUM_16",
+            "NUM_17",
+            "NUM_18",
+            "NUM_19",
+            "NUM_20"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U6.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número representa este signo?",
+              "signId": "NUM_11",
+              "options": [
+                "11",
+                "12",
+                "21",
+                "1"
+              ],
+              "answer": "11"
+            },
+            {
+              "id": "A2.U6.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número representa este signo?",
+              "signId": "NUM_15",
+              "options": [
+                "15",
+                "5",
+                "50",
+                "16"
+              ],
+              "answer": "15"
+            },
+            {
+              "id": "A2.U6.L1.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número representa este signo?",
+              "signId": "NUM_20",
+              "options": [
+                "20",
+                "2",
+                "12",
+                "22"
+              ],
+              "answer": "20"
+            },
+            {
+              "id": "A2.U6.L1.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja el número con su signo",
+              "pairs": [
+                {
+                  "signId": "NUM_13",
+                  "translation": "13"
+                },
+                {
+                  "signId": "NUM_17",
+                  "translation": "17"
+                },
+                {
+                  "signId": "NUM_19",
+                  "translation": "19"
+                }
+              ]
+            },
+            {
+              "id": "A2.U6.L1.E5",
+              "type": "type_word",
+              "signId": "NUM_20",
+              "prompt": "¿Qué número es este?",
+              "acceptable": [
+                "20",
+                "veinte"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "A2.U6.L2",
+          "title": "Decenas y cantidades",
+          "goal": "Expresar cantidades aproximadas y decenas hasta 100",
+          "signs": [
+            "NUM_30",
+            "NUM_40",
+            "NUM_50",
+            "NUM_100",
+            "MUCHO",
+            "POCO",
+            "BASTANTE"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U6.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número representa este signo?",
+              "signId": "NUM_30",
+              "options": [
+                "30",
+                "3",
+                "13",
+                "33"
+              ],
+              "answer": "30"
+            },
+            {
+              "id": "A2.U6.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «mucho»?",
+              "signId": "MUCHO",
+              "options": [
+                "mucho",
+                "poco",
+                "bastante",
+                "nada"
+              ],
+              "answer": "mucho"
+            },
+            {
+              "id": "A2.U6.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué número representa este signo?",
+              "signId": "NUM_100",
+              "options": [
+                "100",
+                "10",
+                "50",
+                "1000"
+              ],
+              "answer": "100"
+            },
+            {
+              "id": "A2.U6.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cantidades y números",
+              "pairs": [
+                {
+                  "signId": "NUM_40",
+                  "translation": "40"
+                },
+                {
+                  "signId": "NUM_50",
+                  "translation": "50"
+                },
+                {
+                  "signId": "POCO",
+                  "translation": "poco"
+                },
+                {
+                  "signId": "BASTANTE",
+                  "translation": "bastante"
+                }
+              ]
+            },
+            {
+              "id": "A2.U6.L2.E5",
+              "type": "type_word",
+              "signId": "MUCHO",
+              "prompt": "¿Qué cantidad expresa este signo?",
+              "acceptable": [
+                "mucho",
+                "muchos",
+                "muchas"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A2.U7",
+      "title": "Objetos cotidianos",
+      "summary": "Objetos del hogar y de la vida diaria en LSE",
+      "lessons": [
+        {
+          "id": "A2.U7.L1",
+          "title": "En casa",
+          "goal": "Nombrar objetos y muebles del hogar",
+          "signs": [
+            "LIBRO",
+            "MESA",
+            "SILLA",
+            "CAMA",
+            "PUERTA",
+            "VENTANA",
+            "TELEFONO"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U7.L1.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «mesa»?",
+              "signId": "MESA",
+              "options": [
+                "mesa",
+                "silla",
+                "cama",
+                "puerta"
+              ],
+              "answer": "mesa"
+            },
+            {
+              "id": "A2.U7.L1.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «libro»?",
+              "signId": "LIBRO",
+              "options": [
+                "libro",
+                "ventana",
+                "teléfono",
+                "cama"
+              ],
+              "answer": "libro"
+            },
+            {
+              "id": "A2.U7.L1.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «teléfono»?",
+              "signId": "TELEFONO",
+              "options": [
+                "teléfono",
+                "puerta",
+                "ventana",
+                "silla"
+              ],
+              "answer": "teléfono"
+            },
+            {
+              "id": "A2.U7.L1.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja cada objeto con su nombre",
+              "pairs": [
+                {
+                  "signId": "SILLA",
+                  "translation": "silla"
+                },
+                {
+                  "signId": "CAMA",
+                  "translation": "cama"
+                },
+                {
+                  "signId": "PUERTA",
+                  "translation": "puerta"
+                },
+                {
+                  "signId": "VENTANA",
+                  "translation": "ventana"
+                }
+              ]
+            },
+            {
+              "id": "A2.U7.L1.E5",
+              "type": "type_word",
+              "signId": "LIBRO",
+              "prompt": "¿Qué objeto es este?",
+              "acceptable": [
+                "libro"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "A2.U7.L2",
+          "title": "Saliendo de casa",
+          "goal": "Nombrar objetos que llevamos encima al salir",
+          "signs": [
+            "ROPA",
+            "BOLSA",
+            "DINERO",
+            "LLAVE",
+            "ORDENADOR",
+            "MOVIL"
+          ],
+          "exercises": [
+            {
+              "id": "A2.U7.L2.E1",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «dinero»?",
+              "signId": "DINERO",
+              "options": [
+                "dinero",
+                "llave",
+                "ropa",
+                "bolsa"
+              ],
+              "answer": "dinero"
+            },
+            {
+              "id": "A2.U7.L2.E2",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «móvil»?",
+              "signId": "MOVIL",
+              "options": [
+                "móvil",
+                "ordenador",
+                "bolsa",
+                "ropa"
+              ],
+              "answer": "móvil"
+            },
+            {
+              "id": "A2.U7.L2.E3",
+              "type": "multiple_choice",
+              "prompt": "¿Qué signo significa «ordenador»?",
+              "signId": "ORDENADOR",
+              "options": [
+                "ordenador",
+                "móvil",
+                "llave",
+                "dinero"
+              ],
+              "answer": "ordenador"
+            },
+            {
+              "id": "A2.U7.L2.E4",
+              "type": "match_pairs",
+              "prompt": "Empareja objeto y nombre",
+              "pairs": [
+                {
+                  "signId": "ROPA",
+                  "translation": "ropa"
+                },
+                {
+                  "signId": "BOLSA",
+                  "translation": "bolsa"
+                },
+                {
+                  "signId": "LLAVE",
+                  "translation": "llave"
+                }
+              ]
+            },
+            {
+              "id": "A2.U7.L2.E5",
+              "type": "type_word",
+              "signId": "MOVIL",
+              "prompt": "¿Qué objeto es este?",
+              "acceptable": [
+                "móvil",
+                "movil",
+                "teléfono móvil"
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "signs": [
@@ -2435,6 +3146,4202 @@
                 0
               ],
               "forearmRoll": 0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TIENDA",
+      "gloss": "TIENDA",
+      "translation": "tienda",
+      "handedness": "one",
+      "tags": [
+        "lugar",
+        "comercio"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.25,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "HOSPITAL",
+      "gloss": "HOSPITAL",
+      "translation": "hospital",
+      "handedness": "one",
+      "tags": [
+        "lugar",
+        "salud"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0.2,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0.2,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PARQUE",
+      "gloss": "PARQUE",
+      "translation": "parque",
+      "handedness": "one",
+      "tags": [
+        "lugar",
+        "naturaleza"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.48000000000000004,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TRABAJO",
+      "gloss": "TRABAJO",
+      "translation": "trabajo",
+      "handedness": "one",
+      "tags": [
+        "lugar",
+        "profesion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.36,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "BANCO",
+      "gloss": "BANCO",
+      "translation": "banco",
+      "handedness": "one",
+      "tags": [
+        "lugar",
+        "economia"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.3
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.3
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FARMACIA",
+      "gloss": "FARMACIA",
+      "translation": "farmacia",
+      "handedness": "one",
+      "tags": [
+        "lugar",
+        "salud"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.45,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.45,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.1,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "RESTAURANTE",
+      "gloss": "RESTAURANTE",
+      "translation": "restaurante",
+      "handedness": "one",
+      "tags": [
+        "lugar",
+        "comida"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.5,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AUTOBUS",
+      "gloss": "AUTOBUS",
+      "translation": "autobús",
+      "handedness": "one",
+      "tags": [
+        "transporte"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.25,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.2,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "METRO",
+      "gloss": "METRO",
+      "translation": "metro",
+      "handedness": "one",
+      "tags": [
+        "transporte"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0.5,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0.5,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0.5,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TAXI",
+      "gloss": "TAXI",
+      "translation": "taxi",
+      "handedness": "one",
+      "tags": [
+        "transporte"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.63,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "COCHE",
+      "gloss": "COCHE",
+      "translation": "coche",
+      "handedness": "one",
+      "tags": [
+        "transporte"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.25,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                -0.3,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "BICICLETA",
+      "gloss": "BICICLETA",
+      "translation": "bicicleta",
+      "handedness": "one",
+      "tags": [
+        "transporte",
+        "deporte"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 1000,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 500,
+            "hand": {
+              "x": 0.25,
+              "y": 0.4,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 1000,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TREN",
+      "gloss": "TREN",
+      "translation": "tren",
+      "handedness": "one",
+      "tags": [
+        "transporte"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 900,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 450,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 900,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AVION",
+      "gloss": "AVION",
+      "translation": "avión",
+      "handedness": "one",
+      "tags": [
+        "transporte"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                -0.2,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.45,
+              "z": 0.0,
+              "rot": [
+                -0.2,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                -0.2,
+                0.2,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CABEZA",
+      "gloss": "CABEZA",
+      "translation": "cabeza",
+      "handedness": "one",
+      "tags": [
+        "cuerpo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.65,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.7000000000000001,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.65,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MANO_CUERPO",
+      "gloss": "MANO",
+      "translation": "mano",
+      "handedness": "one",
+      "tags": [
+        "cuerpo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.5
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.5
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PIE",
+      "gloss": "PIE",
+      "translation": "pie",
+      "handedness": "one",
+      "tags": [
+        "cuerpo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0.6,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 0.0,
+              "rot": [
+                0.6,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ESPALDA",
+      "gloss": "ESPALDA",
+      "translation": "espalda",
+      "handedness": "one",
+      "tags": [
+        "cuerpo"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": -0.2,
+              "y": 0.4,
+              "z": -0.1,
+              "rot": [
+                0,
+                -0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": -0.2,
+              "y": 0.4,
+              "z": -0.1,
+              "rot": [
+                0,
+                -0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "OJO",
+      "gloss": "OJO",
+      "translation": "ojo",
+      "handedness": "one",
+      "tags": [
+        "cuerpo",
+        "sentido"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.58,
+              "z": 0.05,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.58,
+              "z": 0.05,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "OREJA",
+      "gloss": "OREJA",
+      "translation": "oreja",
+      "handedness": "one",
+      "tags": [
+        "cuerpo",
+        "sentido"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.25,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.25,
+              "y": 0.6,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NARIZ",
+      "gloss": "NARIZ",
+      "translation": "nariz",
+      "handedness": "one",
+      "tags": [
+        "cuerpo",
+        "sentido"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.05,
+              "y": 0.56,
+              "z": 0.08,
+              "rot": [
+                0.2,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.05,
+              "y": 0.56,
+              "z": 0.08,
+              "rot": [
+                0.2,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ENFERMO",
+      "gloss": "ENFERMO",
+      "translation": "enfermo",
+      "handedness": "one",
+      "tags": [
+        "salud"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.62,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.58,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.62,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MEDICO",
+      "gloss": "MEDICO",
+      "translation": "médico",
+      "handedness": "one",
+      "tags": [
+        "salud",
+        "profesion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.43,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DOLOR",
+      "gloss": "DOLOR",
+      "translation": "dolor",
+      "handedness": "one",
+      "tags": [
+        "salud",
+        "emocion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.4,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.4,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.4,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FIEBRE",
+      "gloss": "FIEBRE",
+      "translation": "fiebre",
+      "handedness": "one",
+      "tags": [
+        "salud"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.62,
+              "z": 0.06,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.65,
+              "z": 0.06,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.62,
+              "z": 0.06,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PASTILLA",
+      "gloss": "PASTILLA",
+      "translation": "pastilla",
+      "handedness": "one",
+      "tags": [
+        "salud",
+        "medicina"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.5,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.46,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.5,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MEJOR",
+      "gloss": "MEJOR",
+      "translation": "mejor",
+      "handedness": "one",
+      "tags": [
+        "valoracion",
+        "comparacion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.46,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PEOR",
+      "gloss": "PEOR",
+      "translation": "peor",
+      "handedness": "one",
+      "tags": [
+        "valoracion",
+        "comparacion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                3.14
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.34,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                3.14
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0,
+                3.14
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_11",
+      "gloss": "ONCE",
+      "translation": "11",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_12",
+      "gloss": "DOCE",
+      "translation": "12",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_13",
+      "gloss": "TRECE",
+      "translation": "13",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_14",
+      "gloss": "CATORCE",
+      "translation": "14",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_15",
+      "gloss": "QUINCE",
+      "translation": "15",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.3
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.39999999999999997,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.3
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.3
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_16",
+      "gloss": "DIECISEIS",
+      "translation": "16",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_17",
+      "gloss": "DIECISIETE",
+      "translation": "17",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_18",
+      "gloss": "DIECIOCHO",
+      "translation": "18",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_19",
+      "gloss": "DIECINUEVE",
+      "translation": "19",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.38999999999999996,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_20",
+      "gloss": "VEINTE",
+      "translation": "20",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_30",
+      "gloss": "TREINTA",
+      "translation": "30",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_40",
+      "gloss": "CUARENTA",
+      "translation": "40",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.2
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_50",
+      "gloss": "CINCUENTA",
+      "translation": "50",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.5
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.5
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NUM_100",
+      "gloss": "CIEN",
+      "translation": "100",
+      "handedness": "one",
+      "tags": [
+        "numero"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.43,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MUCHO",
+      "gloss": "MUCHO",
+      "translation": "mucho",
+      "handedness": "one",
+      "tags": [
+        "cantidad"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.2,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "POCO",
+      "gloss": "POCO",
+      "translation": "poco",
+      "handedness": "one",
+      "tags": [
+        "cantidad"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.14,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "BASTANTE",
+      "gloss": "BASTANTE",
+      "translation": "bastante",
+      "handedness": "one",
+      "tags": [
+        "cantidad"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.17,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "LIBRO",
+      "gloss": "LIBRO",
+      "translation": "libro",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "educacion"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.5
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.5
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.1,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.5
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MESA",
+      "gloss": "MESA",
+      "translation": "mesa",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "mueble"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0.3,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0.3,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SILLA",
+      "gloss": "SILLA",
+      "translation": "silla",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "mueble"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0.05,
+              "rot": [
+                0.5,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0.05,
+              "rot": [
+                0.5,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CAMA",
+      "gloss": "CAMA",
+      "translation": "cama",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "mueble"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.55,
+              "z": 0.05,
+              "rot": [
+                0.3,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.55,
+              "z": 0.05,
+              "rot": [
+                0.3,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PUERTA",
+      "gloss": "PUERTA",
+      "translation": "puerta",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "casa"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.4,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "VENTANA",
+      "gloss": "VENTANA",
+      "translation": "ventana",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "casa"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.45,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.12,
+              "y": 0.45,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.45,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TELEFONO",
+      "gloss": "TELEFONO",
+      "translation": "teléfono",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "tecnologia"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.25,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.4,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.25,
+              "y": 0.55,
+              "z": 0.0,
+              "rot": [
+                0,
+                0.4,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ROPA",
+      "gloss": "ROPA",
+      "translation": "ropa",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "vestimenta"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.42,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.33999999999999997,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.42,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "BOLSA",
+      "gloss": "BOLSA",
+      "translation": "bolsa",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "accesorio"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.21,
+              "y": 0.3,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.3,
+              "z": 0.05,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "DINERO",
+      "gloss": "DINERO",
+      "translation": "dinero",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "economia"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.39999999999999997,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.1,
+              "y": 0.35,
+              "z": 0.08,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "LLAVE",
+      "gloss": "LLAVE",
+      "translation": "llave",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "casa"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.08,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.12,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.15,
+              "y": 0.35,
+              "z": 0.08,
+              "rot": [
+                0,
+                0.5,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ORDENADOR",
+      "gloss": "ORDENADOR",
+      "translation": "ordenador",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "tecnologia"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0.4,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 400,
+            "hand": {
+              "x": 0.1,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0.4,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.3,
+              "z": 0.1,
+              "rot": [
+                0.4,
+                0,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "MOVIL",
+      "gloss": "MOVIL",
+      "translation": "móvil",
+      "handedness": "one",
+      "tags": [
+        "objeto",
+        "tecnologia"
+      ],
+      "avatarClip": {
+        "handedness": "one",
+        "duration": 800,
+        "keyframes": [
+          {
+            "t": 0,
+            "hand": {
+              "x": 0.2,
+              "y": 0.45,
+              "z": 0.05,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0.0
+            },
+            "fingers": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.2,
+              "y": 0.45,
+              "z": 0.05,
+              "rot": [
+                0,
+                0.3,
+                0
+              ],
+              "forearmRoll": 0.0
             },
             "fingers": [
               0,

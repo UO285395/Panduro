@@ -320,10 +320,11 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     matFace.normalMap = skinNormTex; matFace.normalScale = nv2.clone().set(0.03, 0.03);
   }
   const matHair = new THREE.MeshPhysicalMaterial({
-    color: 0x2a1a10, roughness: 0.70, metalness: 0.00,
-    sheen: 0.18, sheenRoughness: 0.92,
-    sheenColor: new THREE.Color(0x6a4030),
-    envMapIntensity: 0.30,
+    color: 0x2a1a10, roughness: 0.62, metalness: 0.00,
+    sheen: 0.55, sheenRoughness: 0.75,
+    sheenColor: new THREE.Color(0x7a5038),
+    clearcoat: 0.22, clearcoatRoughness: 0.30,
+    envMapIntensity: 0.50,
   });
   // Material para pliegue de muñeca (línea anatómica oscura).
   const matCrease = new THREE.MeshPhysicalMaterial({
@@ -373,10 +374,18 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   head.castShadow = true;
   headGroup.add(head);
 
-  // Ojos: esclerótica + iris + pupila + destello de córnea
+  // Ojos: esclerótica + iris + pupila + córnea (clearcoat) + destello
   const matSclera = new THREE.MeshPhysicalMaterial({ color: 0xf5ede4, roughness: 0.55, metalness: 0.0 });
-  const matIris   = new THREE.MeshPhysicalMaterial({ color: 0x5c3d1e, roughness: 0.18, metalness: 0.0, envMapIntensity: 0.4 });
-  const matPupil  = new THREE.MeshPhysicalMaterial({ color: 0x09070a, roughness: 0.05, metalness: 0.0 });
+  const matIris   = new THREE.MeshPhysicalMaterial({ color: 0x5c3d1e, roughness: 0.18, metalness: 0.0, envMapIntensity: 0.8 });
+  const matPupil  = new THREE.MeshPhysicalMaterial({ color: 0x09070a, roughness: 0.04, metalness: 0.0 });
+  // Córnea: cúpula transparente con clearcoat alto para efecto "ojo húmedo".
+  const matCornea = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff, roughness: 0.0, metalness: 0.0,
+    transparent: true, opacity: 0.08,
+    clearcoat: 1.0, clearcoatRoughness: 0.0,
+    envMapIntensity: 2.0,
+    depthWrite: false,
+  });
   const matCatch  = new THREE.MeshBasicMaterial({ color: 0xffffff });
   // Cuenca del ojo: esfera oscura detrás del ojo para sombra orbital.
   const matSocket = new THREE.MeshPhysicalMaterial({
@@ -417,6 +426,9 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     lash.rotation.z = 0;
     lash.position.set(0, headR * 0.008, headR * 0.090);
     eg.add(lash);
+    // Cúpula corneal — esfera casi transparente con clearcoat máximo.
+    const cornea = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.135, 16, 12), matCornea);
+    eg.add(cornea);
     headGroup.add(eg);
     eyes.push(eg);
   }
@@ -455,7 +467,11 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   headGroup.add(chin);
 
   // Boca: labio superior + inferior + línea de comisura.
-  const matMouth = new THREE.MeshPhysicalMaterial({ color: 0x8a4030, roughness: 0.85 });
+  const matMouth = new THREE.MeshPhysicalMaterial({
+    color: 0x8a4030, roughness: 0.58, metalness: 0.0,
+    clearcoat: 0.55, clearcoatRoughness: 0.12,
+    sheen: 0.22, sheenRoughness: 0.70, sheenColor: new THREE.Color(0xcc6050),
+  });
   // Labio inferior — esfera aplanada ligeramente protuberante.
   const lowerLip = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.068, 12, 8), matMouth);
   lowerLip.scale.set(1.20, 0.38, 0.68);

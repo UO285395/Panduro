@@ -620,6 +620,12 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   );
   foreArm.position.y = -BONE_LENGTHS.foreArm / 2;
   foreArmGroup.add(foreArm);
+  // Músculo extensor del antebrazo — vientre muscular en el tercio proximal.
+  const extensor = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), matSkin);
+  extensor.scale.set(0.78, 1.40, 0.68);
+  extensor.position.set(0.006, -BONE_LENGTHS.foreArm * 0.28, -0.006);
+  extensor.castShadow = true;
+  foreArmGroup.add(extensor);
 
   const wrist = new THREE.Group();
   wrist.position.y = -BONE_LENGTHS.foreArm;
@@ -700,6 +706,21 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   wristCrease.rotation.x = Math.PI / 2;
   wristCrease.position.set(0, PALM_HEIGHT * 0.46, 0);
   palm.add(wristCrease);
+
+  // Tendones extensores dorsales — 4 cápsulas que corren de muñeca a MCP.
+  const tendonMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb07050, roughness: 0.62, metalness: 0.0,
+    transparent: true, opacity: 0.45, depthWrite: false,
+  });
+  for (let ti = 0; ti < 4; ti++) {
+    const tx = PALM_WIDTH / 2 - (PALM_WIDTH / 4) * (0.5 + ti);
+    const tendon = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.0028, PALM_HEIGHT * 0.72, 4, 8),
+      tendonMat,
+    );
+    tendon.position.set(tx, -PALM_HEIGHT * 0.06, -PALM_DEPTH * 0.14);
+    palm.add(tendon);
+  }
 
   // ── Dedos ─────────────────────────────────────────────────────────────────
   // Radios: [proximal-base, medial-base, distal-base]

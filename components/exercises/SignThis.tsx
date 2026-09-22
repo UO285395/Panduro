@@ -80,15 +80,16 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
       c.conf += v.confidence;
       counts.set(v.label, c);
     }
+    // Voto ponderado por confianza: gana quien acumula mayor confianza total
     let winner = "";
-    let winnerCount = -1;
+    let winnerScore = -1;
     for (const [label, c] of counts) {
-      if (c.n > winnerCount) {
+      if (c.conf > winnerScore) {
         winner = label;
-        winnerCount = c.n;
+        winnerScore = c.conf;
       }
     }
-    const winnerAvg = (counts.get(winner)?.conf ?? 0) / Math.max(1, winnerCount);
+    const winnerAvg = (counts.get(winner)?.conf ?? 0) / Math.max(1, counts.get(winner)?.n ?? 1);
     const correct =
       winner === exercise.letterId && winnerAvg >= exercise.minConfidence;
     setPhase({ kind: "done", correct });

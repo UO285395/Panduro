@@ -3,6 +3,7 @@ import lexiconData from "@/content/signs/lexicon.json";
 import type { Template } from "./knn";
 import type { NormalizedLandmark } from "@/lib/mediapipe/types";
 import { extractFeatures } from "./features";
+import { normalizeLandmarks } from "@/lib/mediapipe/landmarks";
 
 /** Formato del JSON de plantillas del alfabeto dactilológico. */
 export type FingerspellingJson = {
@@ -43,18 +44,19 @@ export function listLetters(): string[] {
 }
 
 /** Plantillas globales cargadas desde el repo: alfabeto + signos léxicos.
- * Usa extractFeatures para que templates e inferencia pasen por la misma
- * normalización de rotación (wrist→middle_mcp → eje -Y). */
+ * Aplica normalizeLandmarks antes de extractFeatures para que las plantillas
+ * sintéticas (escala ~0.09) sean comparables con los datos en vivo del
+ * pipeline MediaPipe (escala 1: |wrist→middle_mcp| = 1). */
 export function loadGlobalTemplates(): Template[] {
   const out: Template[] = [];
   for (const [letter, entry] of Object.entries(source.letters)) {
     for (const landmarks of entry.templates) {
-      out.push({ label: letter, features: extractFeatures(landmarks) });
+      out.push({ label: letter, features: extractFeatures(normalizeLandmarks(landmarks)) });
     }
   }
   for (const [signId, entry] of Object.entries(lexicon.signs)) {
     for (const landmarks of entry.templates) {
-      out.push({ label: signId, features: extractFeatures(landmarks) });
+      out.push({ label: signId, features: extractFeatures(normalizeLandmarks(landmarks)) });
     }
   }
   return out;

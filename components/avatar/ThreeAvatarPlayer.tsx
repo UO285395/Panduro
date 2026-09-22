@@ -292,15 +292,43 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   head.castShadow = true;
   headGroup.add(head);
 
-  // Ojos (dos pequeños círculos oscuros a los lados de la esfera)
-  const matEye = new THREE.MeshPhysicalMaterial({ color: 0x1a0a05, roughness: 0.3, metalness: 0.0 });
+  // Ojos: esclerótica + iris + pupila + destello de córnea
+  const matSclera = new THREE.MeshPhysicalMaterial({ color: 0xf5ede4, roughness: 0.55, metalness: 0.0 });
+  const matIris   = new THREE.MeshPhysicalMaterial({ color: 0x5c3d1e, roughness: 0.18, metalness: 0.0, envMapIntensity: 0.4 });
+  const matPupil  = new THREE.MeshPhysicalMaterial({ color: 0x09070a, roughness: 0.05, metalness: 0.0 });
+  const matCatch  = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const eyes: { scale: { y: number } }[] = [];
   for (const side of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.12, 10, 8), matEye);
-    eye.position.set(side * headR * 0.38, headR * 1.06, headR * 0.86);
-    headGroup.add(eye);
-    eyes.push(eye);
+    const eg = new THREE.Group();
+    eg.position.set(side * headR * 0.38, headR * 1.06, headR * 0.86);
+    eg.add(new THREE.Mesh(new THREE.SphereGeometry(headR * 0.130, 14, 10), matSclera));
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.082, 14, 10), matIris);
+    iris.position.z = headR * 0.092;
+    eg.add(iris);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.046, 12, 8), matPupil);
+    pupil.position.z = headR * 0.118;
+    eg.add(pupil);
+    const catchlight = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.020, 8, 6), matCatch);
+    catchlight.position.set(side * headR * 0.030, headR * 0.044, headR * 0.128);
+    eg.add(catchlight);
+    headGroup.add(eg);
+    eyes.push(eg);
   }
+
+  // Cejas
+  const matBrow = new THREE.MeshPhysicalMaterial({ color: 0x2c1a10, roughness: 0.80 });
+  for (const side of [-1, 1]) {
+    const brow = new THREE.Mesh(new THREE.CapsuleGeometry(headR * 0.018, headR * 0.18, 4, 8), matBrow);
+    brow.position.set(side * headR * 0.36, headR * 1.24, headR * 0.82);
+    brow.rotation.z = side * 0.18;
+    headGroup.add(brow);
+  }
+
+  // Nariz (esfera ligeramente aplanada en el centro del rostro)
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.09, 10, 8), matFace);
+  nose.scale.set(0.80, 0.65, 0.70);
+  nose.position.set(0, headR * 0.92, headR * 0.95);
+  headGroup.add(nose);
 
   // Pelo (casquete superior, relativo a headGroup)
   const hair = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.01, 26, 20), matHair);

@@ -330,6 +330,21 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   nose.position.set(0, headR * 0.92, headR * 0.95);
   headGroup.add(nose);
 
+  // Boca (línea oscura sutil)
+  const matMouth = new THREE.MeshPhysicalMaterial({ color: 0x8a4030, roughness: 0.85 });
+  const mouth = new THREE.Mesh(new THREE.CapsuleGeometry(headR * 0.014, headR * 0.14, 4, 8), matMouth);
+  mouth.rotation.z = Math.PI / 2;
+  mouth.position.set(0, headR * 0.76, headR * 0.93);
+  headGroup.add(mouth);
+
+  // Orejas (elipsoides planos a los lados de la cabeza)
+  for (const side of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.11, 10, 8), matFace);
+    ear.scale.set(0.22, 0.72, 0.60);
+    ear.position.set(side * headR * 1.02, headR * 0.90, 0);
+    headGroup.add(ear);
+  }
+
   // Pelo (casquete superior, relativo a headGroup)
   const hair = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.01, 26, 20), matHair);
   hair.position.y = headR + headR * 0.10;

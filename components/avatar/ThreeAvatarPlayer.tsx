@@ -436,12 +436,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const spring = {
     wrist: [0, 0, 0] as [number, number, number],
     roll: 0,
+    shoulder: [0, 0, 0] as [number, number, number],
+    elbow: 0.35,
     headX: 0,
     headY: 0,
   };
-  const KW = 0.18; // rigidez muñeca   (≈90 ms respuesta a 60 fps)
+  const KW = 0.18; // rigidez muñeca    (≈90 ms a 60 fps)
   const KR = 0.15; // rigidez antebrazo
-  const KH = 0.07; // rigidez cabeza   (≈200 ms — movimiento más lento)
+  const KS = 0.12; // rigidez hombro    (≈120 ms — transición suave entre signos)
+  const KH = 0.07; // rigidez cabeza    (≈200 ms — movimiento más lento)
 
   // Parpadeo espontáneo: siguiente parpadeo en t aleatoria, duración 150 ms.
   const blink = { next: 1500 + Math.random() * 2500, start: -1 };
@@ -466,8 +469,13 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   function apply(pose: Pose, tMs: number) {
     const breath = Math.sin(tMs * 0.0018) * 0.003;
     shoulder.position.y = breath;
-    shoulder.rotation.set(pose.shoulder[0], pose.shoulder[1], pose.shoulder[2]);
-    elbow.rotation.set(-pose.elbow, 0, 0);
+
+    spring.shoulder[0] += (pose.shoulder[0] - spring.shoulder[0]) * KS;
+    spring.shoulder[1] += (pose.shoulder[1] - spring.shoulder[1]) * KS;
+    spring.shoulder[2] += (pose.shoulder[2] - spring.shoulder[2]) * KS;
+    spring.elbow       += (pose.elbow       - spring.elbow)       * KS;
+    shoulder.rotation.set(spring.shoulder[0], spring.shoulder[1], spring.shoulder[2]);
+    elbow.rotation.set(-spring.elbow, 0, 0);
 
     spring.roll     += (pose.forearmRoll  - spring.roll)     * KR;
     spring.wrist[0] += (pose.wrist[0]    - spring.wrist[0]) * KW;
@@ -594,7 +602,7 @@ function makeLatheSegment(
   const pts: import("three").Vector2[] = [];
 
   // Yema redondeada en y=0..rTip*dome
-  const domeSegs = 7;
+  const domeSegs = 9;
   const domeR = rTip * 0.82;
   for (let i = 0; i <= domeSegs; i++) {
     const a = ((domeSegs - i) / domeSegs) * (Math.PI / 2);
@@ -605,7 +613,7 @@ function makeLatheSegment(
   pts.push(new THREE.Vector2(rTip * 1.02, domeR + len * 0.06));
 
   // Eje cónico principal (taper de punta a base)
-  const shaftSteps = 6;
+  const shaftSteps = 10;
   for (let i = 1; i <= shaftSteps; i++) {
     const t = i / shaftSteps;
     // Curva suave con easing cúbico
@@ -625,7 +633,7 @@ function makeLatheSegment(
   }
 
   const totalH = len; // altura total del perfil
-  const geo = new THREE.LatheGeometry(pts, 18);
+  const geo = new THREE.LatheGeometry(pts, 24);
   const mesh = new THREE.Mesh(geo, material);
   mesh.castShadow = true;
   mesh.receiveShadow = true;

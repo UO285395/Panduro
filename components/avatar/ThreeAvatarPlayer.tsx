@@ -206,6 +206,33 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       skinNormTex.wrapS = skinNormTex.wrapT = THREE.RepeatWrapping;
       skinNormTex.repeat.set(14, 14);
 
+      // Mapa de rugosidad procedural: ruido de 3 octavas que rompe la uniformidad
+      // del especular y simula la variación natural de los poros de la piel.
+      // Three.js usa el canal G del roughnessMap: 0=liso, 255=rugoso.
+      const roughCanvas = document.createElement("canvas");
+      roughCanvas.width = SZ; roughCanvas.height = SZ;
+      const rctx = roughCanvas.getContext("2d")!;
+      const roughImgd = rctx.createImageData(SZ, SZ);
+      for (let pi = 0; pi < SZ * SZ; pi++) {
+        const px = (pi % SZ) / SZ, py = Math.floor(pi / SZ) / SZ;
+        let v = 0, ramp = 1, rfreq = 3;
+        for (let oct = 0; oct < 3; oct++) {
+          v += Math.sin(px * rfreq * 7.12 + py * rfreq * 2.88) * ramp;
+          v += Math.cos(px * rfreq * 3.44 + py * rfreq * 5.76) * ramp * 0.5;
+          ramp *= 0.55; rfreq *= 2.05;
+        }
+        // Centrado en 168 (≈0.66 roughness) con variación ±32 (±0.125 roughness)
+        const g = Math.max(0, Math.min(255, Math.round(168 + v * 22)));
+        roughImgd.data[pi * 4]     = 255;
+        roughImgd.data[pi * 4 + 1] = g;
+        roughImgd.data[pi * 4 + 2] = 255;
+        roughImgd.data[pi * 4 + 3] = 255;
+      }
+      rctx.putImageData(roughImgd, 0, 0);
+      const skinRoughTex = new THREE.CanvasTexture(roughCanvas);
+      skinRoughTex.wrapS = skinRoughTex.wrapT = THREE.RepeatWrapping;
+      skinRoughTex.repeat.set(14, 14);
+
       // Intentar cargar VRM; si no está disponible, usar el rig procedimental.
       const loaded = await loadPanduroVrm();
 
@@ -236,7 +263,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         loop();
       } else {
         // Fallback: rig procedimental
-        const rig = buildProceduralRig(THREE, skinNormTex);
+        const rig = buildProceduralRig(THREE, skinNormTex, skinRoughTex);
         scene.add(rig.group);
         onReady?.("procedural");
 
@@ -295,7 +322,7 @@ type RigHandle = {
   applyIdle: (tMs: number) => void;
 };
 
-function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import("three").CanvasTexture): RigHandle {
+function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import("three").CanvasTexture, skinRoughTex?: import("three").CanvasTexture): RigHandle {
   // MeshPhysicalMaterial con sheen + thickness para simular SSS de piel.
   // thickness≈0.8 permite que la luz key-light "sangre" a través de la piel
   // de los dedos (efecto visible al contraluz), lo más cercano a SSS sin texturas.
@@ -340,6 +367,13 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     matPalm.normalMap = skinNormTex; matPalm.normalScale = nv2.clone().set(0.04, 0.04);
     matFace.normalMap = skinNormTex; matFace.normalScale = nv2.clone().set(0.03, 0.03);
   }
+  // Mapa de rugosidad: modula el radio del lóbulo especular por zona de piel.
+  // roughness material × roughnessMap.G → variación orgánica en la respuesta.
+  if (skinRoughTex) {
+    matSkin.roughnessMap = skinRoughTex; matSkin.roughness = 0.55;
+    matPalm.roughnessMap = skinRoughTex; matPalm.roughness = 0.65;
+    matFace.roughnessMap = skinRoughTex; matFace.roughness = 0.55;
+  }
   const matHair = new THREE.MeshPhysicalMaterial({
     color: 0x2a1a10, roughness: 0.62, metalness: 0.00,
     sheen: 0.55, sheenRoughness: 0.75,
@@ -373,6 +407,19 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   neck.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck / 2;
   neck.castShadow = true;
   group.add(neck);
+
+  // Esternocleidomastoideo (SCM) — banda muscular diagonal del cuello.
+  // Corre desde la región mastoidea (detrás de la oreja) hasta el manubrio esternal.
+  for (const side of [-1, 1]) {
+    const scm = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.0082, 0.072, 4, 8), matSkin,
+    );
+    scm.position.set(side * 0.021, SHOULDER_HEIGHT + BONE_LENGTHS.neck * 0.26, 0.020);
+    scm.rotation.z = side * 0.52;
+    scm.rotation.x = 0.14;
+    scm.castShadow = true;
+    group.add(scm);
+  }
 
   // Clavícula — cápsula horizontal sobre el hombro derecho.
   const collarBone = new THREE.Mesh(
@@ -447,6 +494,14 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     lash.rotation.z = 0;
     lash.position.set(0, headR * 0.008, headR * 0.090);
     eg.add(lash);
+    // Pliegue supratarsal — arco cutáneo sobre el párpado que da profundidad al ojo.
+    const matFold = new THREE.MeshBasicMaterial({ color: 0x7a3818, transparent: true, opacity: 0.18 });
+    const fold = new THREE.Mesh(
+      new THREE.TorusGeometry(headR * 0.132, 0.0013, 4, 18, Math.PI * 0.80),
+      matFold,
+    );
+    fold.position.set(0, headR * 0.016, headR * 0.090);
+    eg.add(fold);
     // Cúpula corneal — esfera casi transparente con clearcoat máximo.
     const cornea = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.135, 16, 12), matCornea);
     eg.add(cornea);
@@ -473,6 +528,15 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   noseBridge.rotation.x = 0.22;
   noseBridge.position.set(0, headR * 0.985, headR * 0.884);
   headGroup.add(noseBridge);
+  // Columelas del filtrum — dos crestas verticales del surco nasolabial.
+  for (const side of [-1, 1]) {
+    const philtrum = new THREE.Mesh(
+      new THREE.CapsuleGeometry(headR * 0.007, headR * 0.034, 4, 6), matFace,
+    );
+    philtrum.position.set(side * headR * 0.025, headR * 0.812, headR * 0.942);
+    headGroup.add(philtrum);
+  }
+
   // Narinas (fosas nasales oscuras).
   const matNostril = new THREE.MeshPhysicalMaterial({ color: 0x5a2616, roughness: 0.95 });
   for (const side of [-1, 1]) {
@@ -911,25 +975,35 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     shoulder.position.y = breath;
     torso.scale.set(1 + breath * 2, 1 + breath * 8, 1 + breath * 3);
     const lateralSway = Math.sin(tMs * 0.00055) * 0.010;
-    shoulder.rotation.set(0.08 + sway * 0.1, 0, lateralSway);
-    elbow.rotation.set(-0.32 + sway * 0.04, 0, 0);
-    // Micro-pronación del antebrazo — da sensación de peso natural.
-    foreArmGroup.rotation.y = microSway * 0.4;
-    // Micro-flexión de muñeca en reposo.
-    wrist.rotation.set(microSway * 0.18, 0, microSway * 0.06);
+    // Hombro y codo dirigidos por springs → cuando termina un signo la mano
+    // vuelve suavemente a la posición de reposo sin corte brusco.
+    spring.shoulder[0] += (0.08 + sway * 0.1 - spring.shoulder[0]) * KS;
+    spring.shoulder[1] += (0                  - spring.shoulder[1]) * KS;
+    spring.shoulder[2] += (lateralSway        - spring.shoulder[2]) * KS;
+    spring.elbow       += (0.32 + sway * 0.04 - spring.elbow)       * KS;
+    shoulder.rotation.set(spring.shoulder[0], spring.shoulder[1], spring.shoulder[2]);
+    elbow.rotation.set(-spring.elbow, 0, 0);
+    // Antebrazo: spring de vuelta a 0 + micro-pronación.
+    spring.roll += (0 - spring.roll) * KR;
+    foreArmGroup.rotation.y = spring.roll + microSway * 0.4;
+    // Muñeca spring → retracción fluida desde cualquier signo.
+    spring.wrist[0] += (microSway * 0.18 - spring.wrist[0]) * KW;
+    spring.wrist[1] += (0               - spring.wrist[1]) * KW;
+    spring.wrist[2] += (microSway * 0.06 - spring.wrist[2]) * KW;
+    wrist.rotation.set(spring.wrist[0], spring.wrist[1], spring.wrist[2]);
     thumbBase.rotation.z = -THUMB_ABDUCTION;
     for (let i = 1; i < 5; i++) {
       anchors[i]!.rotation.z = 0;
     }
-    // Dedos ligeramente curvados en reposo con micro-tremor individual por dedo.
+    // Dedos con springs → transición suave de cualquier handshape a reposo.
     const curl = 0.06 + Math.sin(tMs * 0.0011) * 0.012;
     for (let i = 0; i < 5; i++) {
       const tremor = Math.sin(tMs * (0.0011 + i * 0.00031) + i * 1.2) * 0.008;
-      applyFingerFlex(fingers[i]!, {
-        proximal: 0.18 + curl + tremor,
-        middle:   0.14 + curl * 0.70 + tremor * 0.60,
-        distal:   0.10 + curl * 0.40 + tremor * 0.30,
-      });
+      const fs = fingerSprings[i]!;
+      fs[0] += (0.18 + curl + tremor             - fs[0]) * KF;
+      fs[1] += (0.14 + curl * 0.70 + tremor * 0.60 - fs[1]) * KF;
+      fs[2] += (0.10 + curl * 0.40 + tremor * 0.30 - fs[2]) * KF;
+      applyFingerFlex(fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
     }
     // Balanceo natural de la cabeza en reposo:
     // ligera inclinación hacia abajo (chin-down) + oscilación muy lenta lateral.

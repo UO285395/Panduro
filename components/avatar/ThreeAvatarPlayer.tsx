@@ -780,13 +780,14 @@ function buildFinger(
   // Falange distal: sin nudillo, yema redondeada
   g3.add(makeLatheSegment(THREE, matSkin, len3, r2, r2 * 0.68, false));
 
-  // Uña en la distal (pequeño box brillante).
+  // Uña en la distal — esfera aplanada para simular la curvatura natural.
   const nail = new THREE.Mesh(
-    new THREE.BoxGeometry(r2 * 1.5, r2 * 0.28, len3 * 0.44),
+    new THREE.SphereGeometry(r2 * 0.80, 14, 8),
     matNail,
   );
+  nail.scale.set(1.10, 0.20, 0.72);
   nail.castShadow = true;
-  nail.position.set(0, -len3 * 0.52, r2 * 0.82);
+  nail.position.set(0, -len3 * 0.48, r2 * 0.84);
   g3.add(nail);
 
   g2.add(g3);

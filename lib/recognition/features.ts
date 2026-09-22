@@ -15,11 +15,13 @@ function dist3(a: {x:number;y:number;z:number}, b: {x:number;y:number;z:number})
 }
 
 /**
- * Extrae un vector de features de 63+15 = 78 dimensiones desde los 21 landmarks:
+ * Extrae un vector de features de 63+15+3 = 81 dimensiones desde los 21 landmarks:
  *   - 63: coordenadas rotadas wrist-centradas (invariante a inclinación XY)
  *   - 5: distancias punta→palma (dedos doblados vs extendidos)
  *   - 5: apertura entre punta del pulgar y cada dedo (configuración relativa)
  *   - 5: curvatura por dedo (ángulo MCP→PIP→TIP, aprox. mediante dist ratios)
+ *   - 3: distancias entre puntas de dedos adyacentes (índice-medio, medio-anular, anular-meñique)
+ *        → diferencia V de U, separa signos con abducción lateral de los cerrados
  * Requiere landmarks ya normalizados por `normalizeLandmarks`.
  */
 export function extractFeatures(landmarks: NormalizedLandmark[]): number[] {
@@ -41,7 +43,7 @@ export function extractFeatures(landmarks: NormalizedLandmark[]): number[] {
     rot[i] = { x: p.x * cos - p.y * sin, y: p.x * sin + p.y * cos, z: p.z };
   }
 
-  const out: number[] = new Array(63 + 15);
+  const out: number[] = new Array(63 + 15 + 3);
 
   // Bloque 1: coordenadas planas (63)
   for (let i = 0; i < 21; i++) {
@@ -73,6 +75,12 @@ export function extractFeatures(landmarks: NormalizedLandmark[]): number[] {
     const via    = dist3(mcpP, pipP) + dist3(pipP, tipP);
     out[73 + i] = via > 1e-5 ? direct / via : 1;
   }
+
+  // Bloque 5: separación entre puntas de dedos adyacentes (3)
+  // Distingue signos con abducción (V, W) de los cerrados (U, R, N)
+  out[78] = dist3(rot[TIPS[1]]!, rot[TIPS[2]]!); // índice-medio
+  out[79] = dist3(rot[TIPS[2]]!, rot[TIPS[3]]!); // medio-anular
+  out[80] = dist3(rot[TIPS[3]]!, rot[TIPS[4]]!); // anular-meñique
 
   return out;
 }

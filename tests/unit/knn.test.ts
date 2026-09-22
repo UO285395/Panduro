@@ -41,10 +41,10 @@ function makeTemplates(): Template[] {
 }
 
 describe("features.extractFeatures", () => {
-  it("aplana 21 landmarks a 78 números con normalización de rotación", () => {
+  it("aplana 21 landmarks a 81 números con normalización de rotación", () => {
     const hand = randomHand(1);
     const out = extractFeatures(hand);
-    expect(out).toHaveLength(78); // 63 coords + 15 derived features
+    expect(out).toHaveLength(81); // 63 coords + 15 derived + 3 adjacent-tip distances
     // z no se toca en la rotación XY — se preserva exacto
     expect(out[2]).toBe(hand[0]!.z);
     expect(out[62]).toBe(hand[20]!.z);

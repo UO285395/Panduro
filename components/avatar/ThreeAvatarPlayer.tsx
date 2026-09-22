@@ -54,7 +54,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(size, size, false);
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.08;
       renderer.outputColorSpace = THREE.SRGBColorSpace;

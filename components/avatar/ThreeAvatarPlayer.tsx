@@ -142,6 +142,11 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       micro.position.set(0.0, 0.0, 3.0);
       scene.add(micro);
 
+      // Spot facial: PointLight sobre el rostro para iluminar ojos y expresión.
+      const faceSpot = new THREE.PointLight(0xfff8f0, 0.55, 1.2);
+      faceSpot.position.set(0.1, 0.96, 0.55);
+      scene.add(faceSpot);
+
       // Intentar cargar VRM; si no está disponible, usar el rig procedimental.
       const loaded = await loadPanduroVrm();
 
@@ -345,17 +350,28 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     headGroup.add(ear);
   }
 
-  // Pelo (casquete superior, relativo a headGroup)
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.01, 26, 20), matHair);
-  hair.position.y = headR + headR * 0.10;
-  hair.scale.set(1, 0.55, 1);
-  hair.castShadow = true;
-  headGroup.add(hair);
+  // Pelo — casquete superior + volumen trasero para aspecto más natural.
+  const hairCap = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.02, 26, 20), matHair);
+  hairCap.position.y = headR * 0.22;
+  hairCap.scale.set(1.0, 0.62, 1.0);
+  hairCap.castShadow = true;
+  headGroup.add(hairCap);
+  // Volumen trasero (occipital) — masa de pelo por detrás de la cabeza.
+  const hairBack = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.72, 18, 14), matHair);
+  hairBack.position.set(0, headR * 0.12, -headR * 0.62);
+  hairBack.scale.set(1.0, 0.90, 0.70);
+  hairBack.castShadow = true;
+  headGroup.add(hairBack);
 
   // ── Brazo ─────────────────────────────────────────────────────────────────
   const shoulder = new THREE.Group();
   shoulder.position.set(RIGHT_SHOULDER_X, SHOULDER_HEIGHT, 0);
   group.add(shoulder);
+
+  // Articulación del hombro — esfera visible que cubre la unión torso/brazo.
+  const shoulderBall = new THREE.Mesh(new THREE.SphereGeometry(0.038, 16, 12), matSkin);
+  shoulderBall.castShadow = true;
+  shoulder.add(shoulderBall);
 
   const upperArm = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.030, BONE_LENGTHS.upperArm - 0.06, 8, 18),
@@ -510,8 +526,9 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   }
 
   function apply(pose: Pose, tMs: number) {
-    const breath = Math.sin(tMs * 0.0018) * 0.003;
+    const breath = Math.sin(tMs * 0.0018) * 0.003 + Math.sin(tMs * 0.0054) * 0.001;
     shoulder.position.y = breath;
+    torso.scale.y = 1 + breath * 8;
 
     spring.shoulder[0] += (pose.shoulder[0] - spring.shoulder[0]) * KS;
     spring.shoulder[1] += (pose.shoulder[1] - spring.shoulder[1]) * KS;
@@ -547,18 +564,24 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   }
 
   function applyIdle(tMs: number) {
-    const breath = Math.sin(tMs * 0.0018) * 0.004;
-    const sway   = Math.sin(tMs * 0.0008) * 0.008;
+    const breath     = Math.sin(tMs * 0.0018) * 0.004 + Math.sin(tMs * 0.0054) * 0.001;
+    const sway       = Math.sin(tMs * 0.0008) * 0.008;
+    const microSway  = Math.sin(tMs * 0.0023) * 0.006;
     shoulder.position.y = breath;
+    torso.scale.y = 1 + breath * 8;
     shoulder.rotation.set(0.08 + sway * 0.1, 0, 0);
     elbow.rotation.set(-0.30, 0, 0);
-    foreArmGroup.rotation.y = 0;
-    wrist.rotation.set(0, 0, 0);
+    // Micro-pronación del antebrazo — da sensación de peso natural.
+    foreArmGroup.rotation.y = microSway * 0.4;
+    // Micro-flexión de muñeca en reposo.
+    wrist.rotation.set(microSway * 0.18, 0, microSway * 0.06);
     thumbBase.rotation.z = -THUMB_ABDUCTION;
     for (let i = 1; i < 5; i++) {
       anchors[i]!.rotation.z = 0;
     }
-    const restFlex: FingerPose = { proximal: 0.15, middle: 0.12, distal: 0.08 };
+    // Dedos ligeramente curvados en reposo con micro-variación viva.
+    const curl = 0.06 + Math.sin(tMs * 0.0011) * 0.012;
+    const restFlex: FingerPose = { proximal: 0.18 + curl, middle: 0.14 + curl * 0.7, distal: 0.10 + curl * 0.4 };
     for (let i = 0; i < 5; i++) {
       applyFingerFlex(fingers[i]!, restFlex);
     }

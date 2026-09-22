@@ -494,6 +494,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     [BONE_LENGTHS.thumb1, BONE_LENGTHS.thumb2, BONE_LENGTHS.thumb3], radii);
   thumbBase.add(thumb.root);
   fingers.push(thumb);
+  // Pliegues interfalángicos del pulgar (IPJ1 e IPJ2)
+  ([thumb.joints[1], thumb.joints[2]] as import("three").Group[]).forEach((j, k) => {
+    const cr = new THREE.Mesh(
+      new THREE.TorusGeometry(radii[1 + k]! * 1.12, 0.0016 - k * 0.0002, 5, 20),
+      matCrease,
+    );
+    cr.rotation.x = Math.PI / 2;
+    j.add(cr);
+  });
 
   // Cuatro dedos largos.
   const fingerSpecs: Array<{ name: string; x: number; lens: [number, number, number] }> = [
@@ -519,6 +528,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     const f = buildFinger(THREE, matSkin, matNail, spec.name, spec.lens, radii);
     anchor.add(f.root);
     fingers.push(f);
+    // Pliegues PIP (joint[1]) y DIP (joint[2]) de cada dedo largo
+    ([f.joints[1], f.joints[2]] as import("three").Group[]).forEach((j, k) => {
+      const cr = new THREE.Mesh(
+        new THREE.TorusGeometry(radii[1 + k]! * 1.12, 0.0016 - k * 0.0002, 5, 20),
+        matCrease,
+      );
+      cr.rotation.x = Math.PI / 2;
+      j.add(cr);
+    });
   }
 
   // Spring state para movimiento secundario — muñeca, antebrazo y cabeza

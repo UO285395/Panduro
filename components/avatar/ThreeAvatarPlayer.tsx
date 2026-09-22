@@ -160,24 +160,30 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       faceSpot.position.set(0.1, 0.96, 0.55);
       scene.add(faceSpot);
 
-      // Mapa de normales procedural para textura microscópica de piel.
-      // Ruido sinusoidal 64×64 repetido en la superficie para simular poros/textura.
+      // Mapa de normales procedural: fBm 4-octavas 128×128 para poros realistas.
+      // Cada octava suma sinusoides ortogonales con amplitud ÷2 y frecuencia ×2.
+      const SZ = 128;
       const normCanvas = document.createElement("canvas");
-      normCanvas.width = 64; normCanvas.height = 64;
+      normCanvas.width = SZ; normCanvas.height = SZ;
       const nctx = normCanvas.getContext("2d")!;
-      const normImgd = nctx.createImageData(64, 64);
-      for (let pi = 0; pi < 64 * 64; pi++) {
-        const px = pi % 64, py = Math.floor(pi / 64);
-        const sn = Math.sin(px * 0.78 + py * 0.32) * Math.sin(py * 0.55 + px * 0.83) * 0.5 + 0.5;
-        normImgd.data[pi * 4]     = 128;
-        normImgd.data[pi * 4 + 1] = 128;
-        normImgd.data[pi * 4 + 2] = Math.floor(sn * 255);
+      const normImgd = nctx.createImageData(SZ, SZ);
+      for (let pi = 0; pi < SZ * SZ; pi++) {
+        const px = (pi % SZ) / SZ, py = Math.floor(pi / SZ) / SZ;
+        let nx = 0, ny = 0, amp = 1, freq = 4;
+        for (let oct = 0; oct < 4; oct++) {
+          nx += Math.sin(px * freq * 6.28 + py * freq * 3.14) * amp;
+          ny += Math.sin(py * freq * 6.28 + px * freq * 3.14) * amp;
+          amp *= 0.50; freq *= 2.10;
+        }
+        normImgd.data[pi * 4]     = Math.round(128 + nx * 20);
+        normImgd.data[pi * 4 + 1] = Math.round(128 + ny * 20);
+        normImgd.data[pi * 4 + 2] = 255;
         normImgd.data[pi * 4 + 3] = 255;
       }
       nctx.putImageData(normImgd, 0, 0);
       const skinNormTex = new THREE.CanvasTexture(normCanvas);
       skinNormTex.wrapS = skinNormTex.wrapT = THREE.RepeatWrapping;
-      skinNormTex.repeat.set(12, 12);
+      skinNormTex.repeat.set(14, 14);
 
       // Intentar cargar VRM; si no está disponible, usar el rig procedimental.
       const loaded = await loadPanduroVrm();
@@ -488,6 +494,45 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   hairBack.scale.set(1.0, 0.90, 0.70);
   hairBack.castShadow = true;
   headGroup.add(hairBack);
+  // Volumen temporal (sien) — dos piezas laterales para silueta más realista.
+  for (const side of [-1, 1]) {
+    const hairSide = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.52, 14, 10), matHair);
+    hairSide.position.set(side * headR * 0.82, headR * 0.40, -headR * 0.08);
+    hairSide.scale.set(0.38, 0.72, 0.70);
+    hairSide.castShadow = true;
+    headGroup.add(hairSide);
+  }
+  // Pómulos (huesos zigomáticos) — protuberancias sutiles en la zona media-lateral.
+  for (const side of [-1, 1]) {
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.072, 10, 8), matFace);
+    cheek.scale.set(0.55, 0.42, 0.50);
+    cheek.position.set(side * headR * 0.82, headR * 0.86, headR * 0.72);
+    headGroup.add(cheek);
+  }
+  // Lóbulo de la oreja — esfera pequeña en la parte inferior del pabellón.
+  for (const side of [-1, 1]) {
+    const lobe = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.046, 8, 6), matFace);
+    lobe.position.set(side * headR * 1.06, headR * 0.62, 0);
+    headGroup.add(lobe);
+  }
+  // Arco ceja superciliar (reborde óseo frontal) — protuberancia muy suave.
+  for (const side of [-1, 1]) {
+    const brow3d = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.062, 8, 6), matFace);
+    brow3d.scale.set(0.70, 0.28, 0.44);
+    brow3d.position.set(side * headR * 0.34, headR * 1.19, headR * 0.86);
+    headGroup.add(brow3d);
+  }
+  // Pestaña inferior — arco pequeño bajo cada ojo.
+  for (const eg of eyes) {
+    const matLashL = new THREE.MeshBasicMaterial({ color: 0x180a06 });
+    const lashLow = new THREE.Mesh(
+      new THREE.TorusGeometry(headR * 0.118, 0.0012, 4, 18, Math.PI),
+      matLashL,
+    );
+    lashLow.rotation.z = Math.PI;
+    lashLow.position.set(0, -headR * 0.006, headR * 0.088);
+    eg.add(lashLow);
+  }
 
   // ── Brazo ─────────────────────────────────────────────────────────────────
   const shoulder = new THREE.Group();

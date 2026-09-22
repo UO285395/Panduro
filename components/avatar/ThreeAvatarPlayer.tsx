@@ -324,7 +324,7 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const matIris   = new THREE.MeshPhysicalMaterial({ color: 0x5c3d1e, roughness: 0.18, metalness: 0.0, envMapIntensity: 0.4 });
   const matPupil  = new THREE.MeshPhysicalMaterial({ color: 0x09070a, roughness: 0.05, metalness: 0.0 });
   const matCatch  = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const eyes: { scale: { y: number } }[] = [];
+  const eyes: import("three").Group[] = [];
   for (const side of [-1, 1]) {
     const eg = new THREE.Group();
     eg.position.set(side * headR * 0.38, headR * 1.06, headR * 0.86);
@@ -601,6 +601,10 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     spring.headY += (targetHY - spring.headY) * KH;
     headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.002;
     headGroup.rotation.y = spring.headY;
+    // Ojos siguen la mano: rotación leve hacia la zona del signo.
+    const gazeX = -spring.shoulder[0] * 0.14;
+    const gazeY = spring.shoulder[1] * 0.10 - spring.headY * 0.8;
+    for (const e of eyes) { e.rotation.x = gazeX; e.rotation.y = gazeY; }
     updateBlink(tMs);
   }
 
@@ -636,6 +640,10 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     spring.headY += (0 - spring.headY) * KH;
     headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.003;
     headGroup.rotation.y = spring.headY + headSway;
+    // Ojos vuelven a posición neutra con micro-drift en reposo.
+    const idleGazeX = Math.sin(tMs * 0.00028) * 0.018;
+    const idleGazeY = Math.sin(tMs * 0.00019) * 0.014;
+    for (const e of eyes) { e.rotation.x = idleGazeX; e.rotation.y = idleGazeY; }
     updateBlink(tMs);
   }
 

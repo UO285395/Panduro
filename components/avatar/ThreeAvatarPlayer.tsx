@@ -535,6 +535,11 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const KR = 0.15; // rigidez antebrazo
   const KS = 0.12; // rigidez hombro    (≈120 ms — transición suave entre signos)
   const KH = 0.07; // rigidez cabeza    (≈200 ms — movimiento más lento)
+  const KF = 0.22; // rigidez dedos     (≈75 ms — suave pero responsivo)
+  // Estado spring para flex por dedo [proximal, medial, distal] × 5
+  const fingerSprings: [[number,number,number],[number,number,number],[number,number,number],[number,number,number],[number,number,number]] = [
+    [0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],
+  ];
 
   // Parpadeo espontáneo: siguiente parpadeo en t aleatoria, duración 150 ms.
   const blink = { next: 1500 + Math.random() * 2500, start: -1 };
@@ -580,7 +585,12 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
       anchors[i]!.rotation.z = pose.abduction[i];
     }
     for (let i = 0; i < 5; i++) {
-      applyFingerFlex(fingers[i]!, pose.fingers[i]);
+      const fp = pose.fingers[i];
+      const fs = fingerSprings[i]!;
+      fs[0] += (fp.proximal - fs[0]) * KF;
+      fs[1] += (fp.middle   - fs[1]) * KF;
+      fs[2] += (fp.distal   - fs[2]) * KF;
+      applyFingerFlex(fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
     }
 
     // Cabeza: mira ligeramente hacia la mano (solo cuando está en zona facial).

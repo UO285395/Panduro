@@ -405,12 +405,25 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   nose.position.set(0, headR * 0.92, headR * 0.95);
   headGroup.add(nose);
 
-  // Boca (línea oscura sutil)
+  // Boca: labio superior + inferior + línea de comisura.
   const matMouth = new THREE.MeshPhysicalMaterial({ color: 0x8a4030, roughness: 0.85 });
-  const mouth = new THREE.Mesh(new THREE.CapsuleGeometry(headR * 0.014, headR * 0.14, 4, 8), matMouth);
-  mouth.rotation.z = Math.PI / 2;
-  mouth.position.set(0, headR * 0.76, headR * 0.93);
-  headGroup.add(mouth);
+  // Labio inferior — esfera aplanada ligeramente protuberante.
+  const lowerLip = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.068, 12, 8), matMouth);
+  lowerLip.scale.set(1.20, 0.38, 0.68);
+  lowerLip.position.set(0, headR * 0.735, headR * 0.938);
+  headGroup.add(lowerLip);
+  // Labio superior — dos semiesferas para el arco de Cupido.
+  for (const side of [-1, 1]) {
+    const up = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.044, 10, 7), matMouth);
+    up.scale.set(0.80, 0.36, 0.65);
+    up.position.set(side * headR * 0.044, headR * 0.775, headR * 0.940);
+    headGroup.add(up);
+  }
+  // Línea de cierre de boca.
+  const mouthLine = new THREE.Mesh(new THREE.CapsuleGeometry(headR * 0.010, headR * 0.13, 4, 8), matMouth);
+  mouthLine.rotation.z = Math.PI / 2;
+  mouthLine.position.set(0, headR * 0.758, headR * 0.935);
+  headGroup.add(mouthLine);
 
   // Orejas (elipsoides planos a los lados de la cabeza)
   for (const side of [-1, 1]) {

@@ -161,10 +161,15 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       fill.position.set(-1.5, 1.5, 1.5);
       scene.add(fill);
 
-      // Rim: luz de contorno desde detrás-arriba para separar la mano del fondo.
-      const rim = new THREE.DirectionalLight(0xffddbb, 0.35);
-      rim.position.set(0.0, 2.0, -2.0);
+      // Rim: luz de contorno principal desde detrás-arriba-izquierda.
+      // Intensidad aumentada para separar mejor la silueta del fondo neutro.
+      const rim = new THREE.DirectionalLight(0xffe8cc, 0.58);
+      rim.position.set(-0.3, 2.5, -2.2);
       scene.add(rim);
+      // Rim frío secundario desde la derecha — da profundidad y separación adicional.
+      const rimCool = new THREE.DirectionalLight(0xc8e8ff, 0.22);
+      rimCool.position.set(0.6, 1.8, -1.8);
+      scene.add(rimCool);
 
       // Micro-fill: luz frontal cercana para iluminar el detalle de la piel.
       const micro = new THREE.DirectionalLight(0xffffff, 0.20);
@@ -332,8 +337,9 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     sheenColor: new THREE.Color(0xee9070),
     envMapIntensity: 0.65,
     thickness: 0.80,
-    attenuationColor: new THREE.Color(0xff9060),
-    attenuationDistance: 0.06,
+    // atenuación sangre-rojiza (hemoglobina): más realista que naranja.
+    attenuationColor: new THREE.Color(0xff3820),
+    attenuationDistance: 0.055,
   });
   const matPalm = new THREE.MeshPhysicalMaterial({
     color: 0xdba070, roughness: 0.46, metalness: 0.00,
@@ -380,6 +386,8 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     sheenColor: new THREE.Color(0x7a5038),
     clearcoat: 0.22, clearcoatRoughness: 0.30,
     envMapIntensity: 0.50,
+    // Anisotropía: simula el reflejo en línea de los mechones de pelo.
+    anisotropy: 0.78, anisotropyRotation: 0.12,
   });
   // Material para pliegue de muñeca (línea anatómica oscura).
   const matCrease = new THREE.MeshPhysicalMaterial({
@@ -433,8 +441,9 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
 
   // Cabeza — grupo animable (permite nod/shake con spring)
   const headR = BONE_LENGTHS.head / 2;
+  const HEAD_BASE_Y = SHOULDER_HEIGHT + BONE_LENGTHS.neck;
   const headGroup = new THREE.Group();
-  headGroup.position.y = SHOULDER_HEIGHT + BONE_LENGTHS.neck;
+  headGroup.position.y = HEAD_BASE_Y;
   group.add(headGroup);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 26, 20), matFace);
@@ -550,6 +559,21 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   chin.scale.set(0.88, 0.58, 0.68);
   chin.position.set(0, headR * 0.55, headR * 0.90);
   headGroup.add(chin);
+  // Ángulo mandibular — volumen lateral que define la línea de la mandíbula.
+  for (const side of [-1, 1]) {
+    const jaw = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.22, 14, 10), matFace);
+    jaw.scale.set(0.58, 0.46, 0.70);
+    jaw.position.set(side * headR * 0.55, headR * 0.52, headR * 0.46);
+    headGroup.add(jaw);
+  }
+  // Conducto auditivo externo — disco oscuro dentro de cada pabellón.
+  const matCanal = new THREE.MeshBasicMaterial({ color: 0x160808 });
+  for (const side of [-1, 1]) {
+    const canal = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.028, 8, 6), matCanal);
+    canal.scale.set(0.36, 0.44, 1.0);
+    canal.position.set(side * headR * 1.022, headR * 0.90, 0.001);
+    headGroup.add(canal);
+  }
 
   // Boca: labio superior + inferior + línea de comisura.
   const matMouth = new THREE.MeshPhysicalMaterial({
@@ -961,6 +985,8 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     spring.headY += (targetHY - spring.headY) * KH;
     headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.002;
     headGroup.rotation.y = spring.headY;
+    // Bob suave sincronizado con la respiración.
+    headGroup.position.y = HEAD_BASE_Y + breath * 0.45;
     // Ojos siguen la mano: rotación leve hacia la zona del signo.
     const gazeX = -spring.shoulder[0] * 0.14;
     const gazeY = spring.shoulder[1] * 0.10 - spring.headY * 0.8;
@@ -1014,6 +1040,7 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     headGroup.rotation.x = spring.headX;
     headGroup.rotation.y = spring.headY + headSway;
     headGroup.rotation.z = Math.sin(tMs * 0.00038) * 0.006; // tilt lateral muy suave
+    headGroup.position.y = HEAD_BASE_Y + breath * 0.45;
     // Micro-sacádica: deriva lenta de la mirada + salto involuntario esporádico.
     // Usamos sumatoria de frecuencias irracionales para un movimiento no periódico.
     const idleGazeX = Math.sin(tMs * 0.000267) * 0.016 + Math.sin(tMs * 0.000891) * 0.006;
@@ -1080,8 +1107,9 @@ function buildFinger(
   g3.add(nail);
   // Pulpejo — esfera carnosa en la yema del dedo (palmar).
   const pulpMat = new THREE.MeshPhysicalMaterial({
-    color: 0xc5825a, roughness: 0.50, metalness: 0.00,
-    thickness: 0.40, attenuationColor: new THREE.Color(0xff9060), attenuationDistance: 0.04,
+    color: 0xc06050, roughness: 0.52, metalness: 0.00,
+    // Hemoglobina visible en la yema: atenuación roja como la piel real.
+    thickness: 0.45, attenuationColor: new THREE.Color(0xff3010), attenuationDistance: 0.032,
   });
   const pulp = new THREE.Mesh(new THREE.SphereGeometry(r2 * 0.78, 10, 8), pulpMat);
   pulp.scale.set(0.92, 0.34, 0.88);

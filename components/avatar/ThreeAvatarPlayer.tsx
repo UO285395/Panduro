@@ -237,38 +237,54 @@ type RigHandle = {
 };
 
 function buildProceduralRig(THREE: typeof import("three")): RigHandle {
-  // MeshPhysicalMaterial con sheen (retro-dispersión subsuperficial) para simular
-  // la translucidez de la piel sin texturas adicionales.
+  // MeshPhysicalMaterial con sheen + thickness para simular SSS de piel.
+  // thickness≈0.8 permite que la luz key-light "sangre" a través de la piel
+  // de los dedos (efecto visible al contraluz), lo más cercano a SSS sin texturas.
   const matSkin = new THREE.MeshPhysicalMaterial({
-    color: 0xc9875e, roughness: 0.42, metalness: 0.01,
-    sheen: 0.45, sheenRoughness: 0.75,
+    color: 0xc5825a, roughness: 0.40, metalness: 0.01,
+    sheen: 0.50, sheenRoughness: 0.72,
     sheenColor: new THREE.Color(0xee9070),
-    envMapIntensity: 0.60,
+    envMapIntensity: 0.65,
+    thickness: 0.80,
+    attenuationColor: new THREE.Color(0xff9060),
+    attenuationDistance: 0.06,
   });
   const matPalm = new THREE.MeshPhysicalMaterial({
-    color: 0xdfa478, roughness: 0.48, metalness: 0.00,
-    sheen: 0.32, sheenRoughness: 0.82,
-    sheenColor: new THREE.Color(0xf0b890), envMapIntensity: 0.50,
+    color: 0xdba070, roughness: 0.46, metalness: 0.00,
+    sheen: 0.35, sheenRoughness: 0.80,
+    sheenColor: new THREE.Color(0xf2b894),
+    envMapIntensity: 0.52,
+    thickness: 0.55,
+    attenuationColor: new THREE.Color(0xffa070),
+    attenuationDistance: 0.04,
   });
   const matShirt = new THREE.MeshPhysicalMaterial({
     color: 0xea580c, roughness: 0.60, metalness: 0.00, envMapIntensity: 0.35,
   });
   const matNail = new THREE.MeshPhysicalMaterial({
-    color: 0xf2ddd0, roughness: 0.10, metalness: 0.04,
-    clearcoat: 0.50, clearcoatRoughness: 0.04, envMapIntensity: 0.90,
+    color: 0xf0d8cc, roughness: 0.08, metalness: 0.04,
+    clearcoat: 0.65, clearcoatRoughness: 0.03, envMapIntensity: 1.00,
   });
   const matFace = new THREE.MeshPhysicalMaterial({
-    color: 0xc88060, roughness: 0.44, metalness: 0.00,
-    sheen: 0.25, sheenRoughness: 0.88,
+    color: 0xc47858, roughness: 0.42, metalness: 0.00,
+    sheen: 0.28, sheenRoughness: 0.86,
     sheenColor: new THREE.Color(0xdda070),
-    clearcoat: 0.08, clearcoatRoughness: 0.40,
-    envMapIntensity: 0.45,
+    clearcoat: 0.10, clearcoatRoughness: 0.38,
+    envMapIntensity: 0.48,
+    thickness: 0.60,
+    attenuationColor: new THREE.Color(0xff8855),
+    attenuationDistance: 0.05,
   });
   const matHair = new THREE.MeshPhysicalMaterial({
-    color: 0x2c1c12, roughness: 0.72, metalness: 0.00,
-    sheen: 0.15, sheenRoughness: 0.95,
-    sheenColor: new THREE.Color(0x5c3c28),
-    envMapIntensity: 0.25,
+    color: 0x2a1a10, roughness: 0.70, metalness: 0.00,
+    sheen: 0.18, sheenRoughness: 0.92,
+    sheenColor: new THREE.Color(0x6a4030),
+    envMapIntensity: 0.30,
+  });
+  // Material para pliegue de muñeca (línea anatómica oscura).
+  const matCrease = new THREE.MeshPhysicalMaterial({
+    color: 0x8a5038, roughness: 0.90, metalness: 0.00,
+    transparent: true, opacity: 0.55,
   });
 
   const group = new THREE.Group();
@@ -450,6 +466,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   wristBall.position.set(0, PALM_HEIGHT * 0.50, 0);
   palm.add(wristBall);
 
+  // Pliegue de muñeca — anillo anatómico oscuro semitransparente.
+  const wristCrease = new THREE.Mesh(
+    new THREE.TorusGeometry(PALM_WIDTH * 0.28, 0.0032, 6, 32),
+    matCrease,
+  );
+  wristCrease.rotation.x = Math.PI / 2;
+  wristCrease.position.set(0, PALM_HEIGHT * 0.46, 0);
+  palm.add(wristCrease);
+
   // ── Dedos ─────────────────────────────────────────────────────────────────
   // Radios: [proximal-base, medial-base, distal-base]
   const radii: [number, number, number] = [0.0158, 0.0132, 0.0108];
@@ -585,11 +610,15 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     for (let i = 1; i < 5; i++) {
       anchors[i]!.rotation.z = 0;
     }
-    // Dedos ligeramente curvados en reposo con micro-variación viva.
+    // Dedos ligeramente curvados en reposo con micro-tremor individual por dedo.
     const curl = 0.06 + Math.sin(tMs * 0.0011) * 0.012;
-    const restFlex: FingerPose = { proximal: 0.18 + curl, middle: 0.14 + curl * 0.7, distal: 0.10 + curl * 0.4 };
     for (let i = 0; i < 5; i++) {
-      applyFingerFlex(fingers[i]!, restFlex);
+      const tremor = Math.sin(tMs * (0.0011 + i * 0.00031) + i * 1.2) * 0.008;
+      applyFingerFlex(fingers[i]!, {
+        proximal: 0.18 + curl + tremor,
+        middle:   0.14 + curl * 0.70 + tremor * 0.60,
+        distal:   0.10 + curl * 0.40 + tremor * 0.30,
+      });
     }
     // Leve balanceo de cabeza en reposo.
     const headSway = Math.sin(tMs * 0.00055) * 0.012;

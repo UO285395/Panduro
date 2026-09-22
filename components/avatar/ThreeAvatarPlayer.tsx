@@ -76,14 +76,16 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       // IBL — mapa de entorno procedural para materiales PBR realistas.
       // Un gradiente equirectangular cielo/horizonte/tierra da reflexiones naturales.
       const envCanvas2d = document.createElement("canvas");
-      envCanvas2d.width = 256; envCanvas2d.height = 128;
+      envCanvas2d.width = 512; envCanvas2d.height = 256;
       const e2d = envCanvas2d.getContext("2d")!;
-      const eGrad = e2d.createLinearGradient(0, 0, 0, 128);
-      eGrad.addColorStop(0.00, "#b0d4f1"); // cielo
-      eGrad.addColorStop(0.45, "#fff4ea"); // horizonte
-      eGrad.addColorStop(1.00, "#c8a870"); // suelo cálido
+      const eGrad = e2d.createLinearGradient(0, 0, 0, 256);
+      eGrad.addColorStop(0.00, "#eef6ff"); // overhead — softbox frío
+      eGrad.addColorStop(0.15, "#c4dff5"); // cielo superior
+      eGrad.addColorStop(0.42, "#fff6ee"); // horizonte key-light cálido
+      eGrad.addColorStop(0.65, "#e8c89a"); // suelo reflejado
+      eGrad.addColorStop(1.00, "#8a6040"); // sombra suelo
       e2d.fillStyle = eGrad;
-      e2d.fillRect(0, 0, 256, 128);
+      e2d.fillRect(0, 0, 512, 256);
       const envTex = new THREE.CanvasTexture(envCanvas2d);
       envTex.mapping = THREE.EquirectangularReflectionMapping;
       const pmrem = new THREE.PMREMGenerator(renderer);
@@ -460,6 +462,18 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   hypothenar.scale.set(0.016, 0.030, 0.012);
   hypothenar.position.set(-PALM_WIDTH * 0.38, PALM_HEIGHT * 0.10, PALM_DEPTH * 0.14);
   palm.add(hypothenar);
+
+  // Línea palmar principal (pliegue de vida) — curva de Bézier cuadrática.
+  const palmCreaseCurve = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(-PALM_WIDTH * 0.40, -PALM_HEIGHT * 0.10, PALM_DEPTH * 0.20),
+    new THREE.Vector3( 0,                  PALM_HEIGHT * 0.08,  PALM_DEPTH * 0.22),
+    new THREE.Vector3( PALM_WIDTH * 0.32,  PALM_HEIGHT * 0.20,  PALM_DEPTH * 0.20),
+  );
+  const palmCreaseMesh = new THREE.Mesh(
+    new THREE.TubeGeometry(palmCreaseCurve, 18, 0.0022, 5, false),
+    matCrease,
+  );
+  palm.add(palmCreaseMesh);
 
   // Articulación muñeca–palma.
   const wristBall = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.6, 18, 14), matSkin);

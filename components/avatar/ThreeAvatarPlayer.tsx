@@ -60,21 +60,30 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
 
       const scene = new THREE.Scene();
 
-      // Fondo de gradiente cálido con viñeta fotográfica suave.
+      // Fondo estudio 512×512: gradiente cálido + bokeh central + viñeta fotográfica.
+      const BG = 512;
       const gradCanvas = document.createElement("canvas");
-      gradCanvas.width = 256; gradCanvas.height = 256;
+      gradCanvas.width = BG; gradCanvas.height = BG;
       const gctx = gradCanvas.getContext("2d")!;
-      const grad = gctx.createLinearGradient(0, 0, 0, 256);
-      grad.addColorStop(0, "#fff4ea");
-      grad.addColorStop(1, "#ffe0c0");
-      gctx.fillStyle = grad;
-      gctx.fillRect(0, 0, 256, 256);
-      // Viñeta radial oscura en las esquinas
-      const vig = gctx.createRadialGradient(128, 128, 55, 128, 128, 195);
+      // Gradiente base diagonal — evita el look plano de un gradiente puro vertical.
+      const bgBase = gctx.createLinearGradient(0, 0, BG, BG);
+      bgBase.addColorStop(0.00, "#f8eede");
+      bgBase.addColorStop(0.50, "#ffe8ca");
+      bgBase.addColorStop(1.00, "#f0d8b8");
+      gctx.fillStyle = bgBase;
+      gctx.fillRect(0, 0, BG, BG);
+      // Bokeh central — halo suave detrás del sujeto como un softbox en el fondo.
+      const bokeh = gctx.createRadialGradient(BG * 0.52, BG * 0.44, 0, BG * 0.52, BG * 0.44, BG * 0.42);
+      bokeh.addColorStop(0, "rgba(255,252,240,0.72)");
+      bokeh.addColorStop(1, "rgba(255,252,240,0.00)");
+      gctx.fillStyle = bokeh;
+      gctx.fillRect(0, 0, BG, BG);
+      // Viñeta fotográfica — oscurece las esquinas suavemente.
+      const vig = gctx.createRadialGradient(BG / 2, BG / 2, BG * 0.22, BG / 2, BG / 2, BG * 0.82);
       vig.addColorStop(0, "rgba(0,0,0,0)");
-      vig.addColorStop(1, "rgba(0,0,0,0.18)");
+      vig.addColorStop(1, "rgba(30,10,0,0.28)");
       gctx.fillStyle = vig;
-      gctx.fillRect(0, 0, 256, 256);
+      gctx.fillRect(0, 0, BG, BG);
       const bgTex = new THREE.CanvasTexture(gradCanvas);
       bgTex.minFilter = THREE.LinearFilter;
       scene.background = bgTex;
@@ -571,6 +580,15 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   const shoulderBall = new THREE.Mesh(new THREE.SphereGeometry(0.038, 16, 12), matSkin);
   shoulderBall.castShadow = true;
   shoulder.add(shoulderBall);
+  // Deltoides — cápsula que da volumen muscular lateral al hombro.
+  const deltoid = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.034, BONE_LENGTHS.upperArm * 0.42, 6, 14),
+    matSkin,
+  );
+  deltoid.position.set(RIGHT_SHOULDER_X > 0 ? 0.024 : -0.024, -BONE_LENGTHS.upperArm * 0.22, 0.010);
+  deltoid.rotation.z = (RIGHT_SHOULDER_X > 0 ? 1 : -1) * 0.18;
+  deltoid.castShadow = true;
+  shoulder.add(deltoid);
 
   const upperArm = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.030, BONE_LENGTHS.upperArm - 0.06, 8, 18),

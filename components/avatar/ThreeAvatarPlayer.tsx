@@ -822,21 +822,36 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     [0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],
   ];
 
-  // Parpadeo espontáneo: siguiente parpadeo en t aleatoria, duración 150 ms.
-  const blink = { next: 1500 + Math.random() * 2500, start: -1 };
+  // Parpadeo espontáneo: cierre 80 ms + apertura 140 ms = 220 ms total.
+  // doubleBlink: 10% de probabilidad de un segundo parpadeo rápido 200 ms después.
+  const BLINK_CLOSE = 80, BLINK_OPEN = 140, BLINK_DUR = BLINK_CLOSE + BLINK_OPEN;
+  const blink = { next: 1500 + Math.random() * 2500, start: -1, double: false };
 
   function updateBlink(tMs: number) {
     if (blink.start < 0 && tMs >= blink.next) {
       blink.start = tMs;
-      blink.next = tMs + 2500 + Math.random() * 3500;
+      blink.double = Math.random() < 0.10;
+      blink.next = tMs + (blink.double ? BLINK_DUR + 200 + BLINK_DUR : 2000 + Math.random() * 4000);
     }
     if (blink.start >= 0) {
-      const phase = (tMs - blink.start) / 150;
+      const elapsed = tMs - blink.start;
+      const phase = elapsed / BLINK_DUR;
       if (phase >= 1) {
-        blink.start = -1;
+        // Si doble parpadeo, programar el segundo 200 ms después.
+        if (blink.double) {
+          blink.double = false;
+          blink.start = -1;
+          blink.next = tMs + 200; // pausa breve antes del segundo parpadeo
+        } else {
+          blink.start = -1;
+        }
         for (const e of eyes) e.scale.y = 1;
       } else {
-        const sy = 1 - 0.9 * Math.sin(Math.PI * phase);
+        // Cierre rápido (fase 0→t_close) + apertura más lenta (t_close→1)
+        const raw = elapsed < BLINK_CLOSE
+          ? (elapsed / BLINK_CLOSE)
+          : 1 - ((elapsed - BLINK_CLOSE) / BLINK_OPEN);
+        const sy = 1 - 0.92 * raw;
         for (const e of eyes) e.scale.y = sy;
       }
     }

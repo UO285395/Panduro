@@ -79,19 +79,31 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       bgTex.minFilter = THREE.LinearFilter;
       scene.background = bgTex;
 
-      // IBL — mapa de entorno procedural para materiales PBR realistas.
-      // Un gradiente equirectangular cielo/horizonte/tierra da reflexiones naturales.
+      // IBL 1024×512 — studio three-point: softbox superior + key window lateral.
+      const EW = 1024, EH = 512;
       const envCanvas2d = document.createElement("canvas");
-      envCanvas2d.width = 512; envCanvas2d.height = 256;
+      envCanvas2d.width = EW; envCanvas2d.height = EH;
       const e2d = envCanvas2d.getContext("2d")!;
-      const eGrad = e2d.createLinearGradient(0, 0, 0, 256);
-      eGrad.addColorStop(0.00, "#eef6ff"); // overhead — softbox frío
-      eGrad.addColorStop(0.15, "#c4dff5"); // cielo superior
-      eGrad.addColorStop(0.42, "#fff6ee"); // horizonte key-light cálido
-      eGrad.addColorStop(0.65, "#e8c89a"); // suelo reflejado
-      eGrad.addColorStop(1.00, "#8a6040"); // sombra suelo
+      // Fondo base — gradiente vertical cielo→suelo.
+      const eGrad = e2d.createLinearGradient(0, 0, 0, EH);
+      eGrad.addColorStop(0.00, "#dde8f8");
+      eGrad.addColorStop(0.35, "#f8f4ec");
+      eGrad.addColorStop(0.65, "#ead4a0");
+      eGrad.addColorStop(1.00, "#7a5830");
       e2d.fillStyle = eGrad;
-      e2d.fillRect(0, 0, 512, 256);
+      e2d.fillRect(0, 0, EW, EH);
+      // Key window cálido — halo elíptico a la derecha (simulando luz de estudio).
+      const kGrad = e2d.createRadialGradient(EW * 0.72, EH * 0.35, 0, EW * 0.72, EH * 0.35, EW * 0.32);
+      kGrad.addColorStop(0, "rgba(255,245,210,0.82)");
+      kGrad.addColorStop(1, "rgba(255,245,210,0.00)");
+      e2d.fillStyle = kGrad;
+      e2d.fillRect(0, 0, EW, EH);
+      // Fill frío desde la izquierda.
+      const fGrad = e2d.createRadialGradient(EW * 0.10, EH * 0.42, 0, EW * 0.10, EH * 0.42, EW * 0.28);
+      fGrad.addColorStop(0, "rgba(190,215,240,0.50)");
+      fGrad.addColorStop(1, "rgba(190,215,240,0.00)");
+      e2d.fillStyle = fGrad;
+      e2d.fillRect(0, 0, EW, EH);
       const envTex = new THREE.CanvasTexture(envCanvas2d);
       envTex.mapping = THREE.EquirectangularReflectionMapping;
       const pmrem = new THREE.PMREMGenerator(renderer);
@@ -906,6 +918,15 @@ function buildFinger(
   nail.castShadow = true;
   nail.position.set(0, -len3 * 0.48, r2 * 0.84);
   g3.add(nail);
+  // Pulpejo — esfera carnosa en la yema del dedo (palmar).
+  const pulpMat = new THREE.MeshPhysicalMaterial({
+    color: 0xc5825a, roughness: 0.50, metalness: 0.00,
+    thickness: 0.40, attenuationColor: new THREE.Color(0xff9060), attenuationDistance: 0.04,
+  });
+  const pulp = new THREE.Mesh(new THREE.SphereGeometry(r2 * 0.78, 10, 8), pulpMat);
+  pulp.scale.set(0.92, 0.34, 0.88);
+  pulp.position.set(0, -len3 * 0.54, -r2 * 0.66);
+  g3.add(pulp);
 
   g2.add(g3);
   g1.add(g2);

@@ -596,6 +596,14 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
   );
   upperArm.position.y = -BONE_LENGTHS.upperArm / 2;
   shoulder.add(upperArm);
+  // Bíceps — cápsula frontal más ancha que el cúbito para dar forma muscular.
+  const bicep = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.028, BONE_LENGTHS.upperArm * 0.50, 6, 12),
+    matSkin,
+  );
+  bicep.position.set(0.006, -BONE_LENGTHS.upperArm * 0.44, 0.014);
+  bicep.castShadow = true;
+  shoulder.add(bicep);
 
   const elbow = new THREE.Group();
   elbow.position.y = -BONE_LENGTHS.upperArm;
@@ -755,6 +763,22 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
       cr.rotation.x = Math.PI / 2;
       j.add(cr);
     });
+  }
+
+  // Membrana interdigital — rellena la "V" entre los dedos en la base.
+  // Tres membranas: índice-medio, medio-anular, anular-meñique.
+  const webMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb87050, roughness: 0.55, metalness: 0.0,
+    transparent: true, opacity: 0.72, depthWrite: false,
+    thickness: 0.30, attenuationColor: new THREE.Color(0xff9060), attenuationDistance: 0.03,
+  });
+  for (let wi = 0; wi < 3; wi++) {
+    const xA = PALM_WIDTH / 2 - spacing * (0.5 + wi);
+    const xB = PALM_WIDTH / 2 - spacing * (1.5 + wi);
+    const web = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.05, 10, 8), webMat);
+    web.scale.set(0.72, 0.55, 0.88);
+    web.position.set((xA + xB) * 0.5, -PALM_HEIGHT / 2, PALM_DEPTH * 0.06);
+    palm.add(web);
   }
 
   // Spring state para movimiento secundario — muñeca, antebrazo y cabeza

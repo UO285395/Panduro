@@ -369,6 +369,23 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     const catchlight = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.020, 8, 6), matCatch);
     catchlight.position.set(side * headR * 0.030, headR * 0.044, headR * 0.128);
     eg.add(catchlight);
+    // Anillo limbal — círculo oscuro en el borde exterior del iris.
+    const matLimbal = new THREE.MeshBasicMaterial({ color: 0x120805 });
+    const limbal = new THREE.Mesh(
+      new THREE.TorusGeometry(headR * 0.082, headR * 0.009, 6, 24),
+      matLimbal,
+    );
+    limbal.position.z = headR * 0.090;
+    eg.add(limbal);
+    // Pestaña superior — arco oscuro encima del ojo.
+    const matLash = new THREE.MeshBasicMaterial({ color: 0x180a06 });
+    const lash = new THREE.Mesh(
+      new THREE.TorusGeometry(headR * 0.128, 0.0018, 4, 20, Math.PI),
+      matLash,
+    );
+    lash.rotation.z = 0;
+    lash.position.set(0, headR * 0.008, headR * 0.090);
+    eg.add(lash);
     headGroup.add(eg);
     eyes.push(eg);
   }

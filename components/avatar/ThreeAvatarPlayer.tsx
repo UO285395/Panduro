@@ -399,11 +399,29 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     headGroup.add(brow);
   }
 
-  // Nariz (esfera ligeramente aplanada en el centro del rostro)
+  // Nariz: punta + puente + narinas.
   const nose = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.09, 10, 8), matFace);
   nose.scale.set(0.80, 0.65, 0.70);
   nose.position.set(0, headR * 0.92, headR * 0.95);
   headGroup.add(nose);
+  // Puente nasal (cápsula vertical sutil).
+  const noseBridge = new THREE.Mesh(new THREE.CapsuleGeometry(headR * 0.016, headR * 0.07, 4, 8), matFace);
+  noseBridge.rotation.x = 0.22;
+  noseBridge.position.set(0, headR * 0.985, headR * 0.884);
+  headGroup.add(noseBridge);
+  // Narinas (fosas nasales oscuras).
+  const matNostril = new THREE.MeshPhysicalMaterial({ color: 0x5a2616, roughness: 0.95 });
+  for (const side of [-1, 1]) {
+    const nostril = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.024, 8, 6), matNostril);
+    nostril.scale.set(0.75, 0.50, 1.10);
+    nostril.position.set(side * headR * 0.052, headR * 0.882, headR * 0.972);
+    headGroup.add(nostril);
+  }
+  // Barbilla (protuberancia suave en la base del mentón).
+  const chin = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.052, 10, 8), matFace);
+  chin.scale.set(0.88, 0.58, 0.68);
+  chin.position.set(0, headR * 0.55, headR * 0.90);
+  headGroup.add(chin);
 
   // Boca: labio superior + inferior + línea de comisura.
   const matMouth = new THREE.MeshPhysicalMaterial({ color: 0x8a4030, roughness: 0.85 });

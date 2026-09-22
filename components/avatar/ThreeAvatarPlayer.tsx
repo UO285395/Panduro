@@ -910,8 +910,9 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     const microSway  = Math.sin(tMs * 0.0023) * 0.006;
     shoulder.position.y = breath;
     torso.scale.set(1 + breath * 2, 1 + breath * 8, 1 + breath * 3);
-    shoulder.rotation.set(0.08 + sway * 0.1, 0, 0);
-    elbow.rotation.set(-0.30, 0, 0);
+    const lateralSway = Math.sin(tMs * 0.00055) * 0.010;
+    shoulder.rotation.set(0.08 + sway * 0.1, 0, lateralSway);
+    elbow.rotation.set(-0.32 + sway * 0.04, 0, 0);
     // Micro-pronación del antebrazo — da sensación de peso natural.
     foreArmGroup.rotation.y = microSway * 0.4;
     // Micro-flexión de muñeca en reposo.
@@ -930,16 +931,23 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
         distal:   0.10 + curl * 0.40 + tremor * 0.30,
       });
     }
-    // Leve balanceo de cabeza en reposo.
-    const headSway = Math.sin(tMs * 0.00055) * 0.012;
-    spring.headX += (0 - spring.headX) * KH;
+    // Balanceo natural de la cabeza en reposo:
+    // ligera inclinación hacia abajo (chin-down) + oscilación muy lenta lateral.
+    const headSway = Math.sin(tMs * 0.00055) * 0.010;
+    const chinDown  = 0.025 + Math.sin(tMs * 0.0018) * 0.004;
+    spring.headX += (chinDown - spring.headX) * KH;
     spring.headY += (0 - spring.headY) * KH;
-    headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.003;
+    headGroup.rotation.x = spring.headX;
     headGroup.rotation.y = spring.headY + headSway;
-    // Ojos vuelven a posición neutra con micro-drift en reposo.
-    const idleGazeX = Math.sin(tMs * 0.00028) * 0.018;
-    const idleGazeY = Math.sin(tMs * 0.00019) * 0.014;
-    for (const e of eyes) { e.rotation.x = idleGazeX; e.rotation.y = idleGazeY; }
+    headGroup.rotation.z = Math.sin(tMs * 0.00038) * 0.006; // tilt lateral muy suave
+    // Micro-sacádica: deriva lenta de la mirada + salto involuntario esporádico.
+    // Usamos sumatoria de frecuencias irracionales para un movimiento no periódico.
+    const idleGazeX = Math.sin(tMs * 0.000267) * 0.016 + Math.sin(tMs * 0.000891) * 0.006;
+    const idleGazeY = Math.sin(tMs * 0.000184) * 0.013 + Math.sin(tMs * 0.000712) * 0.005;
+    // Micro-sacada de alta frecuencia (3–5 Hz) a baja amplitud (±0.004 rad).
+    const sacX = Math.sign(Math.sin(tMs * 0.00312)) * 0.004 * (Math.random() < 0.002 ? 1 : 0);
+    const sacY = Math.sign(Math.sin(tMs * 0.00289)) * 0.003 * (Math.random() < 0.002 ? 1 : 0);
+    for (const e of eyes) { e.rotation.x = idleGazeX + sacX; e.rotation.y = idleGazeY + sacY; }
     updateBlink(tMs);
   }
 

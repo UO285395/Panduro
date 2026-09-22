@@ -60,15 +60,21 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
 
       const scene = new THREE.Scene();
 
-      // Fondo de gradiente cálido usando textura 2×2 interpolada por la GPU.
+      // Fondo de gradiente cálido con viñeta fotográfica suave.
       const gradCanvas = document.createElement("canvas");
-      gradCanvas.width = 2; gradCanvas.height = 2;
+      gradCanvas.width = 256; gradCanvas.height = 256;
       const gctx = gradCanvas.getContext("2d")!;
-      const grad = gctx.createLinearGradient(0, 0, 0, 2);
+      const grad = gctx.createLinearGradient(0, 0, 0, 256);
       grad.addColorStop(0, "#fff4ea");
       grad.addColorStop(1, "#ffe0c0");
       gctx.fillStyle = grad;
-      gctx.fillRect(0, 0, 2, 2);
+      gctx.fillRect(0, 0, 256, 256);
+      // Viñeta radial oscura en las esquinas
+      const vig = gctx.createRadialGradient(128, 128, 55, 128, 128, 195);
+      vig.addColorStop(0, "rgba(0,0,0,0)");
+      vig.addColorStop(1, "rgba(0,0,0,0.18)");
+      gctx.fillStyle = vig;
+      gctx.fillRect(0, 0, 256, 256);
       const bgTex = new THREE.CanvasTexture(gradCanvas);
       bgTex.minFilter = THREE.LinearFilter;
       scene.background = bgTex;
@@ -125,8 +131,8 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       key.shadow.camera.far = 6;
       key.shadow.camera.left = key.shadow.camera.bottom = -0.4;
       key.shadow.camera.right = key.shadow.camera.top = 0.4;
-      key.shadow.radius = 4;
-      key.shadow.bias = -0.001;
+      key.shadow.radius = 6;
+      key.shadow.bias = -0.0008;
       scene.add(key);
 
       // Fill: suave desde la izquierda, reduce sombras duras.

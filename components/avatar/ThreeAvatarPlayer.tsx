@@ -347,8 +347,16 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const matIris   = new THREE.MeshPhysicalMaterial({ color: 0x5c3d1e, roughness: 0.18, metalness: 0.0, envMapIntensity: 0.4 });
   const matPupil  = new THREE.MeshPhysicalMaterial({ color: 0x09070a, roughness: 0.05, metalness: 0.0 });
   const matCatch  = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  // Cuenca del ojo: esfera oscura detrás del ojo para sombra orbital.
+  const matSocket = new THREE.MeshPhysicalMaterial({
+    color: 0x4a2810, roughness: 1.0, metalness: 0.0,
+    transparent: true, opacity: 0.28,
+  });
   const eyes: import("three").Group[] = [];
   for (const side of [-1, 1]) {
+    const socket = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.165, 12, 8), matSocket);
+    socket.position.set(side * headR * 0.38, headR * 1.06, headR * 0.80);
+    headGroup.add(socket);
     const eg = new THREE.Group();
     eg.position.set(side * headR * 0.38, headR * 1.06, headR * 0.86);
     eg.add(new THREE.Mesh(new THREE.SphereGeometry(headR * 0.130, 14, 10), matSclera));

@@ -32,7 +32,10 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
     const b = kfs[i + 1]!;
     if (tMs >= a.t && tMs < b.t) {
       const span = b.t - a.t;
-      const t01 = span > 0 ? (tMs - a.t) / span : 0;
+      const tRaw = span > 0 ? (tMs - a.t) / span : 0;
+      // Ease-in-out: aplica smoothstep para dar aceleración/desaceleración
+      // natural a cada segmento (lento al principio y al final, rápido en medio).
+      const t01 = tRaw * tRaw * (3 - 2 * tRaw);
       // Catmull-Rom: puntos de control envolventes (loop en los extremos).
       const p0 = kfs[(i - 1 + n) % n]!;
       const p3 = kfs[(i + 2) % n]!;

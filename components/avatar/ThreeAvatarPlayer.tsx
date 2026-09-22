@@ -310,6 +310,16 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   neck.castShadow = true;
   group.add(neck);
 
+  // Clavícula — cápsula horizontal sobre el hombro derecho.
+  const collarBone = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.012, 0.22, 4, 10),
+    matSkin,
+  );
+  collarBone.rotation.z = Math.PI / 2;
+  collarBone.position.set(RIGHT_SHOULDER_X * 0.5, SHOULDER_HEIGHT + 0.01, 0.02);
+  collarBone.castShadow = true;
+  group.add(collarBone);
+
   // Cabeza — grupo animable (permite nod/shake con spring)
   const headR = BONE_LENGTHS.head / 2;
   const headGroup = new THREE.Group();
@@ -596,7 +606,7 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   function apply(pose: Pose, tMs: number) {
     const breath = Math.sin(tMs * 0.0018) * 0.003 + Math.sin(tMs * 0.0054) * 0.001;
     shoulder.position.y = breath;
-    torso.scale.y = 1 + breath * 8;
+    torso.scale.set(1 + breath * 2, 1 + breath * 8, 1 + breath * 3);
 
     spring.shoulder[0] += (pose.shoulder[0] - spring.shoulder[0]) * KS;
     spring.shoulder[1] += (pose.shoulder[1] - spring.shoulder[1]) * KS;
@@ -645,7 +655,7 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     const sway       = Math.sin(tMs * 0.0008) * 0.008;
     const microSway  = Math.sin(tMs * 0.0023) * 0.006;
     shoulder.position.y = breath;
-    torso.scale.y = 1 + breath * 8;
+    torso.scale.set(1 + breath * 2, 1 + breath * 8, 1 + breath * 3);
     shoulder.rotation.set(0.08 + sway * 0.1, 0, 0);
     elbow.rotation.set(-0.30, 0, 0);
     // Micro-pronación del antebrazo — da sensación de peso natural.

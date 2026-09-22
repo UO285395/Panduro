@@ -294,10 +294,12 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
 
   // Ojos (dos pequeños círculos oscuros a los lados de la esfera)
   const matEye = new THREE.MeshPhysicalMaterial({ color: 0x1a0a05, roughness: 0.3, metalness: 0.0 });
+  const eyes: { scale: { y: number } }[] = [];
   for (const side of [-1, 1]) {
     const eye = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.12, 10, 8), matEye);
     eye.position.set(side * headR * 0.38, headR * 1.06, headR * 0.86);
     headGroup.add(eye);
+    eyes.push(eye);
   }
 
   // Pelo (casquete superior, relativo a headGroup)
@@ -441,6 +443,26 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   const KR = 0.15; // rigidez antebrazo
   const KH = 0.07; // rigidez cabeza   (≈200 ms — movimiento más lento)
 
+  // Parpadeo espontáneo: siguiente parpadeo en t aleatoria, duración 150 ms.
+  const blink = { next: 1500 + Math.random() * 2500, start: -1 };
+
+  function updateBlink(tMs: number) {
+    if (blink.start < 0 && tMs >= blink.next) {
+      blink.start = tMs;
+      blink.next = tMs + 2500 + Math.random() * 3500;
+    }
+    if (blink.start >= 0) {
+      const phase = (tMs - blink.start) / 150;
+      if (phase >= 1) {
+        blink.start = -1;
+        for (const e of eyes) e.scale.y = 1;
+      } else {
+        const sy = 1 - 0.9 * Math.sin(Math.PI * phase);
+        for (const e of eyes) e.scale.y = sy;
+      }
+    }
+  }
+
   function apply(pose: Pose, tMs: number) {
     const breath = Math.sin(tMs * 0.0018) * 0.003;
     shoulder.position.y = breath;
@@ -470,6 +492,7 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     spring.headY += (targetHY - spring.headY) * KH;
     headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.002;
     headGroup.rotation.y = spring.headY;
+    updateBlink(tMs);
   }
 
   function applyIdle(tMs: number) {
@@ -494,6 +517,7 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     spring.headY += (0 - spring.headY) * KH;
     headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.003;
     headGroup.rotation.y = spring.headY + headSway;
+    updateBlink(tMs);
   }
 
   return { group, apply, applyIdle };

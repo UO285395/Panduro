@@ -160,6 +160,25 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       faceSpot.position.set(0.1, 0.96, 0.55);
       scene.add(faceSpot);
 
+      // Mapa de normales procedural para textura microscópica de piel.
+      // Ruido sinusoidal 64×64 repetido en la superficie para simular poros/textura.
+      const normCanvas = document.createElement("canvas");
+      normCanvas.width = 64; normCanvas.height = 64;
+      const nctx = normCanvas.getContext("2d")!;
+      const normImgd = nctx.createImageData(64, 64);
+      for (let pi = 0; pi < 64 * 64; pi++) {
+        const px = pi % 64, py = Math.floor(pi / 64);
+        const sn = Math.sin(px * 0.78 + py * 0.32) * Math.sin(py * 0.55 + px * 0.83) * 0.5 + 0.5;
+        normImgd.data[pi * 4]     = 128;
+        normImgd.data[pi * 4 + 1] = 128;
+        normImgd.data[pi * 4 + 2] = Math.floor(sn * 255);
+        normImgd.data[pi * 4 + 3] = 255;
+      }
+      nctx.putImageData(normImgd, 0, 0);
+      const skinNormTex = new THREE.CanvasTexture(normCanvas);
+      skinNormTex.wrapS = skinNormTex.wrapT = THREE.RepeatWrapping;
+      skinNormTex.repeat.set(12, 12);
+
       // Intentar cargar VRM; si no está disponible, usar el rig procedimental.
       const loaded = await loadPanduroVrm();
 
@@ -190,7 +209,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         loop();
       } else {
         // Fallback: rig procedimental
-        const rig = buildProceduralRig(THREE);
+        const rig = buildProceduralRig(THREE, skinNormTex);
         scene.add(rig.group);
         onReady?.("procedural");
 
@@ -249,7 +268,7 @@ type RigHandle = {
   applyIdle: (tMs: number) => void;
 };
 
-function buildProceduralRig(THREE: typeof import("three")): RigHandle {
+function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import("three").CanvasTexture): RigHandle {
   // MeshPhysicalMaterial con sheen + thickness para simular SSS de piel.
   // thickness≈0.8 permite que la luz key-light "sangre" a través de la piel
   // de los dedos (efecto visible al contraluz), lo más cercano a SSS sin texturas.
@@ -288,6 +307,12 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     attenuationColor: new THREE.Color(0xff8855),
     attenuationDistance: 0.05,
   });
+  if (skinNormTex) {
+    const nv2 = new THREE.Vector2;
+    matSkin.normalMap = skinNormTex; matSkin.normalScale = nv2.set(0.05, 0.05);
+    matPalm.normalMap = skinNormTex; matPalm.normalScale = nv2.clone().set(0.04, 0.04);
+    matFace.normalMap = skinNormTex; matFace.normalScale = nv2.clone().set(0.03, 0.03);
+  }
   const matHair = new THREE.MeshPhysicalMaterial({
     color: 0x2a1a10, roughness: 0.70, metalness: 0.00,
     sheen: 0.18, sheenRoughness: 0.92,

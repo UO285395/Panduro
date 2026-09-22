@@ -24,7 +24,7 @@ describe("fingerspelling templates", () => {
     const templates = loadGlobalTemplates();
     expect(templates.length).toBeGreaterThanOrEqual((12 + 6) * 3);
     for (const t of templates) {
-      expect(t.features.length).toBe(81); // 63 coords + 15 derived + 3 adjacent-tip
+      expect(t.features.length).toBe(84); // 63 coords + 15 derived + 3 adjacent-tip + 3 palm-normal
     }
     const labels = new Set(templates.map((t) => t.label));
     for (const letter of ["A", "B", "C", "L", "O", "Y", "I", "U", "V", "W", "F", "P"]) {

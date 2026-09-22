@@ -73,7 +73,7 @@ export function globalTemplateCount(label: string): number {
 // Plantillas personales (localStorage). Permiten auto-calibración por usuario.
 // ---------------------------------------------------------------------------
 
-const LOCAL_KEY = "panduro:templates";
+const LOCAL_KEY = "panduro:templates:v2"; // v2: features 84-dim (was 81 in v1)
 
 type LocalStore = {
   version: 1;

@@ -15,13 +15,15 @@ function dist3(a: {x:number;y:number;z:number}, b: {x:number;y:number;z:number})
 }
 
 /**
- * Extrae un vector de features de 63+15+3 = 81 dimensiones desde los 21 landmarks:
+ * Extrae un vector de features de 63+15+3+3 = 84 dimensiones desde los 21 landmarks:
  *   - 63: coordenadas rotadas wrist-centradas (invariante a inclinación XY)
- *   - 5: distancias punta→palma (dedos doblados vs extendidos)
+ *   - 5: distancias punta→muñeca (dedos doblados vs extendidos)
  *   - 5: apertura entre punta del pulgar y cada dedo (configuración relativa)
  *   - 5: curvatura por dedo (ángulo MCP→PIP→TIP, aprox. mediante dist ratios)
  *   - 3: distancias entre puntas de dedos adyacentes (índice-medio, medio-anular, anular-meñique)
  *        → diferencia V de U, separa signos con abducción lateral de los cerrados
+ *   - 3: normal de la palma (cruz de wrist→index_mcp × wrist→pinky_mcp, normalizado)
+ *        → distingue palma hacia cámara, palma alejada, palma lateral (B vs N, etc.)
  * Requiere landmarks ya normalizados por `normalizeLandmarks`.
  */
 export function extractFeatures(landmarks: NormalizedLandmark[]): number[] {
@@ -43,7 +45,7 @@ export function extractFeatures(landmarks: NormalizedLandmark[]): number[] {
     rot[i] = { x: p.x * cos - p.y * sin, y: p.x * sin + p.y * cos, z: p.z };
   }
 
-  const out: number[] = new Array(63 + 15 + 3);
+  const out: number[] = new Array(63 + 15 + 3 + 3);
 
   // Bloque 1: coordenadas planas (63)
   for (let i = 0; i < 21; i++) {
@@ -81,6 +83,21 @@ export function extractFeatures(landmarks: NormalizedLandmark[]): number[] {
   out[78] = dist3(rot[TIPS[1]]!, rot[TIPS[2]]!); // índice-medio
   out[79] = dist3(rot[TIPS[2]]!, rot[TIPS[3]]!); // medio-anular
   out[80] = dist3(rot[TIPS[3]]!, rot[TIPS[4]]!); // anular-meñique
+
+  // Bloque 6: normal de la palma (3)
+  // Producto vectorial (wrist→index_mcp) × (wrist→pinky_mcp) — normalizado a longitud 1.
+  // La componente z codifica si la palma mira hacia la cámara (+) o alejada (-).
+  const idxMcp  = rot[5]!;
+  const pinkMcp = rot[17]!;
+  const ax = idxMcp.x - wrist.x,  ay = idxMcp.y - wrist.y,  az = idxMcp.z - wrist.z;
+  const bx = pinkMcp.x - wrist.x, by = pinkMcp.y - wrist.y, bz = pinkMcp.z - wrist.z;
+  let nx = ay * bz - az * by;
+  let ny = az * bx - ax * bz;
+  let nz = ax * by - ay * bx;
+  const nlen = Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
+  out[81] = nx / nlen;
+  out[82] = ny / nlen;
+  out[83] = nz / nlen;
 
   return out;
 }

@@ -74,7 +74,7 @@ function catmullRomBlend(
         cr(p0.hand.rot[1], a.hand.rot[1], b.hand.rot[1], p3.hand.rot[1]),
         cr(p0.hand.rot[2], a.hand.rot[2], b.hand.rot[2], p3.hand.rot[2]),
       ],
-      forearmRoll: lerpMaybe(a.hand.forearmRoll, b.hand.forearmRoll, t),
+      forearmRoll: crScalarMaybe(p0.hand.forearmRoll, a.hand.forearmRoll, b.hand.forearmRoll, p3.hand.forearmRoll, t),
     },
     fingers: [0, 1, 2, 3, 4].map((i) =>
       crF(fFlex(p0, i), fFlex(a, i), fFlex(b, i), fFlex(p3, i))
@@ -113,6 +113,20 @@ function lerp(a: number, b: number, u: number): number {
 function lerpMaybe(a: number | undefined, b: number | undefined, u: number): number | undefined {
   if (a === undefined && b === undefined) return undefined;
   return lerp(a ?? 0, b ?? 0, u) || undefined;
+}
+
+function crScalarMaybe(
+  v0: number | undefined, v1: number | undefined,
+  v2: number | undefined, v3: number | undefined,
+  t: number,
+): number | undefined {
+  if (v0 === undefined && v1 === undefined && v2 === undefined && v3 === undefined) return undefined;
+  const cr = (a: number, b: number, c: number, d: number) => {
+    const t2 = t * t, t3 = t2 * t;
+    return 0.5 * (2*b + (c-a)*t + (2*a-5*b+4*c-d)*t2 + (3*b-a-3*c+d)*t3);
+  };
+  const val = cr(v0 ?? 0, v1 ?? 0, v2 ?? 0, v3 ?? 0);
+  return val || undefined;
 }
 
 function lerpFinger(a: FingerValue, b: FingerValue, u: number): FingerValue {

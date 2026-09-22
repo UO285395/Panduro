@@ -1,5 +1,5 @@
 import type { AvatarKeyframe, FingerValue } from "@/lib/curriculum/schema";
-import { BONE_LENGTHS, RIGHT_SHOULDER_X, SHOULDER_HEIGHT } from "./rig";
+import { BONE_LENGTHS, LEFT_SHOULDER_X, RIGHT_SHOULDER_X, SHOULDER_HEIGHT } from "./rig";
 
 /** Rotación acumulada por falange (rad, alrededor del eje X local del hueso). */
 export type FingerPose = {
@@ -9,7 +9,7 @@ export type FingerPose = {
 };
 
 export type Pose = {
-  /** Rotación del hombro derecho en radianes (X, Y, Z locales). */
+  /** Rotación del hombro en radianes (X, Y, Z locales). */
   shoulder: [number, number, number];
   /** Rotación del codo (flexión sobre el eje X del antebrazo). */
   elbow: number;
@@ -58,59 +58,83 @@ export function distributeFlex(flex: number): FingerPose {
 }
 
 /**
- * Convierte un `AvatarKeyframe` (posición deseada de la muñeca + flexión de
- * dedos, en el espacio de landmarks normalizados que usa el clip) a rotaciones
- * en radianes para los huesos relevantes.
- *
- * IK simplificada 2-bone en el plano frontal (XY):
- *  - Se coloca el hombro derecho en (RIGHT_SHOULDER_X, SHOULDER_HEIGHT, 0).
- *  - El "target" es el hombro + escalado del vector (hand.x, hand.y) del clip.
- *  - Solución analítica para hombro y codo dado el triángulo (hombro, codo, muñeca).
+ * IK analítica 2-bone para un brazo.
+ * shoulderX: posición X del hombro en el espacio de escena.
+ * hand: posición normalizada de la muñeca (espacio del clip).
  */
-export function poseFromKeyframe(kf: AvatarKeyframe): Pose {
-  // Escala 0.55 para aprovechar mejor el rango de movimiento del brazo.
+function _poseForArm(
+  hand: AvatarKeyframe["hand"],
+  fingers: AvatarKeyframe["fingers"],
+  shoulderX: number,
+): Pose {
+  // Siempre hay componente Z positiva (hacia cámara) para evitar yaw ±90°.
+  const effectiveZ = hand.z * 0.32 + 0.20;
   const target = {
-    x: RIGHT_SHOULDER_X + kf.hand.x * 0.55,
-    y: SHOULDER_HEIGHT  + kf.hand.y * 0.55,
-    z: kf.hand.z * 0.32,
+    x: shoulderX + hand.x * 0.40,
+    y: SHOULDER_HEIGHT + hand.y * 0.40,
+    z: effectiveZ,
   };
 
-  const dx = target.x - RIGHT_SHOULDER_X;
+  const dx = target.x - shoulderX;
   const dy = target.y - SHOULDER_HEIGHT;
   const dz = target.z;
   const dist = Math.min(Math.sqrt(dx * dx + dy * dy + dz * dz), ARM_LENGTH * 0.98);
 
-  const shoulderPitch = Math.atan2(-dy, Math.hypot(dx, dz));
-  const shoulderYaw   = Math.atan2(dx, dz || 1e-6);
+  // Fórmula correcta: el brazo apunta hacia (dx, dy, dz) desde el hombro.
+  // Pitch = ángulo entre el eje -Y y la dirección (respecto al plano horizontal).
+  // arm_dir_y = -cos(pitch) = dy/dist  →  pitch = acos(-dy/dist)
+  const shoulderPitch = Math.acos(Math.min(1, Math.max(-1, -dy / dist)));
+  // Yaw en el plano XZ: atan2(dx, dz). Con effectiveZ > 0 nunca da ±90°.
+  const shoulderYaw   = Math.atan2(dx, dz);
 
   const a = BONE_LENGTHS.upperArm;
   const b = BONE_LENGTHS.foreArm;
-  // Ley de cosenos para el ángulo en el codo.
   const cosElbow = Math.min(
     1,
     Math.max(-1, (a * a + b * b - dist * dist) / (2 * a * b)),
   );
-  // Codo extendido = 0 rad; las poses de reposo muestran ~20 ° de flexión mínima.
   const elbow = Math.max(0.35, Math.PI - Math.acos(cosElbow));
 
   return {
     shoulder: [shoulderPitch, shoulderYaw, 0],
     elbow,
-    wrist: [kf.hand.rot[0], kf.hand.rot[1], kf.hand.rot[2]],
-    forearmRoll: kf.hand.forearmRoll ?? 0,
+    wrist: [hand.rot[0], hand.rot[1], hand.rot[2]],
+    forearmRoll: hand.forearmRoll ?? 0,
     fingers: [
-      distributeFlex(getFingerFlex(kf.fingers[0])),
-      distributeFlex(getFingerFlex(kf.fingers[1])),
-      distributeFlex(getFingerFlex(kf.fingers[2])),
-      distributeFlex(getFingerFlex(kf.fingers[3])),
-      distributeFlex(getFingerFlex(kf.fingers[4])),
+      distributeFlex(getFingerFlex(fingers[0])),
+      distributeFlex(getFingerFlex(fingers[1])),
+      distributeFlex(getFingerFlex(fingers[2])),
+      distributeFlex(getFingerFlex(fingers[3])),
+      distributeFlex(getFingerFlex(fingers[4])),
     ],
     abduction: [
-      getFingerAbduction(kf.fingers[0]),
-      getFingerAbduction(kf.fingers[1]),
-      getFingerAbduction(kf.fingers[2]),
-      getFingerAbduction(kf.fingers[3]),
-      getFingerAbduction(kf.fingers[4]),
+      getFingerAbduction(fingers[0]),
+      getFingerAbduction(fingers[1]),
+      getFingerAbduction(fingers[2]),
+      getFingerAbduction(fingers[3]),
+      getFingerAbduction(fingers[4]),
     ],
   };
+}
+
+/** Convierte un keyframe a pose del brazo derecho. */
+export function poseFromKeyframe(kf: AvatarKeyframe): Pose {
+  return _poseForArm(kf.hand, kf.fingers, RIGHT_SHOULDER_X);
+}
+
+/**
+ * Convierte un keyframe a pose del brazo izquierdo.
+ * Si el clip tiene `hand2`/`fingers2`, los usa; si no, espeja el brazo derecho.
+ */
+export function poseFromKeyframeLeft(kf: AvatarKeyframe): Pose {
+  if (kf.hand2) {
+    return _poseForArm(kf.hand2, kf.fingers2 ?? kf.fingers, LEFT_SHOULDER_X);
+  }
+  // Signo unimanual: espejo simétrico del brazo derecho.
+  const mirroredHand = {
+    ...kf.hand,
+    x: -kf.hand.x,
+    rot: [kf.hand.rot[0], -kf.hand.rot[1], -kf.hand.rot[2]] as [number, number, number],
+  };
+  return _poseForArm(mirroredHand, kf.fingers, LEFT_SHOULDER_X);
 }

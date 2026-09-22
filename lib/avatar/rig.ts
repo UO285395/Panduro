@@ -57,6 +57,7 @@ export const BONE_LENGTHS: Record<BoneName, number> = {
 /** Origen de la escena: pies del avatar en (0,0,0), altura hacia +Y. */
 export const SHOULDER_HEIGHT = 0.85;
 export const RIGHT_SHOULDER_X = 0.10;
+export const LEFT_SHOULDER_X = -0.10;
 
 /** Palma anatómica: ancho radio-cubital, alto proximo-distal, grosor dorso-palmar. */
 export const PALM_WIDTH = 0.075;

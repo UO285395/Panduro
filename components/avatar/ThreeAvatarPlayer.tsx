@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
-import { poseFromKeyframe, type FingerPose, type Pose } from "@/lib/avatar/pose";
+import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
 import { applyPoseToVrm } from "@/lib/avatar/vrmMapper";
 import {
   BONE_LENGTHS,
   KNUCKLE_RADIUS,
+  LEFT_SHOULDER_X,
   PALM_DEPTH,
   PALM_HEIGHT,
   PALM_WIDTH,
@@ -130,14 +131,10 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       floor.receiveShadow = true;
       scene.add(floor);
 
-      // Cámara perspectiva suave — más natural que ortográfica.
-      // fov reducido (28°) imita un tele-objetivo y minimiza la distorsión.
-      const camera = new THREE.PerspectiveCamera(28, 1, 0.01, 10);
-      const CAM_X = RIGHT_SHOULDER_X;
-      const CAM_Y = 0.78;
-      // Ligeramente a la derecha y elevada para un ángulo de 3/4 sutil.
-      camera.position.set(CAM_X + 0.08, CAM_Y + 0.05, 2.0);
-      camera.lookAt(CAM_X, CAM_Y - 0.02, 0);
+      // Cámara centrada — muestra ambos brazos simétricamente.
+      const camera = new THREE.PerspectiveCamera(26, 1, 0.01, 10);
+      camera.position.set(0, 0.86, 1.7);
+      camera.lookAt(0, 0.78, 0);
 
       // ── Iluminación de 4 puntos ──────────────────────────────────────────
       // Hemisférica suave (cielo cálido / suelo frío) como ambient.
@@ -279,8 +276,9 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           const dt = performance.now() - started;
           const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
           if (clip && kf) {
-            const pose = poseFromKeyframe(kf);
-            rig.apply(pose, dt);
+            const poseR = poseFromKeyframe(kf);
+            const poseL = poseFromKeyframeLeft(kf);
+            rig.apply(poseR, poseL, dt);
           } else {
             rig.applyIdle(dt);
           }
@@ -321,11 +319,238 @@ type FingerHandle = {
   joints: [import("three").Group, import("three").Group, import("three").Group];
 };
 
+type ArmMats = {
+  skin: import("three").MeshPhysicalMaterial;
+  nail: import("three").MeshPhysicalMaterial;
+  crease: import("three").MeshPhysicalMaterial;
+  palm: import("three").MeshPhysicalMaterial;
+};
+
+type ArmHandle = {
+  shoulder: import("three").Group;
+  elbow: import("three").Group;
+  foreArmGroup: import("three").Group;
+  wrist: import("three").Group;
+  thumbBase: import("three").Group;
+  anchors: import("three").Group[];
+  fingers: FingerHandle[];
+};
+
 type RigHandle = {
   group: import("three").Group;
-  apply: (pose: Pose, tMs: number) => void;
+  apply: (poseR: Pose, poseL: Pose, tMs: number) => void;
   applyIdle: (tMs: number) => void;
 };
+
+function buildArm(
+  THREE: typeof import("three"),
+  mats: ArmMats,
+  sx: 1 | -1,
+  group: import("three").Group,
+): ArmHandle {
+  const { skin: matSkin, nail: matNail, crease: matCrease, palm: matPalm } = mats;
+
+  const shoulder = new THREE.Group();
+  shoulder.position.set(sx * RIGHT_SHOULDER_X, SHOULDER_HEIGHT, 0);
+  group.add(shoulder);
+
+  const shoulderBall = new THREE.Mesh(new THREE.SphereGeometry(0.038, 16, 12), matSkin);
+  shoulderBall.castShadow = true;
+  shoulder.add(shoulderBall);
+  const deltoid = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.034, BONE_LENGTHS.upperArm * 0.42, 6, 14),
+    matSkin,
+  );
+  deltoid.position.set(sx * 0.024, -BONE_LENGTHS.upperArm * 0.22, 0.010);
+  deltoid.rotation.z = sx * 0.18;
+  deltoid.castShadow = true;
+  shoulder.add(deltoid);
+
+  const upperArm = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.030, BONE_LENGTHS.upperArm - 0.06, 8, 18),
+    matSkin,
+  );
+  upperArm.position.y = -BONE_LENGTHS.upperArm / 2;
+  shoulder.add(upperArm);
+  const bicep = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.028, BONE_LENGTHS.upperArm * 0.50, 6, 12),
+    matSkin,
+  );
+  bicep.position.set(sx * 0.006, -BONE_LENGTHS.upperArm * 0.44, 0.014);
+  bicep.castShadow = true;
+  shoulder.add(bicep);
+
+  const elbow = new THREE.Group();
+  elbow.position.y = -BONE_LENGTHS.upperArm;
+  shoulder.add(elbow);
+  elbow.add(new THREE.Mesh(new THREE.SphereGeometry(0.028, 18, 14), matSkin));
+
+  const foreArmGroup = new THREE.Group();
+  elbow.add(foreArmGroup);
+
+  const foreArm = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.025, BONE_LENGTHS.foreArm - 0.06, 8, 18),
+    matSkin,
+  );
+  foreArm.position.y = -BONE_LENGTHS.foreArm / 2;
+  foreArmGroup.add(foreArm);
+  const extensor = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), matSkin);
+  extensor.scale.set(0.78, 1.40, 0.68);
+  extensor.position.set(sx * 0.006, -BONE_LENGTHS.foreArm * 0.28, -0.006);
+  extensor.castShadow = true;
+  foreArmGroup.add(extensor);
+
+  const wrist = new THREE.Group();
+  wrist.position.y = -BONE_LENGTHS.foreArm;
+  foreArmGroup.add(wrist);
+
+  const shadowDisc = new THREE.Mesh(
+    new THREE.CircleGeometry(0.068, 24),
+    new THREE.MeshBasicMaterial({ color: 0x7a4c2b, transparent: true, opacity: 0.14, depthWrite: false }),
+  );
+  shadowDisc.position.set(0, -(BONE_LENGTHS.foreArm * 0.55), -0.016);
+  wrist.add(shadowDisc);
+
+  // ── Palma ─────────────────────────────────────────────────────────────────
+  const palm = new THREE.Group();
+  palm.position.y = -PALM_HEIGHT * 0.40;
+  wrist.add(palm);
+
+  const palmBody = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matSkin);
+  palmBody.scale.set(PALM_WIDTH * 0.52, PALM_HEIGHT * 0.50, PALM_DEPTH * 0.30);
+  palmBody.castShadow = true;
+  palmBody.receiveShadow = true;
+  palm.add(palmBody);
+
+  const palmFace = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matPalm);
+  palmFace.scale.set(PALM_WIDTH * 0.44, PALM_HEIGHT * 0.45, PALM_DEPTH * 0.20);
+  palmFace.position.z = PALM_DEPTH * 0.16;
+  palmFace.castShadow = true;
+  palm.add(palmFace);
+
+  const thenar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matPalm);
+  thenar.scale.set(0.022, 0.038, 0.016);
+  thenar.position.set(sx * PALM_WIDTH * 0.38, PALM_HEIGHT * 0.06, PALM_DEPTH * 0.18);
+  palm.add(thenar);
+
+  const hypothenar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matPalm);
+  hypothenar.scale.set(0.016, 0.030, 0.012);
+  hypothenar.position.set(-sx * PALM_WIDTH * 0.38, PALM_HEIGHT * 0.10, PALM_DEPTH * 0.14);
+  palm.add(hypothenar);
+
+  const palmCreaseCurve = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(-sx * PALM_WIDTH * 0.40, -PALM_HEIGHT * 0.10, PALM_DEPTH * 0.20),
+    new THREE.Vector3(0,                         PALM_HEIGHT * 0.08,  PALM_DEPTH * 0.22),
+    new THREE.Vector3( sx * PALM_WIDTH * 0.32,   PALM_HEIGHT * 0.20,  PALM_DEPTH * 0.20),
+  );
+  palm.add(new THREE.Mesh(new THREE.TubeGeometry(palmCreaseCurve, 18, 0.0022, 5, false), matCrease));
+
+  const distalCreaseCurve = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(-sx * PALM_WIDTH * 0.28, -PALM_HEIGHT * 0.30, PALM_DEPTH * 0.22),
+    new THREE.Vector3( sx * PALM_WIDTH * 0.05, -PALM_HEIGHT * 0.28, PALM_DEPTH * 0.24),
+    new THREE.Vector3( sx * PALM_WIDTH * 0.36, -PALM_HEIGHT * 0.24, PALM_DEPTH * 0.21),
+  );
+  palm.add(new THREE.Mesh(new THREE.TubeGeometry(distalCreaseCurve, 14, 0.0018, 5, false), matCrease));
+
+  const wristBall = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.6, 18, 14), matSkin);
+  wristBall.position.set(0, PALM_HEIGHT * 0.50, 0);
+  palm.add(wristBall);
+
+  const wristCrease = new THREE.Mesh(
+    new THREE.TorusGeometry(PALM_WIDTH * 0.28, 0.0032, 6, 32),
+    matCrease,
+  );
+  wristCrease.rotation.x = Math.PI / 2;
+  wristCrease.position.set(0, PALM_HEIGHT * 0.46, 0);
+  palm.add(wristCrease);
+
+  const tendonMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb07050, roughness: 0.62, metalness: 0.0,
+    transparent: true, opacity: 0.45, depthWrite: false,
+  });
+  for (let ti = 0; ti < 4; ti++) {
+    const tx = sx * (PALM_WIDTH / 2 - (PALM_WIDTH / 4) * (0.5 + ti));
+    const tendon = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.0028, PALM_HEIGHT * 0.72, 4, 8),
+      tendonMat,
+    );
+    tendon.position.set(tx, -PALM_HEIGHT * 0.06, -PALM_DEPTH * 0.14);
+    palm.add(tendon);
+  }
+
+  // ── Dedos ─────────────────────────────────────────────────────────────────
+  const radii: [number, number, number] = [0.0158, 0.0132, 0.0108];
+  const spacing = PALM_WIDTH / 4;
+  const fingers: FingerHandle[] = [];
+  const anchors: import("three").Group[] = [];
+
+  const thumbBase = new THREE.Group();
+  thumbBase.position.set(sx * PALM_WIDTH * 0.46, PALM_HEIGHT * 0.05, PALM_DEPTH * 0.10);
+  thumbBase.rotation.set(-0.25, -sx * Math.PI / 2.4, -sx * THUMB_ABDUCTION);
+  palm.add(thumbBase);
+  anchors.push(thumbBase);
+
+  const thumb = buildFinger(THREE, matSkin, matNail, "thumb",
+    [BONE_LENGTHS.thumb1, BONE_LENGTHS.thumb2, BONE_LENGTHS.thumb3], radii);
+  thumbBase.add(thumb.root);
+  fingers.push(thumb);
+  ([thumb.joints[1], thumb.joints[2]] as import("three").Group[]).forEach((j, k) => {
+    const cr = new THREE.Mesh(
+      new THREE.TorusGeometry(radii[1 + k]! * 1.12, 0.0016 - k * 0.0002, 5, 20),
+      matCrease,
+    );
+    cr.rotation.x = Math.PI / 2;
+    j.add(cr);
+  });
+
+  const fingerSpecs: Array<{ name: string; x: number; lens: [number, number, number] }> = [
+    { name: "index",  x: PALM_WIDTH / 2 - spacing * 0.5,
+      lens: [BONE_LENGTHS.index1,  BONE_LENGTHS.index2,  BONE_LENGTHS.index3]  },
+    { name: "middle", x: PALM_WIDTH / 2 - spacing * 1.5,
+      lens: [BONE_LENGTHS.middle1, BONE_LENGTHS.middle2, BONE_LENGTHS.middle3] },
+    { name: "ring",   x: PALM_WIDTH / 2 - spacing * 2.5,
+      lens: [BONE_LENGTHS.ring1,   BONE_LENGTHS.ring2,   BONE_LENGTHS.ring3]   },
+    { name: "pinky",  x: PALM_WIDTH / 2 - spacing * 3.5,
+      lens: [BONE_LENGTHS.pinky1,  BONE_LENGTHS.pinky2,  BONE_LENGTHS.pinky3]  },
+  ];
+
+  for (const spec of fingerSpecs) {
+    const anchor = new THREE.Group();
+    anchor.position.set(sx * spec.x, -PALM_HEIGHT / 2, PALM_DEPTH * 0.04);
+    palm.add(anchor);
+    anchors.push(anchor);
+
+    anchor.add(new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.2, 14, 12), matSkin));
+
+    const f = buildFinger(THREE, matSkin, matNail, spec.name, spec.lens, radii);
+    anchor.add(f.root);
+    fingers.push(f);
+    ([f.joints[1], f.joints[2]] as import("three").Group[]).forEach((j, k) => {
+      const cr = new THREE.Mesh(
+        new THREE.TorusGeometry(radii[1 + k]! * 1.12, 0.0016 - k * 0.0002, 5, 20),
+        matCrease,
+      );
+      cr.rotation.x = Math.PI / 2;
+      j.add(cr);
+    });
+  }
+
+  const webMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb87050, roughness: 0.55, metalness: 0.0,
+    transparent: true, opacity: 0.72, depthWrite: false,
+    thickness: 0.30, attenuationColor: new THREE.Color(0xff9060), attenuationDistance: 0.03,
+  });
+  for (let wi = 0; wi < 3; wi++) {
+    const xA = sx * (PALM_WIDTH / 2 - spacing * (0.5 + wi));
+    const xB = sx * (PALM_WIDTH / 2 - spacing * (1.5 + wi));
+    const web = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.05, 10, 8), webMat);
+    web.scale.set(0.72, 0.55, 0.88);
+    web.position.set((xA + xB) * 0.5, -PALM_HEIGHT / 2, PALM_DEPTH * 0.06);
+    palm.add(web);
+  }
+
+  return { shoulder, elbow, foreArmGroup, wrist, thumbBase, anchors, fingers };
+}
 
 function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import("three").CanvasTexture, skinRoughTex?: import("three").CanvasTexture): RigHandle {
   // MeshPhysicalMaterial con sheen + thickness para simular SSS de piel.
@@ -659,254 +884,34 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     eg.add(lashLow);
   }
 
-  // ── Brazo ─────────────────────────────────────────────────────────────────
-  const shoulder = new THREE.Group();
-  shoulder.position.set(RIGHT_SHOULDER_X, SHOULDER_HEIGHT, 0);
-  group.add(shoulder);
+  // ── Brazos (derecho e izquierdo) ──────────────────────────────────────────
+  const armMats: ArmMats = { skin: matSkin, nail: matNail, crease: matCrease, palm: matPalm };
+  const rightArm = buildArm(THREE, armMats, 1, group);
+  const leftArm  = buildArm(THREE, armMats, -1, group);
 
-  // Articulación del hombro — esfera visible que cubre la unión torso/brazo.
-  const shoulderBall = new THREE.Mesh(new THREE.SphereGeometry(0.038, 16, 12), matSkin);
-  shoulderBall.castShadow = true;
-  shoulder.add(shoulderBall);
-  // Deltoides — cápsula que da volumen muscular lateral al hombro.
-  const deltoid = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.034, BONE_LENGTHS.upperArm * 0.42, 6, 14),
-    matSkin,
-  );
-  deltoid.position.set(RIGHT_SHOULDER_X > 0 ? 0.024 : -0.024, -BONE_LENGTHS.upperArm * 0.22, 0.010);
-  deltoid.rotation.z = (RIGHT_SHOULDER_X > 0 ? 1 : -1) * 0.18;
-  deltoid.castShadow = true;
-  shoulder.add(deltoid);
 
-  const upperArm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.030, BONE_LENGTHS.upperArm - 0.06, 8, 18),
-    matSkin,
-  );
-  upperArm.position.y = -BONE_LENGTHS.upperArm / 2;
-  shoulder.add(upperArm);
-  // Bíceps — cápsula frontal más ancha que el cúbito para dar forma muscular.
-  const bicep = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.028, BONE_LENGTHS.upperArm * 0.50, 6, 12),
-    matSkin,
-  );
-  bicep.position.set(0.006, -BONE_LENGTHS.upperArm * 0.44, 0.014);
-  bicep.castShadow = true;
-  shoulder.add(bicep);
-
-  const elbow = new THREE.Group();
-  elbow.position.y = -BONE_LENGTHS.upperArm;
-  shoulder.add(elbow);
-  elbow.add(new THREE.Mesh(new THREE.SphereGeometry(0.028, 18, 14), matSkin));
-
-  // Grupo de pronación/supinación del antebrazo (rota en eje Y local).
-  const foreArmGroup = new THREE.Group();
-  elbow.add(foreArmGroup);
-
-  const foreArm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.025, BONE_LENGTHS.foreArm - 0.06, 8, 18),
-    matSkin,
-  );
-  foreArm.position.y = -BONE_LENGTHS.foreArm / 2;
-  foreArmGroup.add(foreArm);
-  // Músculo extensor del antebrazo — vientre muscular en el tercio proximal.
-  const extensor = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), matSkin);
-  extensor.scale.set(0.78, 1.40, 0.68);
-  extensor.position.set(0.006, -BONE_LENGTHS.foreArm * 0.28, -0.006);
-  extensor.castShadow = true;
-  foreArmGroup.add(extensor);
-
-  const wrist = new THREE.Group();
-  wrist.position.y = -BONE_LENGTHS.foreArm;
-  foreArmGroup.add(wrist);
-
-  // Contact shadow — disco translúcido detrás de la palma para profundidad visual.
-  const shadowDisc = new THREE.Mesh(
-    new THREE.CircleGeometry(0.068, 24),
-    new THREE.MeshBasicMaterial({ color: 0x7a4c2b, transparent: true, opacity: 0.14, depthWrite: false }),
-  );
-  shadowDisc.position.set(0, -(BONE_LENGTHS.foreArm * 0.55), -0.016);
-  wrist.add(shadowDisc);
-
-  // ── Palma elipsoidal ──────────────────────────────────────────────────────
-  const palm = new THREE.Group();
-  palm.position.y = -PALM_HEIGHT * 0.40;
-  wrist.add(palm);
-
-  // Cuerpo principal: esfera unidad escalada a proporciones de palma.
-  const palmBody = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matSkin);
-  palmBody.scale.set(PALM_WIDTH * 0.52, PALM_HEIGHT * 0.50, PALM_DEPTH * 0.30);
-  palmBody.castShadow = true;
-  palmBody.receiveShadow = true;
-  palm.add(palmBody);
-
-  // Capa palmar (más clara, ligeramente desplazada hacia el espectador).
-  const palmFace = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), matPalm);
-  palmFace.scale.set(PALM_WIDTH * 0.44, PALM_HEIGHT * 0.45, PALM_DEPTH * 0.20);
-  palmFace.position.z = PALM_DEPTH * 0.16;
-  palmFace.castShadow = true;
-  palm.add(palmFace);
-
-  // Eminencia tenar (músculo de la base del pulgar).
-  const thenar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matPalm);
-  thenar.scale.set(0.022, 0.038, 0.016);
-  thenar.position.set(PALM_WIDTH * 0.38, PALM_HEIGHT * 0.06, PALM_DEPTH * 0.18);
-  palm.add(thenar);
-
-  // Eminencia hipotenar (músculo del meñique).
-  const hypothenar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matPalm);
-  hypothenar.scale.set(0.016, 0.030, 0.012);
-  hypothenar.position.set(-PALM_WIDTH * 0.38, PALM_HEIGHT * 0.10, PALM_DEPTH * 0.14);
-  palm.add(hypothenar);
-
-  // Línea palmar principal (pliegue de vida) — curva de Bézier cuadrática.
-  const palmCreaseCurve = new THREE.QuadraticBezierCurve3(
-    new THREE.Vector3(-PALM_WIDTH * 0.40, -PALM_HEIGHT * 0.10, PALM_DEPTH * 0.20),
-    new THREE.Vector3( 0,                  PALM_HEIGHT * 0.08,  PALM_DEPTH * 0.22),
-    new THREE.Vector3( PALM_WIDTH * 0.32,  PALM_HEIGHT * 0.20,  PALM_DEPTH * 0.20),
-  );
-  const palmCreaseMesh = new THREE.Mesh(
-    new THREE.TubeGeometry(palmCreaseCurve, 18, 0.0022, 5, false),
-    matCrease,
-  );
-  palm.add(palmCreaseMesh);
-
-  // Pliegue palmar distal (línea de los dedos) — ligeramente horizontal bajo los MCP.
-  const distalCreaseCurve = new THREE.QuadraticBezierCurve3(
-    new THREE.Vector3(-PALM_WIDTH * 0.28, -PALM_HEIGHT * 0.30, PALM_DEPTH * 0.22),
-    new THREE.Vector3( PALM_WIDTH * 0.05, -PALM_HEIGHT * 0.28, PALM_DEPTH * 0.24),
-    new THREE.Vector3( PALM_WIDTH * 0.36, -PALM_HEIGHT * 0.24, PALM_DEPTH * 0.21),
-  );
-  palm.add(new THREE.Mesh(
-    new THREE.TubeGeometry(distalCreaseCurve, 14, 0.0018, 5, false),
-    matCrease,
-  ));
-
-  // Articulación muñeca–palma.
-  const wristBall = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.6, 18, 14), matSkin);
-  wristBall.position.set(0, PALM_HEIGHT * 0.50, 0);
-  palm.add(wristBall);
-
-  // Pliegue de muñeca — anillo anatómico oscuro semitransparente.
-  const wristCrease = new THREE.Mesh(
-    new THREE.TorusGeometry(PALM_WIDTH * 0.28, 0.0032, 6, 32),
-    matCrease,
-  );
-  wristCrease.rotation.x = Math.PI / 2;
-  wristCrease.position.set(0, PALM_HEIGHT * 0.46, 0);
-  palm.add(wristCrease);
-
-  // Tendones extensores dorsales — 4 cápsulas que corren de muñeca a MCP.
-  const tendonMat = new THREE.MeshPhysicalMaterial({
-    color: 0xb07050, roughness: 0.62, metalness: 0.0,
-    transparent: true, opacity: 0.45, depthWrite: false,
-  });
-  for (let ti = 0; ti < 4; ti++) {
-    const tx = PALM_WIDTH / 2 - (PALM_WIDTH / 4) * (0.5 + ti);
-    const tendon = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.0028, PALM_HEIGHT * 0.72, 4, 8),
-      tendonMat,
-    );
-    tendon.position.set(tx, -PALM_HEIGHT * 0.06, -PALM_DEPTH * 0.14);
-    palm.add(tendon);
-  }
-
-  // ── Dedos ─────────────────────────────────────────────────────────────────
-  // Radios: [proximal-base, medial-base, distal-base]
-  const radii: [number, number, number] = [0.0158, 0.0132, 0.0108];
-  const spacing = PALM_WIDTH / 4;
-  const fingers: FingerHandle[] = [];
-  // anchors[0]=thumbBase, anchors[1..4]=finger anchors (para abducción lateral)
-  const anchors: import("three").Group[] = [];
-
-  // Pulgar — nace en el lateral radial de la palma.
-  const thumbBase = new THREE.Group();
-  thumbBase.position.set(PALM_WIDTH * 0.46, PALM_HEIGHT * 0.05, PALM_DEPTH * 0.10);
-  thumbBase.rotation.set(-0.25, -Math.PI / 2.4, -THUMB_ABDUCTION);
-  palm.add(thumbBase);
-  anchors.push(thumbBase);
-
-  const thumb = buildFinger(THREE, matSkin, matNail, "thumb",
-    [BONE_LENGTHS.thumb1, BONE_LENGTHS.thumb2, BONE_LENGTHS.thumb3], radii);
-  thumbBase.add(thumb.root);
-  fingers.push(thumb);
-  // Pliegues interfalángicos del pulgar (IPJ1 e IPJ2)
-  ([thumb.joints[1], thumb.joints[2]] as import("three").Group[]).forEach((j, k) => {
-    const cr = new THREE.Mesh(
-      new THREE.TorusGeometry(radii[1 + k]! * 1.12, 0.0016 - k * 0.0002, 5, 20),
-      matCrease,
-    );
-    cr.rotation.x = Math.PI / 2;
-    j.add(cr);
-  });
-
-  // Cuatro dedos largos.
-  const fingerSpecs: Array<{ name: string; x: number; lens: [number, number, number] }> = [
-    { name: "index",  x: PALM_WIDTH / 2 - spacing * 0.5,
-      lens: [BONE_LENGTHS.index1,  BONE_LENGTHS.index2,  BONE_LENGTHS.index3]  },
-    { name: "middle", x: PALM_WIDTH / 2 - spacing * 1.5,
-      lens: [BONE_LENGTHS.middle1, BONE_LENGTHS.middle2, BONE_LENGTHS.middle3] },
-    { name: "ring",   x: PALM_WIDTH / 2 - spacing * 2.5,
-      lens: [BONE_LENGTHS.ring1,   BONE_LENGTHS.ring2,   BONE_LENGTHS.ring3]   },
-    { name: "pinky",  x: PALM_WIDTH / 2 - spacing * 3.5,
-      lens: [BONE_LENGTHS.pinky1,  BONE_LENGTHS.pinky2,  BONE_LENGTHS.pinky3]  },
-  ];
-
-  for (const spec of fingerSpecs) {
-    const anchor = new THREE.Group();
-    anchor.position.set(spec.x, -PALM_HEIGHT / 2, PALM_DEPTH * 0.04);
-    palm.add(anchor);
-    anchors.push(anchor);
-
-    // Nudillo MCP (articulación metacarpofalángica).
-    anchor.add(new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.2, 14, 12), matSkin));
-
-    const f = buildFinger(THREE, matSkin, matNail, spec.name, spec.lens, radii);
-    anchor.add(f.root);
-    fingers.push(f);
-    // Pliegues PIP (joint[1]) y DIP (joint[2]) de cada dedo largo
-    ([f.joints[1], f.joints[2]] as import("three").Group[]).forEach((j, k) => {
-      const cr = new THREE.Mesh(
-        new THREE.TorusGeometry(radii[1 + k]! * 1.12, 0.0016 - k * 0.0002, 5, 20),
-        matCrease,
-      );
-      cr.rotation.x = Math.PI / 2;
-      j.add(cr);
-    });
-  }
-
-  // Membrana interdigital — rellena la "V" entre los dedos en la base.
-  // Tres membranas: índice-medio, medio-anular, anular-meñique.
-  const webMat = new THREE.MeshPhysicalMaterial({
-    color: 0xb87050, roughness: 0.55, metalness: 0.0,
-    transparent: true, opacity: 0.72, depthWrite: false,
-    thickness: 0.30, attenuationColor: new THREE.Color(0xff9060), attenuationDistance: 0.03,
-  });
-  for (let wi = 0; wi < 3; wi++) {
-    const xA = PALM_WIDTH / 2 - spacing * (0.5 + wi);
-    const xB = PALM_WIDTH / 2 - spacing * (1.5 + wi);
-    const web = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.05, 10, 8), webMat);
-    web.scale.set(0.72, 0.55, 0.88);
-    web.position.set((xA + xB) * 0.5, -PALM_HEIGHT / 2, PALM_DEPTH * 0.06);
-    palm.add(web);
-  }
-
-  // Spring state para movimiento secundario — muñeca, antebrazo y cabeza
-  // siguen la pose con leve retraso (follow-through) que da naturalidad.
-  const spring = {
+  const springR = {
     wrist: [0, 0, 0] as [number, number, number],
     roll: 0,
     shoulder: [0, 0, 0] as [number, number, number],
     elbow: 0.35,
-    headX: 0,
-    headY: 0,
   };
-  const KW = 0.18; // rigidez muñeca    (≈90 ms a 60 fps)
-  const KR = 0.15; // rigidez antebrazo
-  const KS = 0.12; // rigidez hombro    (≈120 ms — transición suave entre signos)
-  const KH = 0.07; // rigidez cabeza    (≈200 ms — movimiento más lento)
-  const KF = 0.22; // rigidez dedos     (≈75 ms — suave pero responsivo)
-  // Estado spring para flex por dedo [proximal, medial, distal] × 5
-  const fingerSprings: [[number,number,number],[number,number,number],[number,number,number],[number,number,number],[number,number,number]] = [
+  const springL = {
+    wrist: [0, 0, 0] as [number, number, number],
+    roll: 0,
+    shoulder: [0, 0, 0] as [number, number, number],
+    elbow: 0.35,
+  };
+  const springHead = { headX: 0, headY: 0 };
+  const KW = 0.18;
+  const KR = 0.15;
+  const KS = 0.12;
+  const KH = 0.07;
+  const KF = 0.22;
+  const fingerSpringsR: [[number,number,number],[number,number,number],[number,number,number],[number,number,number],[number,number,number]] = [
+    [0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],
+  ];
+  const fingerSpringsL: [[number,number,number],[number,number,number],[number,number,number],[number,number,number],[number,number,number]] = [
     [0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],[0.18,0.14,0.10],
   ];
 
@@ -945,107 +950,144 @@ function buildProceduralRig(THREE: typeof import("three"), skinNormTex?: import(
     }
   }
 
-  function apply(pose: Pose, tMs: number) {
+  function apply(poseR: Pose, poseL: Pose, tMs: number) {
     const breath = Math.sin(tMs * 0.0018) * 0.003 + Math.sin(tMs * 0.0054) * 0.001;
-    shoulder.position.y = breath;
+    // CRITICAL FIX: Y must be SHOULDER_HEIGHT + breath, not just breath.
+    rightArm.shoulder.position.y = SHOULDER_HEIGHT + breath;
+    leftArm.shoulder.position.y  = SHOULDER_HEIGHT + breath;
     torso.scale.set(1 + breath * 2, 1 + breath * 8, 1 + breath * 3);
 
-    spring.shoulder[0] += (pose.shoulder[0] - spring.shoulder[0]) * KS;
-    spring.shoulder[1] += (pose.shoulder[1] - spring.shoulder[1]) * KS;
-    spring.shoulder[2] += (pose.shoulder[2] - spring.shoulder[2]) * KS;
-    spring.elbow       += (pose.elbow       - spring.elbow)       * KS;
-    shoulder.rotation.set(spring.shoulder[0], spring.shoulder[1], spring.shoulder[2]);
-    elbow.rotation.set(-spring.elbow, 0, 0);
-
-    spring.roll     += (pose.forearmRoll  - spring.roll)     * KR;
-    spring.wrist[0] += (pose.wrist[0]    - spring.wrist[0]) * KW;
-    spring.wrist[1] += (pose.wrist[1]    - spring.wrist[1]) * KW;
-    spring.wrist[2] += (pose.wrist[2]    - spring.wrist[2]) * KW;
-
-    foreArmGroup.rotation.y = spring.roll;
-    wrist.rotation.set(spring.wrist[0], spring.wrist[1], spring.wrist[2]);
-    thumbBase.rotation.z = -THUMB_ABDUCTION + pose.abduction[0];
-    for (let i = 1; i < 5; i++) {
-      anchors[i]!.rotation.z = pose.abduction[i];
-    }
+    // Right arm
+    springR.shoulder[0] += (poseR.shoulder[0] - springR.shoulder[0]) * KS;
+    springR.shoulder[1] += (poseR.shoulder[1] - springR.shoulder[1]) * KS;
+    springR.shoulder[2] += (poseR.shoulder[2] - springR.shoulder[2]) * KS;
+    springR.elbow       += (poseR.elbow       - springR.elbow)       * KS;
+    rightArm.shoulder.rotation.set(springR.shoulder[0], springR.shoulder[1], springR.shoulder[2]);
+    rightArm.elbow.rotation.set(-springR.elbow, 0, 0);
+    springR.roll     += (poseR.forearmRoll  - springR.roll)     * KR;
+    springR.wrist[0] += (poseR.wrist[0]    - springR.wrist[0]) * KW;
+    springR.wrist[1] += (poseR.wrist[1]    - springR.wrist[1]) * KW;
+    springR.wrist[2] += (poseR.wrist[2]    - springR.wrist[2]) * KW;
+    rightArm.foreArmGroup.rotation.y = springR.roll;
+    rightArm.wrist.rotation.set(springR.wrist[0], springR.wrist[1], springR.wrist[2]);
+    rightArm.thumbBase.rotation.z = -THUMB_ABDUCTION + poseR.abduction[0];
+    for (let i = 1; i < 5; i++) rightArm.anchors[i]!.rotation.z = poseR.abduction[i];
     for (let i = 0; i < 5; i++) {
-      const fp = pose.fingers[i];
-      const fs = fingerSprings[i]!;
+      const fp = poseR.fingers[i]!;
+      const fs = fingerSpringsR[i]!;
       fs[0] += (fp.proximal - fs[0]) * KF;
       fs[1] += (fp.middle   - fs[1]) * KF;
       fs[2] += (fp.distal   - fs[2]) * KF;
-      applyFingerFlex(fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
+      applyFingerFlex(rightArm.fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
     }
 
-    // Cabeza: mira ligeramente hacia la mano (solo cuando está en zona facial).
-    const handHigh = pose.shoulder[0] < -0.25;
-    const targetHX = handHigh ? pose.shoulder[0] * 0.12 : 0;
-    const targetHY = handHigh ? pose.shoulder[1] * 0.08 : 0;
-    spring.headX += (targetHX - spring.headX) * KH;
-    spring.headY += (targetHY - spring.headY) * KH;
-    headGroup.rotation.x = spring.headX + Math.sin(tMs * 0.0018) * 0.002;
-    headGroup.rotation.y = spring.headY;
-    // Bob suave sincronizado con la respiración.
+    // Left arm (mirrored pose already computed by poseFromKeyframeLeft)
+    springL.shoulder[0] += (poseL.shoulder[0] - springL.shoulder[0]) * KS;
+    springL.shoulder[1] += (poseL.shoulder[1] - springL.shoulder[1]) * KS;
+    springL.shoulder[2] += (poseL.shoulder[2] - springL.shoulder[2]) * KS;
+    springL.elbow       += (poseL.elbow       - springL.elbow)       * KS;
+    leftArm.shoulder.rotation.set(springL.shoulder[0], springL.shoulder[1], springL.shoulder[2]);
+    leftArm.elbow.rotation.set(-springL.elbow, 0, 0);
+    springL.roll     += (poseL.forearmRoll  - springL.roll)     * KR;
+    springL.wrist[0] += (poseL.wrist[0]    - springL.wrist[0]) * KW;
+    springL.wrist[1] += (poseL.wrist[1]    - springL.wrist[1]) * KW;
+    springL.wrist[2] += (poseL.wrist[2]    - springL.wrist[2]) * KW;
+    leftArm.foreArmGroup.rotation.y = springL.roll;
+    leftArm.wrist.rotation.set(springL.wrist[0], springL.wrist[1], springL.wrist[2]);
+    leftArm.thumbBase.rotation.z = THUMB_ABDUCTION - poseL.abduction[0];
+    for (let i = 1; i < 5; i++) leftArm.anchors[i]!.rotation.z = -poseL.abduction[i];
+    for (let i = 0; i < 5; i++) {
+      const fp = poseL.fingers[i]!;
+      const fs = fingerSpringsL[i]!;
+      fs[0] += (fp.proximal - fs[0]) * KF;
+      fs[1] += (fp.middle   - fs[1]) * KF;
+      fs[2] += (fp.distal   - fs[2]) * KF;
+      applyFingerFlex(leftArm.fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
+    }
+
+    const handHigh = poseR.shoulder[0] < -0.25;
+    const targetHX = handHigh ? poseR.shoulder[0] * 0.12 : 0;
+    const targetHY = handHigh ? poseR.shoulder[1] * 0.08 : 0;
+    springHead.headX += (targetHX - springHead.headX) * KH;
+    springHead.headY += (targetHY - springHead.headY) * KH;
+    headGroup.rotation.x = springHead.headX + Math.sin(tMs * 0.0018) * 0.002;
+    headGroup.rotation.y = springHead.headY;
     headGroup.position.y = HEAD_BASE_Y + breath * 0.45;
-    // Ojos siguen la mano: rotación leve hacia la zona del signo.
-    const gazeX = -spring.shoulder[0] * 0.14;
-    const gazeY = spring.shoulder[1] * 0.10 - spring.headY * 0.8;
+    const gazeX = -springR.shoulder[0] * 0.14;
+    const gazeY = springR.shoulder[1] * 0.10 - springHead.headY * 0.8;
     for (const e of eyes) { e.rotation.x = gazeX; e.rotation.y = gazeY; }
     updateBlink(tMs);
   }
 
   function applyIdle(tMs: number) {
-    const breath     = Math.sin(tMs * 0.0018) * 0.004 + Math.sin(tMs * 0.0054) * 0.001;
-    const sway       = Math.sin(tMs * 0.0008) * 0.008;
-    const microSway  = Math.sin(tMs * 0.0023) * 0.006;
-    shoulder.position.y = breath;
+    const breath    = Math.sin(tMs * 0.0018) * 0.004 + Math.sin(tMs * 0.0054) * 0.001;
+    const sway      = Math.sin(tMs * 0.0008) * 0.008;
+    const microSway = Math.sin(tMs * 0.0023) * 0.006;
+    // CRITICAL FIX: Y must be SHOULDER_HEIGHT + breath, not just breath.
+    rightArm.shoulder.position.y = SHOULDER_HEIGHT + breath;
+    leftArm.shoulder.position.y  = SHOULDER_HEIGHT + breath;
     torso.scale.set(1 + breath * 2, 1 + breath * 8, 1 + breath * 3);
     const lateralSway = Math.sin(tMs * 0.00055) * 0.010;
-    // Hombro y codo dirigidos por springs → cuando termina un signo la mano
-    // vuelve suavemente a la posición de reposo sin corte brusco.
-    spring.shoulder[0] += (0.08 + sway * 0.1 - spring.shoulder[0]) * KS;
-    spring.shoulder[1] += (0                  - spring.shoulder[1]) * KS;
-    spring.shoulder[2] += (lateralSway        - spring.shoulder[2]) * KS;
-    spring.elbow       += (0.32 + sway * 0.04 - spring.elbow)       * KS;
-    shoulder.rotation.set(spring.shoulder[0], spring.shoulder[1], spring.shoulder[2]);
-    elbow.rotation.set(-spring.elbow, 0, 0);
-    // Antebrazo: spring de vuelta a 0 + micro-pronación.
-    spring.roll += (0 - spring.roll) * KR;
-    foreArmGroup.rotation.y = spring.roll + microSway * 0.4;
-    // Muñeca spring → retracción fluida desde cualquier signo.
-    spring.wrist[0] += (microSway * 0.18 - spring.wrist[0]) * KW;
-    spring.wrist[1] += (0               - spring.wrist[1]) * KW;
-    spring.wrist[2] += (microSway * 0.06 - spring.wrist[2]) * KW;
-    wrist.rotation.set(spring.wrist[0], spring.wrist[1], spring.wrist[2]);
-    thumbBase.rotation.z = -THUMB_ABDUCTION;
-    for (let i = 1; i < 5; i++) {
-      anchors[i]!.rotation.z = 0;
-    }
-    // Dedos con springs → transición suave de cualquier handshape a reposo.
     const curl = 0.06 + Math.sin(tMs * 0.0011) * 0.012;
+
+    // Right arm idle
+    springR.shoulder[0] += (0.08 + sway * 0.1 - springR.shoulder[0]) * KS;
+    springR.shoulder[1] += (0                  - springR.shoulder[1]) * KS;
+    springR.shoulder[2] += (lateralSway        - springR.shoulder[2]) * KS;
+    springR.elbow       += (0.32 + sway * 0.04 - springR.elbow)       * KS;
+    rightArm.shoulder.rotation.set(springR.shoulder[0], springR.shoulder[1], springR.shoulder[2]);
+    rightArm.elbow.rotation.set(-springR.elbow, 0, 0);
+    springR.roll += (0 - springR.roll) * KR;
+    rightArm.foreArmGroup.rotation.y = springR.roll + microSway * 0.4;
+    springR.wrist[0] += (microSway * 0.18 - springR.wrist[0]) * KW;
+    springR.wrist[1] += (0                - springR.wrist[1]) * KW;
+    springR.wrist[2] += (microSway * 0.06 - springR.wrist[2]) * KW;
+    rightArm.wrist.rotation.set(springR.wrist[0], springR.wrist[1], springR.wrist[2]);
+    rightArm.thumbBase.rotation.z = -THUMB_ABDUCTION;
+    for (let i = 1; i < 5; i++) rightArm.anchors[i]!.rotation.z = 0;
     for (let i = 0; i < 5; i++) {
       const tremor = Math.sin(tMs * (0.0011 + i * 0.00031) + i * 1.2) * 0.008;
-      const fs = fingerSprings[i]!;
-      fs[0] += (0.18 + curl + tremor             - fs[0]) * KF;
+      const fs = fingerSpringsR[i]!;
+      fs[0] += (0.18 + curl + tremor              - fs[0]) * KF;
       fs[1] += (0.14 + curl * 0.70 + tremor * 0.60 - fs[1]) * KF;
       fs[2] += (0.10 + curl * 0.40 + tremor * 0.30 - fs[2]) * KF;
-      applyFingerFlex(fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
+      applyFingerFlex(rightArm.fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
     }
-    // Balanceo natural de la cabeza en reposo:
-    // ligera inclinación hacia abajo (chin-down) + oscilación muy lenta lateral.
+
+    // Left arm idle (symmetric mirror)
+    springL.shoulder[0] += (0.08 + sway * 0.1 - springL.shoulder[0]) * KS;
+    springL.shoulder[1] += (0                  - springL.shoulder[1]) * KS;
+    springL.shoulder[2] += (-lateralSway       - springL.shoulder[2]) * KS;
+    springL.elbow       += (0.32 + sway * 0.04 - springL.elbow)       * KS;
+    leftArm.shoulder.rotation.set(springL.shoulder[0], springL.shoulder[1], springL.shoulder[2]);
+    leftArm.elbow.rotation.set(-springL.elbow, 0, 0);
+    springL.roll += (0 - springL.roll) * KR;
+    leftArm.foreArmGroup.rotation.y = springL.roll - microSway * 0.4;
+    springL.wrist[0] += (microSway * 0.18 - springL.wrist[0]) * KW;
+    springL.wrist[1] += (0                - springL.wrist[1]) * KW;
+    springL.wrist[2] += (-microSway * 0.06 - springL.wrist[2]) * KW;
+    leftArm.wrist.rotation.set(springL.wrist[0], springL.wrist[1], springL.wrist[2]);
+    leftArm.thumbBase.rotation.z = THUMB_ABDUCTION;
+    for (let i = 1; i < 5; i++) leftArm.anchors[i]!.rotation.z = 0;
+    for (let i = 0; i < 5; i++) {
+      const tremor = Math.sin(tMs * (0.0011 + i * 0.00031) + i * 1.2) * 0.008;
+      const fs = fingerSpringsL[i]!;
+      fs[0] += (0.18 + curl + tremor              - fs[0]) * KF;
+      fs[1] += (0.14 + curl * 0.70 + tremor * 0.60 - fs[1]) * KF;
+      fs[2] += (0.10 + curl * 0.40 + tremor * 0.30 - fs[2]) * KF;
+      applyFingerFlex(leftArm.fingers[i]!, { proximal: fs[0], middle: fs[1], distal: fs[2] });
+    }
+
     const headSway = Math.sin(tMs * 0.00055) * 0.010;
     const chinDown  = 0.025 + Math.sin(tMs * 0.0018) * 0.004;
-    spring.headX += (chinDown - spring.headX) * KH;
-    spring.headY += (0 - spring.headY) * KH;
-    headGroup.rotation.x = spring.headX;
-    headGroup.rotation.y = spring.headY + headSway;
-    headGroup.rotation.z = Math.sin(tMs * 0.00038) * 0.006; // tilt lateral muy suave
+    springHead.headX += (chinDown - springHead.headX) * KH;
+    springHead.headY += (0        - springHead.headY) * KH;
+    headGroup.rotation.x = springHead.headX;
+    headGroup.rotation.y = springHead.headY + headSway;
+    headGroup.rotation.z = Math.sin(tMs * 0.00038) * 0.006;
     headGroup.position.y = HEAD_BASE_Y + breath * 0.45;
-    // Micro-sacádica: deriva lenta de la mirada + salto involuntario esporádico.
-    // Usamos sumatoria de frecuencias irracionales para un movimiento no periódico.
     const idleGazeX = Math.sin(tMs * 0.000267) * 0.016 + Math.sin(tMs * 0.000891) * 0.006;
     const idleGazeY = Math.sin(tMs * 0.000184) * 0.013 + Math.sin(tMs * 0.000712) * 0.005;
-    // Micro-sacada de alta frecuencia (3–5 Hz) a baja amplitud (±0.004 rad).
     const sacX = Math.sign(Math.sin(tMs * 0.00312)) * 0.004 * (Math.random() < 0.002 ? 1 : 0);
     const sacY = Math.sign(Math.sin(tMs * 0.00289)) * 0.003 * (Math.random() < 0.002 ? 1 : 0);
     for (const e of eyes) { e.rotation.x = idleGazeX + sacX; e.rotation.y = idleGazeY + sacY; }

@@ -247,6 +247,14 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         setMode("vrm");
         onReady?.("vrm");
 
+        // Escena limpia estilo referencia (fondo blanco, softbox frontal)
+        scene.background = new THREE.Color(0xffffff);
+        const softbox = new THREE.DirectionalLight(0xffffff, 0.85);
+        softbox.position.set(0, 1.5, 2.0);
+        scene.add(softbox);
+        camera.position.set(0, 0.90, 2.0);
+        camera.lookAt(0, 0.80, 0);
+
         const clock = new THREE.Clock();
         const started = performance.now();
 
@@ -255,8 +263,9 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           const dt = performance.now() - started;
           const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
           if (kf) {
-            const pose = poseFromKeyframe(kf);
-            applyPoseToVrm(vrm, pose);
+            const poseR = poseFromKeyframe(kf);
+            const poseL = poseFromKeyframeLeft(kf);
+            applyPoseToVrm(vrm, poseR, poseL);
           }
           vrm.update(clock.getDelta());
           renderer.render(scene, camera);

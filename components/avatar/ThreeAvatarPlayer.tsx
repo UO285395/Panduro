@@ -55,7 +55,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.12;
+      renderer.toneMappingExposure = 1.08;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
 
       const scene = new THREE.Scene();
@@ -118,7 +118,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       const key = new THREE.DirectionalLight(0xfffaf0, 1.20);
       key.position.set(1.2, 3.0, 2.5);
       key.castShadow = true;
-      key.shadow.mapSize.set(1024, 1024);
+      key.shadow.mapSize.set(2048, 2048);
       key.shadow.camera.near = 0.5;
       key.shadow.camera.far = 6;
       key.shadow.camera.left = key.shadow.camera.bottom = -0.4;
@@ -240,29 +240,35 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
   // MeshPhysicalMaterial con sheen (retro-dispersión subsuperficial) para simular
   // la translucidez de la piel sin texturas adicionales.
   const matSkin = new THREE.MeshPhysicalMaterial({
-    color: 0xc9875e, roughness: 0.45, metalness: 0.01,
-    sheen: 0.40, sheenRoughness: 0.80,
-    sheenColor: new THREE.Color(0xe8a070), envMapIntensity: 0.55,
+    color: 0xc9875e, roughness: 0.42, metalness: 0.01,
+    sheen: 0.45, sheenRoughness: 0.75,
+    sheenColor: new THREE.Color(0xee9070),
+    envMapIntensity: 0.60,
   });
   const matPalm = new THREE.MeshPhysicalMaterial({
-    color: 0xe0a87a, roughness: 0.50, metalness: 0.00,
-    sheen: 0.28, sheenRoughness: 0.85,
-    sheenColor: new THREE.Color(0xf0c09a), envMapIntensity: 0.45,
+    color: 0xdfa478, roughness: 0.48, metalness: 0.00,
+    sheen: 0.32, sheenRoughness: 0.82,
+    sheenColor: new THREE.Color(0xf0b890), envMapIntensity: 0.50,
   });
   const matShirt = new THREE.MeshPhysicalMaterial({
-    color: 0xea580c, roughness: 0.62, metalness: 0.00, envMapIntensity: 0.30,
+    color: 0xea580c, roughness: 0.60, metalness: 0.00, envMapIntensity: 0.35,
   });
   const matNail = new THREE.MeshPhysicalMaterial({
-    color: 0xf2ddd0, roughness: 0.12, metalness: 0.05,
-    clearcoat: 0.35, clearcoatRoughness: 0.05, envMapIntensity: 0.85,
+    color: 0xf2ddd0, roughness: 0.10, metalness: 0.04,
+    clearcoat: 0.50, clearcoatRoughness: 0.04, envMapIntensity: 0.90,
   });
   const matFace = new THREE.MeshPhysicalMaterial({
-    color: 0xc98060, roughness: 0.46, metalness: 0.00,
-    sheen: 0.20, sheenRoughness: 0.90,
-    sheenColor: new THREE.Color(0xe09060), envMapIntensity: 0.40,
+    color: 0xc88060, roughness: 0.44, metalness: 0.00,
+    sheen: 0.25, sheenRoughness: 0.88,
+    sheenColor: new THREE.Color(0xdda070),
+    clearcoat: 0.08, clearcoatRoughness: 0.40,
+    envMapIntensity: 0.45,
   });
   const matHair = new THREE.MeshPhysicalMaterial({
-    color: 0x2e1f14, roughness: 0.78, metalness: 0.00, envMapIntensity: 0.20,
+    color: 0x2c1c12, roughness: 0.72, metalness: 0.00,
+    sheen: 0.15, sheenRoughness: 0.95,
+    sheenColor: new THREE.Color(0x5c3c28),
+    envMapIntensity: 0.25,
   });
 
   const group = new THREE.Group();

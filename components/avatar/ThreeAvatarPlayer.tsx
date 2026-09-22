@@ -150,6 +150,11 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       micro.position.set(0.0, 0.0, 3.0);
       scene.add(micro);
 
+      // Up-fill: rebote cálido desde el suelo — ilumina la palma por debajo.
+      const upFill = new THREE.DirectionalLight(0xffa050, 0.14);
+      upFill.position.set(0.0, -1.5, 1.0);
+      scene.add(upFill);
+
       // Spot facial: PointLight sobre el rostro para iluminar ojos y expresión.
       const faceSpot = new THREE.PointLight(0xfff8f0, 0.55, 1.2);
       faceSpot.position.set(0.1, 0.96, 0.55);
@@ -490,6 +495,17 @@ function buildProceduralRig(THREE: typeof import("three")): RigHandle {
     matCrease,
   );
   palm.add(palmCreaseMesh);
+
+  // Pliegue palmar distal (línea de los dedos) — ligeramente horizontal bajo los MCP.
+  const distalCreaseCurve = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(-PALM_WIDTH * 0.28, -PALM_HEIGHT * 0.30, PALM_DEPTH * 0.22),
+    new THREE.Vector3( PALM_WIDTH * 0.05, -PALM_HEIGHT * 0.28, PALM_DEPTH * 0.24),
+    new THREE.Vector3( PALM_WIDTH * 0.36, -PALM_HEIGHT * 0.24, PALM_DEPTH * 0.21),
+  );
+  palm.add(new THREE.Mesh(
+    new THREE.TubeGeometry(distalCreaseCurve, 14, 0.0018, 5, false),
+    matCrease,
+  ));
 
   // Articulación muñeca–palma.
   const wristBall = new THREE.Mesh(new THREE.SphereGeometry(KNUCKLE_RADIUS * 1.6, 18, 14), matSkin);

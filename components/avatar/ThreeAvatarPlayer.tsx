@@ -243,6 +243,8 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           scene: import("three").Group;
           vrm: import("@pixiv/three-vrm").VRM;
         };
+        // VRM0 faces +Z; rotate to face camera (at +Z)
+        vrmScene.rotation.y = Math.PI;
         scene.add(vrmScene);
         setMode("vrm");
         onReady?.("vrm");
@@ -252,8 +254,24 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         const softbox = new THREE.DirectionalLight(0xffffff, 0.85);
         softbox.position.set(0, 1.5, 2.0);
         scene.add(softbox);
-        camera.position.set(0, 0.90, 2.0);
-        camera.lookAt(0, 0.80, 0);
+
+        // Auto-fit camera to VRM bounding box — works regardless of model scale
+        {
+          const box = new THREE.Box3().setFromObject(vrmScene);
+          const bCenter = box.getCenter(new THREE.Vector3());
+          const bSize = box.getSize(new THREE.Vector3());
+          // Encuadre torso→cabeza: de 40% a 105% de la altura total
+          const showMin = box.min.y + bSize.y * 0.40;
+          const showMax = box.max.y + bSize.y * 0.05;
+          const showCy = (showMin + showMax) / 2;
+          const showH = showMax - showMin;
+          camera.fov = 28;
+          camera.updateProjectionMatrix();
+          const halfFov = (camera.fov / 2) * Math.PI / 180;
+          const dist = (showH / 2) / Math.tan(halfFov) * 1.25;
+          camera.position.set(bCenter.x, showCy, bCenter.z + dist);
+          camera.lookAt(bCenter.x, showCy, bCenter.z);
+        }
 
         const clock = new THREE.Clock();
         const started = performance.now();
@@ -262,6 +280,8 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           if (disposed) return;
           const dt = performance.now() - started;
           const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
+          // setNormalizedLocalRotation ANTES de vrm.update() para que
+          // update() propague normalized→raw en el mismo frame.
           if (kf) {
             const poseR = poseFromKeyframe(kf);
             const poseL = poseFromKeyframeLeft(kf);

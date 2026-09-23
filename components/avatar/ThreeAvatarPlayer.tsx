@@ -5,7 +5,7 @@ import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
-import { applyPoseToVrm, applyVrmIdle } from "@/lib/avatar/vrmMapper";
+import { applyPoseRightToVrm, applyPoseLeftToVrm, applyVrmIdle, applyVrmIdleLeft } from "@/lib/avatar/vrmMapper";
 import {
   BONE_LENGTHS,
   KNUCKLE_RADIUS,
@@ -284,8 +284,14 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           // update() propague normalized→raw en el mismo frame.
           if (kf) {
             const poseR = poseFromKeyframe(kf);
-            const poseL = poseFromKeyframeLeft(kf);
-            applyPoseToVrm(vrm, poseR, poseL);
+            applyPoseRightToVrm(vrm, poseR);
+            // Solo animar brazo izquierdo si el clip es bimanual (hand2 presente).
+            // Para signos unimanuales el brazo izquierdo se queda en idle.
+            if (kf.hand2) {
+              applyPoseLeftToVrm(vrm, poseFromKeyframeLeft(kf));
+            } else {
+              applyVrmIdleLeft(vrm, dt);
+            }
           } else {
             applyVrmIdle(vrm, dt);
           }

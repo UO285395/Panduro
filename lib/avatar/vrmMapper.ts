@@ -21,26 +21,24 @@ function setNormRot(vrm: VRM, name: VRMHumanBoneName, q: THREE.Quaternion) {
   if (node) node.quaternion.copy(q);
 }
 
-export function applyPoseToVrm(vrm: VRM, poseR: Pose, poseL: Pose) {
-  // ── Brazo derecho ────────────────────────────────────────────────────────
+export function applyPoseRightToVrm(vrm: VRM, pose: Pose) {
   setNormRot(vrm, VRMHumanBoneName.RightUpperArm,
-    shoulderQuat(poseR.shoulder[0], poseR.shoulder[1], "Right"));
+    shoulderQuat(pose.shoulder[0], pose.shoulder[1], "Right"));
   setNormRot(vrm, VRMHumanBoneName.RightLowerArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(-poseR.elbow, poseR.forearmRoll, 0)));
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(-pose.elbow, pose.forearmRoll, 0)));
   setNormRot(vrm, VRMHumanBoneName.RightHand,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(poseR.wrist[0], poseR.wrist[1], poseR.wrist[2])));
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.wrist[0], pose.wrist[1], pose.wrist[2])));
+  applyFingers(vrm, pose, "Right");
+}
 
-  applyFingers(vrm, poseR, "Right");
-
-  // ── Brazo izquierdo ──────────────────────────────────────────────────────
+export function applyPoseLeftToVrm(vrm: VRM, pose: Pose) {
   setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
-    shoulderQuat(poseL.shoulder[0], poseL.shoulder[1], "Left"));
+    shoulderQuat(pose.shoulder[0], pose.shoulder[1], "Left"));
   setNormRot(vrm, VRMHumanBoneName.LeftLowerArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(-poseL.elbow, poseL.forearmRoll, 0)));
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(-pose.elbow, pose.forearmRoll, 0)));
   setNormRot(vrm, VRMHumanBoneName.LeftHand,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(poseL.wrist[0], poseL.wrist[1], poseL.wrist[2])));
-
-  applyFingers(vrm, poseL, "Left");
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.wrist[0], pose.wrist[1], pose.wrist[2])));
+  applyFingers(vrm, pose, "Left");
 }
 
 /**
@@ -95,22 +93,28 @@ function shoulderQuat(
 /** Postura idle natural: brazos caídos con ligera respiración. */
 export function applyVrmIdle(vrm: VRM, tMs: number) {
   const breath = Math.sin(tMs * 0.0008) * 0.012;
-
-  // Z negativo baja el brazo derecho, Z positivo baja el izquierdo.
-  // -1.4 rad ≈ -80° = brazos casi completamente caídos.
   const downR = -1.4 - breath * 0.1;
   const downL = 1.4 + breath * 0.1;
+  const elbowQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.1, 0, 0));
 
   setNormRot(vrm, VRMHumanBoneName.RightUpperArm,
     new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downR)));
   setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
     new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downL)));
-
-  const elbowQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.1, 0, 0));
   setNormRot(vrm, VRMHumanBoneName.RightLowerArm, elbowQ);
   setNormRot(vrm, VRMHumanBoneName.LeftLowerArm, elbowQ);
-
   setNormRot(vrm, VRMHumanBoneName.RightHand, new THREE.Quaternion());
+  setNormRot(vrm, VRMHumanBoneName.LeftHand, new THREE.Quaternion());
+}
+
+/** Postura idle solo para el brazo izquierdo (signos unimanuales). */
+export function applyVrmIdleLeft(vrm: VRM, tMs: number) {
+  const breath = Math.sin(tMs * 0.0008) * 0.012;
+  const downL = 1.4 + breath * 0.1;
+  setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downL)));
+  setNormRot(vrm, VRMHumanBoneName.LeftLowerArm,
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.1, 0, 0)));
   setNormRot(vrm, VRMHumanBoneName.LeftHand, new THREE.Quaternion());
 }
 

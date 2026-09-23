@@ -35,6 +35,17 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mode, setMode] = useState<"procedural" | "vrm">("procedural");
 
+  // Cambiar de clip o recibir callbacks nuevos no debe reconstruir la escena
+  // ni volver a cargar el VRM: el bucle lee siempre el clip vigente.
+  const clipRef = useRef({ clip, startedAt: 0 });
+  const callbacksRef = useRef({ onReady, onFailed });
+  useEffect(() => {
+    callbacksRef.current = { onReady, onFailed };
+  });
+  useEffect(() => {
+    clipRef.current = { clip, startedAt: performance.now() };
+  }, [clip]);
+
   useEffect(() => {
     let disposed = false;
     let raf = 0;
@@ -45,7 +56,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       try {
         THREE = await import("three");
       } catch {
-        onFailed?.();
+        callbacksRef.current.onFailed?.();
         return;
       }
       if (disposed) return;
@@ -249,7 +260,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         vrmScene.rotation.y = rig.facingY;
         scene.add(vrmScene);
         setMode("vrm");
-        onReady?.("vrm");
+        callbacksRef.current.onReady?.("vrm");
 
         // Escena limpia estilo referencia (fondo blanco, softbox frontal)
         scene.background = new THREE.Color(0xffffff);
@@ -276,12 +287,12 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         }
 
         const clock = new THREE.Clock();
-        const started = performance.now();
 
         const loop = () => {
           if (disposed) return;
-          const dt = performance.now() - started;
-          const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
+          const { clip: active, startedAt } = clipRef.current;
+          const dt = performance.now() - startedAt;
+          const kf = active ? sampleClip(active, dt % active.duration) : null;
           // setNormalizedLocalRotation ANTES de vrm.update() para que
           // update() propague normalized→raw en el mismo frame.
           if (kf) {
@@ -298,15 +309,14 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         // Fallback: rig procedimental
         const rig = buildProceduralRig(THREE, skinNormTex, skinRoughTex);
         scene.add(rig.group);
-        onReady?.("procedural");
-
-        const started = performance.now();
+        callbacksRef.current.onReady?.("procedural");
 
         const loop = () => {
           if (disposed) return;
-          const dt = performance.now() - started;
-          const kf = clip ? sampleClip(clip, dt % clip.duration) : null;
-          if (clip && kf) {
+          const { clip: active, startedAt } = clipRef.current;
+          const dt = performance.now() - startedAt;
+          const kf = active ? sampleClip(active, dt % active.duration) : null;
+          if (kf) {
             const poseR = poseFromKeyframe(kf);
             const poseL = poseFromKeyframeLeft(kf);
             rig.apply(poseR, poseL, dt);
@@ -326,7 +336,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
       disposed = true;
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [clip, size, onReady, onFailed]);
+  }, [size]);
 
   return (
     <canvas

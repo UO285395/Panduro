@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
 import type { Exercise, Sign } from "@/lib/curriculum/schema";
 
 type Pair = { sign: Sign; translation: string };
@@ -51,8 +52,15 @@ export function MatchPairs({ exercise, pairs, onAnswer, disabled }: Props) {
         .reduce((acc, ch) => (acc + ch.charCodeAt(0)) % 100000, 7),
     [exercise.id],
   );
-  const [signOrder] = useState(() => shuffle(signTokens, seed));
+  // Los signos se identifican por su posición, no por la glosa: la glosa es
+  // la propia respuesta. El avatar muestra el signo que se toca.
+  const [signOrder] = useState(() =>
+    shuffle(signTokens, seed).map((t, i) => ({ ...t, label: `Signo ${i + 1}` })),
+  );
   const [transOrder] = useState(() => shuffle(transTokens, seed + 13));
+  const [playingId, setPlayingId] = useState(() => signOrder[0]?.signId);
+  const playing = pairs.find((p) => p.sign.id === playingId)?.sign;
+  const playingLabel = signOrder.find((t) => t.signId === playingId)?.label;
 
   const [selection, setSelection] = useState<{
     sign?: Token;
@@ -67,6 +75,7 @@ export function MatchPairs({ exercise, pairs, onAnswer, disabled }: Props) {
 
   function pick(token: Token) {
     if (disabled || matched.has(token.signId)) return;
+    if (token.kind === "sign") setPlayingId(token.signId);
     setWrongAttempt(null);
     setSelection((s) => ({ ...s, [token.kind]: token }));
   }
@@ -97,6 +106,14 @@ export function MatchPairs({ exercise, pairs, onAnswer, disabled }: Props) {
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">{exercise.prompt}</h2>
+      <figure className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex aspect-square w-full max-w-[240px] items-center justify-center overflow-hidden rounded-xl bg-brand-100 dark:bg-brand-900/40">
+          <AvatarPlayer clip={playing?.avatarClip ?? null} size={240} />
+        </div>
+        <figcaption className="text-sm font-medium text-slate-600 dark:text-slate-300">
+          ▶ {playingLabel} · toca otro signo para verlo
+        </figcaption>
+      </figure>
       <div className="grid grid-cols-2 gap-3">
         <ul className="space-y-2" aria-label="Signos">
           {signOrder.map((t) => (
@@ -106,6 +123,7 @@ export function MatchPairs({ exercise, pairs, onAnswer, disabled }: Props) {
                 selected={selection.sign?.key === t.key}
                 matched={matched.has(t.signId)}
                 wrong={wrongAttempt?.signKey === t.key}
+                playing={playingId === t.signId}
                 disabled={disabled}
                 onPick={pick}
               />
@@ -140,6 +158,7 @@ function MatchButton({
   selected,
   matched,
   wrong,
+  playing = false,
   disabled,
   onPick,
 }: {
@@ -147,6 +166,7 @@ function MatchButton({
   selected: boolean;
   matched: boolean;
   wrong: boolean;
+  playing?: boolean;
   disabled: boolean;
   onPick: (t: Token) => void;
 }) {
@@ -164,8 +184,9 @@ function MatchButton({
             : selected
               ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40"
               : "border-slate-200 bg-white hover:border-brand-400 dark:border-slate-800 dark:bg-slate-900"
-      }`}
+      } ${playing && !matched ? "ring-2 ring-brand-300 dark:ring-brand-700" : ""}`}
     >
+      {token.kind === "sign" && "▶ "}
       {token.label}
     </button>
   );

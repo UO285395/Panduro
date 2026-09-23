@@ -12,13 +12,12 @@
 
 export const VRM_PATH = "/avatars/panduro.vrm";
 
-// Modelos VRM gratuitos (CC-BY / no-comercial). El browser los prueba en orden.
-// VRoid/Alicia: personaje femenino anime-realistic, ideal para lengua de signos.
+// Modelos VRM gratuitos (CC-BY). El browser los prueba en orden.
 const CDN_CANDIDATES = [
-  // Alicia Solid — modelo canónico VRM0, female, anime-realistic (CC-BY)
-  "https://cdn.jsdelivr.net/gh/pixiv/three-vrm@3.5.5/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm",
-  // Seed-san — muestra oficial VRM1 del consorcio VRM (CC-BY)
+  // Seed-san — personaje femenino oficial del VRM Consortium (CC-BY, VRM1)
   "https://cdn.jsdelivr.net/gh/vrm-c/vrm-specification@master/samples/Seed-san/vrm1/Seed-san.vrm",
+  // VRM1_Constraint_Twist_Sample — fallback técnico de pixiv/three-vrm
+  "https://cdn.jsdelivr.net/gh/pixiv/three-vrm@3.5.5/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm",
 ];
 
 export type LoadedVrm = {

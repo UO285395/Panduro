@@ -5,7 +5,7 @@ import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
-import { applyPoseToVrm } from "@/lib/avatar/vrmMapper";
+import { applyPoseToVrm, applyVrmIdle } from "@/lib/avatar/vrmMapper";
 import {
   BONE_LENGTHS,
   KNUCKLE_RADIUS,
@@ -266,6 +266,8 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
             const poseR = poseFromKeyframe(kf);
             const poseL = poseFromKeyframeLeft(kf);
             applyPoseToVrm(vrm, poseR, poseL);
+          } else {
+            applyVrmIdle(vrm, dt);
           }
           vrm.update(clock.getDelta());
           renderer.render(scene, camera);

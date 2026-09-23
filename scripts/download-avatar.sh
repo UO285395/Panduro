@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Descarga el avatar VRM CC0 (VRM Consortium sample) a public/avatars/panduro.vrm.
+# Descarga Seed-san (personaje femenino CC-BY del VRM Consortium) a public/avatars/panduro.vrm.
 # El binario NO está versionado en git; este script es el mecanismo de provisión.
 set -euo pipefail
 
-URL="https://github.com/vrm-c/vrm-specification/raw/master/samples/VRM1_Constraint_Twist_Sample.vrm"
+URL="https://github.com/vrm-c/vrm-specification/raw/master/samples/Seed-san/vrm1/Seed-san.vrm"
 DEST="public/avatars/panduro.vrm"
 
 mkdir -p public/avatars

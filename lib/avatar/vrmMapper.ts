@@ -55,6 +55,27 @@ const FINGER_BONES: Record<"Right" | "Left", [VRMHumanBoneName, VRMHumanBoneName
   ],
 };
 
+/** Postura idle natural: brazos ligeramente caídos con respiración. */
+export function applyVrmIdle(vrm: VRM, tMs: number) {
+  const h = vrm.humanoid;
+  const breath = Math.sin(tMs * 0.0008) * 0.015;
+
+  const rua = h.getBoneNode(VRMHumanBoneName.RightUpperArm);
+  if (rua) rua.rotation.set(0.10 + breath, -0.05, -0.08);
+  const lua = h.getBoneNode(VRMHumanBoneName.LeftUpperArm);
+  if (lua) lua.rotation.set(0.10 + breath,  0.05,  0.08);
+
+  const rla = h.getBoneNode(VRMHumanBoneName.RightLowerArm);
+  if (rla) { rla.rotation.x = -0.12; rla.rotation.y = 0; }
+  const lla = h.getBoneNode(VRMHumanBoneName.LeftLowerArm);
+  if (lla) { lla.rotation.x = -0.12; lla.rotation.y = 0; }
+
+  const rh = h.getBoneNode(VRMHumanBoneName.RightHand);
+  if (rh) rh.rotation.set(0, 0, 0);
+  const lh = h.getBoneNode(VRMHumanBoneName.LeftHand);
+  if (lh) lh.rotation.set(0, 0, 0);
+}
+
 function applyFingers(vrm: VRM, pose: Pose, side: "Right" | "Left") {
   const h = vrm.humanoid;
   const map = FINGER_BONES[side];

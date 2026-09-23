@@ -4,9 +4,12 @@ import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
 export function SignCard({
   sign,
   compact = false,
+  hideAnswer = false,
 }: {
   sign: Sign;
   compact?: boolean;
+  /** Modo ejercicio: no mostrar glosa, traducción ni descripción. */
+  hideAnswer?: boolean;
 }) {
   return (
     <figure
@@ -33,23 +36,29 @@ export function SignCard({
             className="h-full w-full rounded-lg object-cover"
           />
         ) : sign.avatarClip && !compact ? (
-          <AvatarPlayer clip={sign.avatarClip} label={sign.gloss} size={260} />
+          <AvatarPlayer
+            clip={sign.avatarClip}
+            label={hideAnswer ? undefined : sign.gloss}
+            size={260}
+          />
         ) : (
           <span className={compact ? "text-xs" : "text-4xl font-bold"}>
-            {sign.gloss}
+            {hideAnswer ? "?" : sign.gloss}
           </span>
         )}
       </div>
-      <figcaption
-        className={compact ? "text-sm" : "space-y-1 text-center"}
-      >
-        <span className="block font-semibold">{sign.translation}</span>
-        {!compact && sign.description && (
-          <span className="block text-sm text-slate-600 dark:text-slate-300">
-            {sign.description}
-          </span>
-        )}
-      </figcaption>
+      {!hideAnswer && (
+        <figcaption
+          className={compact ? "text-sm" : "space-y-1 text-center"}
+        >
+          <span className="block font-semibold">{sign.translation}</span>
+          {!compact && sign.description && (
+            <span className="block text-sm text-slate-600 dark:text-slate-300">
+              {sign.description}
+            </span>
+          )}
+        </figcaption>
+      )}
     </figure>
   );
 }

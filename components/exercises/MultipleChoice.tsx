@@ -23,7 +23,7 @@ export function MultipleChoice({ exercise, sign, onAnswer, disabled }: Props) {
   return (
     <section className="space-y-6">
       <h2 className="text-lg font-semibold">{exercise.prompt}</h2>
-      <SignCard sign={sign} />
+      <SignCard sign={sign} hideAnswer={picked === null} />
       <ul className="grid gap-2 sm:grid-cols-2">
         {exercise.options.map((option) => {
           const isPicked = option === picked;

@@ -8,7 +8,7 @@ import { HandTracker } from "@/lib/mediapipe/handTracker";
 import type { HandFrame, PerfStats } from "@/lib/mediapipe/types";
 import type { Exercise } from "@/lib/curriculum/schema";
 import { extractFeatures } from "@/lib/recognition/features";
-import { KnnClassifier } from "@/lib/recognition/knn";
+import { KnnClassifier, withoutSameHandshape } from "@/lib/recognition/knn";
 import { refineWithRules } from "@/lib/recognition/rules";
 import {
   getLetterMeta,
@@ -49,10 +49,13 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
     // Se recalcula cuando `templatesTick` cambia (tras cada saveLocalTemplate).
     void templatesTick;
     return new KnnClassifier(
-      [...loadGlobalTemplates(), ...loadLocalTemplates()],
+      withoutSameHandshape(
+        [...loadGlobalTemplates(), ...loadLocalTemplates()],
+        exercise.letterId,
+      ),
       5,
     );
-  }, [templatesTick]);
+  }, [templatesTick, exercise.letterId]);
 
   const availableTemplates = useMemo(
     () => classifier.countFor(exercise.letterId),

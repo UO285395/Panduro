@@ -8,7 +8,7 @@ import { HandTracker } from "@/lib/mediapipe/handTracker";
 import type { HandFrame, PerfStats } from "@/lib/mediapipe/types";
 import type { Exercise, Sign } from "@/lib/curriculum/schema";
 import { extractFeatures } from "@/lib/recognition/features";
-import { KnnClassifier } from "@/lib/recognition/knn";
+import { KnnClassifier, withoutSameHandshape } from "@/lib/recognition/knn";
 import { loadGlobalTemplates, loadLocalTemplates } from "@/lib/recognition/templates";
 
 type Props = {
@@ -34,8 +34,15 @@ export function SignWord({ exercise, sign, onAnswer, disabled }: Props) {
   const [delegate, setDelegate] = useState<"GPU" | "CPU" | "loading">("loading");
 
   const classifier = useMemo(
-    () => new KnnClassifier([...loadGlobalTemplates(), ...loadLocalTemplates()], 3),
-    [],
+    () =>
+      new KnnClassifier(
+        withoutSameHandshape(
+          [...loadGlobalTemplates(), ...loadLocalTemplates()],
+          exercise.signId,
+        ),
+        3,
+      ),
+    [exercise.signId],
   );
 
   const votesRef = useRef<{ label: string; confidence: number }[]>([]);

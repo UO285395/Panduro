@@ -37,7 +37,7 @@ export function TypeWord({ exercise, sign, onAnswer, disabled }: Props) {
   return (
     <section className="space-y-6">
       <h2 className="text-lg font-semibold">{exercise.prompt}</h2>
-      <SignCard sign={sign} />
+      <SignCard sign={sign} hideAnswer={!locked} />
       <form onSubmit={onSubmit} className="space-y-3">
         <label className="block space-y-1">
           <span className="text-sm font-medium">Traducción</span>

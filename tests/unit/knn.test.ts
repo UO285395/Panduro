@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { KnnClassifier, type Template } from "@/lib/recognition/knn";
+import { KnnClassifier, withoutSameHandshape, type Template } from "@/lib/recognition/knn";
+import { loadGlobalTemplates } from "@/lib/recognition/templates";
 import { euclidean, extractFeatures } from "@/lib/recognition/features";
 import type { NormalizedLandmark } from "@/lib/mediapipe/types";
 
@@ -106,5 +107,30 @@ describe("KnnClassifier", () => {
     );
     const p = small.predict([0.1, 0.1]);
     expect(p?.label).toBe("A");
+  });
+});
+
+describe("withoutSameHandshape", () => {
+  it("quita plantillas de otras etiquetas con la misma forma y conserva las distintas", () => {
+    const templates: Template[] = [
+      { label: "HOLA", features: [0, 0] },
+      { label: "ADIOS", features: [0, 0.01] },
+      { label: "NUM_1", features: [5, 5] },
+    ];
+    const kept = withoutSameHandshape(templates, "HOLA").map((t) => t.label);
+    expect(kept).toEqual(["HOLA", "NUM_1"]);
+  });
+
+  it("cada signo del corpus es reconocible por su propia configuración", () => {
+    const all = loadGlobalTemplates();
+    const labels = [...new Set(all.map((t) => t.label))];
+    const missed = labels.filter((label) => {
+      const probe = all
+        .find((t) => t.label === label)!
+        .features.map((v, i) => v + (i % 2 ? 0.01 : -0.01));
+      const cls = new KnnClassifier(withoutSameHandshape(all, label), 3);
+      return cls.predict(probe)?.label !== label;
+    });
+    expect(missed.length / labels.length).toBeLessThan(0.01);
   });
 });

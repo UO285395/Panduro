@@ -89,6 +89,27 @@ export class KnnClassifier {
   }
 }
 
+/**
+ * Quita las plantillas de otras etiquetas cuya configuración de mano coincide
+ * con alguna de `label`. Muchos signos comparten forma (difieren en lugar o
+ * movimiento) y un k-NN estático no puede separarlos: sin este filtro el
+ * empate lo gana una etiqueta arbitraria y el objetivo nunca se reconoce.
+ * `eps` (0.1) queda por debajo de la dispersión entre las propias plantillas
+ * de un signo (~0.17): más cerca que eso no se distingue de forma fiable.
+ */
+export function withoutSameHandshape(
+  templates: Template[],
+  label: string,
+  eps = 0.1,
+): Template[] {
+  const target = templates.filter((t) => t.label === label);
+  return templates.filter(
+    (t) =>
+      t.label === label ||
+      !target.some((x) => euclidean(x.features, t.features) < eps),
+  );
+}
+
 function medianOfNumbers(xs: number[]): number {
   if (xs.length === 0) return 0;
   const sorted = [...xs].sort((a, b) => a - b);

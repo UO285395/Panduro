@@ -5,7 +5,8 @@ import type { AvatarClip } from "@/lib/curriculum/schema";
 import { sampleClip } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
-import { applyPoseRightToVrm, applyPoseLeftToVrm, applyVrmIdle, applyVrmIdleLeft } from "@/lib/avatar/vrmMapper";
+import { applyVrmIdle, applyVrmKeyframe, createVrmRig } from "@/lib/avatar/vrmMapper";
+import { addHandOutline } from "@/lib/avatar/handOutline";
 import {
   BONE_LENGTHS,
   KNUCKLE_RADIUS,
@@ -243,8 +244,9 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           scene: import("three").Group;
           vrm: import("@pixiv/three-vrm").VRM;
         };
-        // VRM0 faces +Z; rotate to face camera (at +Z)
-        vrmScene.rotation.y = Math.PI;
+        const rig = createVrmRig(vrm);
+        addHandOutline(vrm, 0.016 * rig.armLen);
+        vrmScene.rotation.y = rig.facingY;
         scene.add(vrmScene);
         setMode("vrm");
         onReady?.("vrm");
@@ -283,17 +285,9 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           // setNormalizedLocalRotation ANTES de vrm.update() para que
           // update() propague normalized→raw en el mismo frame.
           if (kf) {
-            const poseR = poseFromKeyframe(kf);
-            applyPoseRightToVrm(vrm, poseR);
-            // Solo animar brazo izquierdo si el clip es bimanual (hand2 presente).
-            // Para signos unimanuales el brazo izquierdo se queda en idle.
-            if (kf.hand2) {
-              applyPoseLeftToVrm(vrm, poseFromKeyframeLeft(kf));
-            } else {
-              applyVrmIdleLeft(vrm, dt);
-            }
+            applyVrmKeyframe(rig, kf, dt);
           } else {
-            applyVrmIdle(vrm, dt);
+            applyVrmIdle(rig, dt);
           }
           vrm.update(clock.getDelta());
           renderer.render(scene, camera);

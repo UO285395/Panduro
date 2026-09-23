@@ -1,181 +1,321 @@
 import type { VRM } from "@pixiv/three-vrm";
-import { VRMHumanBoneName } from "@pixiv/three-vrm";
+import { VRMHumanBoneName as B } from "@pixiv/three-vrm";
 import * as THREE from "three";
-import type { Pose } from "./pose";
-import { THUMB_ABDUCTION } from "./rig";
+import type { AvatarKeyframe } from "@/lib/curriculum/schema";
+import { distributeFlex, getFingerAbduction, getFingerFlex } from "./pose";
 
 /**
- * Aplica poses calculadas por pose.ts a los bones humanoides de un VRM
- * usando la API de bones normalizados de three-vrm.
+ * Anima un VRM a partir de los keyframes del currículo.
  *
- * En three-vrm, los bones normalizados usan un sistema de coordenadas
- * canónico donde (0,0,0,1) = T-pose para todos los huesos.
- * Para el brazo derecho: +X_norm = dirección del brazo en T-pose.
- * Para bajarlo hacia posición natural: rotación negativa alrededor del eje Z.
- *
- * IMPORTANTE: llamar a setNormalizedLocalRotation ANTES de vrm.update(),
- * porque update() propaga normalized→raw. Invertir el orden no funciona.
+ * Los huesos normalizados de three-vrm parten de rotación identidad y sus
+ * ejes coinciden con el espacio del modelo, así que cada rotación se construye
+ * como el cambio entre dos bases ortonormales: la de reposo (T-pose, palma
+ * abajo) y la objetivo (dirección del hueso + palma o plano del codo). La
+ * posición de la muñeca sale de una IK de dos huesos con las longitudes reales
+ * del modelo, y el espacio de signado se ancla a la cara y el pecho del propio
+ * modelo (VRM0 mira a -Z, VRM1 a +Z; se detecta a partir de los hombros).
  */
-function setNormRot(vrm: VRM, name: VRMHumanBoneName, q: THREE.Quaternion) {
-  const node = vrm.humanoid.getNormalizedBoneNode(name);
-  if (node) node.quaternion.copy(q);
-}
 
-// En VRM1 normalizado la T-pose del antebrazo tiene la palma hacia abajo.
-// Para que la palma mire al espectador hay que girar PI alrededor del eje
-// longitudinal del antebrazo (Y local normalizado) ANTES de doblar el codo.
-// Con Euler XYZ el eje Y queda inclinado por el codo, lo que desvía la mano
-// al interior del cuerpo. Por eso usamos quaterniones explícitos y aplicamos
-// el roll primero en el eje original: q_total = q_codo * q_roll
-//   (en THREE.js: q_bend.multiply(q_roll) aplica q_roll primero)
-const FOREARM_ROLL_OFFSET = Math.PI;
+type Side = "Right" | "Left";
+type HandSpec = AvatarKeyframe["hand"];
+type FingersSpec = AvatarKeyframe["fingers"];
 
-function lowerArmQuat(elbow: number, forearmRoll: number): THREE.Quaternion {
-  const roll = new THREE.Quaternion().setFromAxisAngle(
-    new THREE.Vector3(0, 1, 0), forearmRoll + FOREARM_ROLL_OFFSET);
-  const bend = new THREE.Quaternion().setFromAxisAngle(
-    new THREE.Vector3(1, 0, 0), -elbow);
-  return bend.multiply(roll);  // roll primero, luego codo sobre eje original
-}
+const ARM = {
+  Right: { upper: B.RightUpperArm, lower: B.RightLowerArm, hand: B.RightHand },
+  Left: { upper: B.LeftUpperArm, lower: B.LeftLowerArm, hand: B.LeftHand },
+} as const;
 
-export function applyPoseRightToVrm(vrm: VRM, pose: Pose) {
-  setNormRot(vrm, VRMHumanBoneName.RightUpperArm,
-    shoulderQuat(pose.shoulder[0], pose.shoulder[1], "Right"));
-  setNormRot(vrm, VRMHumanBoneName.RightLowerArm,
-    lowerArmQuat(pose.elbow, pose.forearmRoll));
-  setNormRot(vrm, VRMHumanBoneName.RightHand,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.wrist[0], pose.wrist[1], pose.wrist[2])));
-  applyFingers(vrm, pose, "Right");
-}
-
-export function applyPoseLeftToVrm(vrm: VRM, pose: Pose) {
-  setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
-    shoulderQuat(pose.shoulder[0], pose.shoulder[1], "Left"));
-  setNormRot(vrm, VRMHumanBoneName.LeftLowerArm,
-    lowerArmQuat(pose.elbow, pose.forearmRoll));
-  setNormRot(vrm, VRMHumanBoneName.LeftHand,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.wrist[0], pose.wrist[1], pose.wrist[2])));
-  applyFingers(vrm, pose, "Left");
-}
-
-/**
- * Convierte los ángulos IK del hombro (pitch desde -Y, yaw en XZ) a un
- * quaternion en el espacio de bones normalizados de three-vrm.
- *
- * En el espacio normalizado:
- * - (0,0,0,1) = T-pose (brazo horizontal)
- * - La dirección del brazo normalizado local +Y = +X_world (brazo der) o -X_world (brazo izq)
- * - Z normalizado negativo baja el brazo derecho; Z positivo baja el izquierdo
- *
- * Transformación (brazo derecho):
- *   Q_parent^-1 = rotación +90° alrededor de Z
- *   local.x = -world_arm.y = cos(pitch)
- *   local.y = world_arm.x  = sin(pitch)*sin(yaw)
- *   local.z = world_arm.z  (en VRM space, negado por la rotación de escena)
- */
-function shoulderQuat(
-  pitch: number,
-  yaw: number,
-  side: "Right" | "Left",
-): THREE.Quaternion {
-  // Dirección del brazo en espacio de escena (procedural rig convention)
-  const wx = Math.sin(pitch) * Math.sin(yaw);
-  const wy = -Math.cos(pitch);
-  // wz negado al pasar a VRM space (vrmScene.rotation.y = PI)
-  const wz = -(Math.sin(pitch) * Math.cos(yaw));
-
-  let lx: number, ly: number, lz: number;
-  if (side === "Right") {
-    // Q_parent_R^-1 = rotación +90° Z: local.x=-wy, local.y=wx, local.z=wz
-    lx = -wy; // = cos(pitch)
-    ly = wx;  // = sin(pitch)*sin(yaw)
-    lz = wz;
-  } else {
-    // Para brazo izquierdo, el parent alínea +Y_local con -X_world
-    // Q_parent_L^-1 = rotación -90° Z: local.x=wy, local.y=-wx, local.z=wz
-    lx = wy;  // = -(-cos(pitch)) = cos(pitch)
-    ly = -wx; // = -sin(pitch)*sin(yaw)
-    lz = wz;
-  }
-
-  const len = Math.sqrt(lx * lx + ly * ly + lz * lz);
-  if (len < 1e-6) return new THREE.Quaternion(); // degenerate case
-
-  return new THREE.Quaternion().setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    new THREE.Vector3(lx / len, ly / len, lz / len),
-  );
-}
-
-/** Postura idle natural: brazos caídos con ligera respiración. */
-export function applyVrmIdle(vrm: VRM, tMs: number) {
-  const breath = Math.sin(tMs * 0.0008) * 0.012;
-  const downR = -1.4 - breath * 0.1;
-  const downL = 1.4 + breath * 0.1;
-  const elbowQ = lowerArmQuat(0.1, 0);
-
-  setNormRot(vrm, VRMHumanBoneName.RightUpperArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downR)));
-  setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downL)));
-  setNormRot(vrm, VRMHumanBoneName.RightLowerArm, elbowQ);
-  setNormRot(vrm, VRMHumanBoneName.LeftLowerArm, elbowQ);
-  setNormRot(vrm, VRMHumanBoneName.RightHand, new THREE.Quaternion());
-  setNormRot(vrm, VRMHumanBoneName.LeftHand, new THREE.Quaternion());
-}
-
-/** Postura idle solo para el brazo izquierdo (signos unimanuales). */
-export function applyVrmIdleLeft(vrm: VRM, tMs: number) {
-  const breath = Math.sin(tMs * 0.0008) * 0.012;
-  const downL = 1.4 + breath * 0.1;
-  setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downL)));
-  setNormRot(vrm, VRMHumanBoneName.LeftLowerArm,
-    lowerArmQuat(0.1, 0));
-  setNormRot(vrm, VRMHumanBoneName.LeftHand, new THREE.Quaternion());
-}
-
-/** Tabla de bones VRM por dedo × falange para un lado dado. */
-const FINGER_BONES: Record<
-  "Right" | "Left",
-  [VRMHumanBoneName, VRMHumanBoneName, VRMHumanBoneName][]
-> = {
+const FINGERS: Record<Side, [B, B, B][]> = {
   Right: [
-    [VRMHumanBoneName.RightThumbMetacarpal, VRMHumanBoneName.RightThumbProximal, VRMHumanBoneName.RightThumbDistal],
-    [VRMHumanBoneName.RightIndexProximal,   VRMHumanBoneName.RightIndexIntermediate,  VRMHumanBoneName.RightIndexDistal],
-    [VRMHumanBoneName.RightMiddleProximal,  VRMHumanBoneName.RightMiddleIntermediate, VRMHumanBoneName.RightMiddleDistal],
-    [VRMHumanBoneName.RightRingProximal,    VRMHumanBoneName.RightRingIntermediate,   VRMHumanBoneName.RightRingDistal],
-    [VRMHumanBoneName.RightLittleProximal,  VRMHumanBoneName.RightLittleIntermediate, VRMHumanBoneName.RightLittleDistal],
+    [B.RightThumbMetacarpal, B.RightThumbProximal, B.RightThumbDistal],
+    [B.RightIndexProximal, B.RightIndexIntermediate, B.RightIndexDistal],
+    [B.RightMiddleProximal, B.RightMiddleIntermediate, B.RightMiddleDistal],
+    [B.RightRingProximal, B.RightRingIntermediate, B.RightRingDistal],
+    [B.RightLittleProximal, B.RightLittleIntermediate, B.RightLittleDistal],
   ],
   Left: [
-    [VRMHumanBoneName.LeftThumbMetacarpal,  VRMHumanBoneName.LeftThumbProximal,  VRMHumanBoneName.LeftThumbDistal],
-    [VRMHumanBoneName.LeftIndexProximal,    VRMHumanBoneName.LeftIndexIntermediate,  VRMHumanBoneName.LeftIndexDistal],
-    [VRMHumanBoneName.LeftMiddleProximal,   VRMHumanBoneName.LeftMiddleIntermediate, VRMHumanBoneName.LeftMiddleDistal],
-    [VRMHumanBoneName.LeftRingProximal,     VRMHumanBoneName.LeftRingIntermediate,   VRMHumanBoneName.LeftRingDistal],
-    [VRMHumanBoneName.LeftLittleProximal,   VRMHumanBoneName.LeftLittleIntermediate, VRMHumanBoneName.LeftLittleDistal],
+    [B.LeftThumbMetacarpal, B.LeftThumbProximal, B.LeftThumbDistal],
+    [B.LeftIndexProximal, B.LeftIndexIntermediate, B.LeftIndexDistal],
+    [B.LeftMiddleProximal, B.LeftMiddleIntermediate, B.LeftMiddleDistal],
+    [B.LeftRingProximal, B.LeftRingIntermediate, B.LeftRingDistal],
+    [B.LeftLittleProximal, B.LeftLittleIntermediate, B.LeftLittleDistal],
   ],
 };
 
-function applyFingers(vrm: VRM, pose: Pose, side: "Right" | "Left") {
-  const h = vrm.humanoid;
-  const map = FINGER_BONES[side];
-  const zSign = side === "Right" ? 1 : -1;
+const THUMB_FLEX_SCALE = 0.7;
 
-  for (let i = 0; i < 5; i++) {
-    const fp = pose.fingers[i]!;
-    const abd = pose.abduction[i]!;
-    const [b0, b1, b2] = map[i]!;
+type FingerRest = { bones: [B, B, B]; curlAxis: THREE.Vector3 };
 
-    // Usar getRawBoneNode para dedos — el mapeado de bones normalizados
-    // para falanges es idéntico en VRM0 y VRM1 (no hay transformación extra)
-    const n0 = h.getRawBoneNode(b0);
-    if (n0) {
-      n0.rotation.x = -fp.proximal;
-      n0.rotation.z = i === 0 ? -zSign * THUMB_ABDUCTION + zSign * abd : zSign * abd;
-    }
-    const n1 = h.getRawBoneNode(b1);
-    if (n1) n1.rotation.x = -fp.middle;
-    const n2 = h.getRawBoneNode(b2);
-    if (n2) n2.rotation.x = -fp.distal;
+type ArmRest = {
+  shoulder: THREE.Vector3;
+  upperLen: number;
+  lowerLen: number;
+  upperRestInv: THREE.Matrix4;
+  lowerRestInv: THREE.Matrix4;
+  handRestInv: THREE.Matrix4;
+  palmRest: THREE.Vector3;
+  fingers: FingerRest[];
+};
+
+export type VrmRig = {
+  vrm: VRM;
+  /** Rotación Y de la escena para que el personaje mire a +Z (cámara). */
+  facingY: number;
+  right: THREE.Vector3;
+  up: THREE.Vector3;
+  forward: THREE.Vector3;
+  armLen: number;
+  chestY: number;
+  mouthY: number;
+  /** Distancia de la cara por delante del plano de los hombros. */
+  faceFwd: number;
+  arms: Record<Side, ArmRest>;
+};
+
+const X = new THREE.Vector3();
+
+function perp(v: THREE.Vector3, axis: THREE.Vector3, fallback: THREE.Vector3): THREE.Vector3 {
+  const p = v.clone().addScaledVector(axis, -v.dot(axis));
+  if (p.lengthSq() < 1e-6) return fallback.clone().addScaledVector(axis, -fallback.dot(axis)).normalize();
+  return p.normalize();
+}
+
+function basis(primary: THREE.Vector3, secondary: THREE.Vector3): THREE.Matrix4 {
+  const x = primary.clone().normalize();
+  const y = secondary.clone().addScaledVector(x, -secondary.dot(x)).normalize();
+  const z = new THREE.Vector3().crossVectors(x, y);
+  return new THREE.Matrix4().makeBasis(x, y, z);
+}
+
+function rotation(restInv: THREE.Matrix4, target: THREE.Matrix4): THREE.Quaternion {
+  return new THREE.Quaternion().setFromRotationMatrix(target.multiply(restInv));
+}
+
+function setNorm(vrm: VRM, name: B, q: THREE.Quaternion) {
+  vrm.humanoid.getNormalizedBoneNode(name)?.quaternion.copy(q);
+}
+
+/** Lee la pose de reposo del VRM. Llamar justo tras cargarlo, antes de posar. */
+export function createVrmRig(vrm: VRM): VrmRig {
+  const root = vrm.humanoid.normalizedHumanBonesRoot;
+  root.updateWorldMatrix(true, true);
+  const toModel = root.matrixWorld.clone().invert();
+  const pos = (name: B): THREE.Vector3 | null => {
+    const node = vrm.humanoid.getNormalizedBoneNode(name);
+    return node ? new THREE.Vector3().setFromMatrixPosition(node.matrixWorld).applyMatrix4(toModel) : null;
+  };
+  const must = (name: B) => {
+    const p = pos(name);
+    if (!p) throw new Error(`VRM sin hueso ${name}`);
+    return p;
+  };
+
+  const up = new THREE.Vector3(0, 1, 0);
+  const right = must(B.RightUpperArm).sub(must(B.LeftUpperArm));
+  right.y = 0;
+  right.normalize();
+  const forward = new THREE.Vector3().crossVectors(up, right);
+  const down = up.clone().negate();
+
+  const arms = {} as Record<Side, ArmRest>;
+  for (const side of ["Right", "Left"] as const) {
+    const bones = ARM[side];
+    const s = must(bones.upper);
+    const e = must(bones.lower);
+    const w = must(bones.hand);
+    const tip = pos(side === "Right" ? B.RightMiddleProximal : B.LeftMiddleProximal);
+    const r1 = e.clone().sub(s).normalize();
+    const r2 = w.clone().sub(e).normalize();
+    const r3 = tip ? tip.clone().sub(w).normalize() : r2.clone();
+    const palmRest = perp(down, r3, forward);
+
+    const fingers: FingerRest[] = FINGERS[side].map((chain) => {
+      const a = pos(chain[0]);
+      const b = pos(chain[1]);
+      const dir = a && b ? b.clone().sub(a).normalize() : r3.clone();
+      const curlAxis = new THREE.Vector3().crossVectors(dir, palmRest);
+      if (curlAxis.lengthSq() < 1e-6) curlAxis.crossVectors(r3, palmRest);
+      return { bones: chain, curlAxis: curlAxis.normalize() };
+    });
+
+    arms[side] = {
+      shoulder: s,
+      upperLen: e.distanceTo(s),
+      lowerLen: w.distanceTo(e),
+      upperRestInv: basis(r1, perp(forward, r1, down)).invert(),
+      lowerRestInv: basis(r2, perp(down, r2, forward)).invert(),
+      handRestInv: basis(r3, palmRest).invert(),
+      palmRest,
+      fingers,
+    };
+  }
+
+  const R = arms.Right;
+  const armLen = R.upperLen + R.lowerLen;
+  const shoulderY = R.shoulder.y;
+  const head = pos(B.Head) ?? R.shoulder.clone().setY(shoulderY + 0.5 * armLen);
+  const eyeL = pos(B.LeftEye);
+  const eyeR = pos(B.RightEye);
+  const eyes = eyeL && eyeR ? eyeL.add(eyeR).multiplyScalar(0.5) : null;
+  const eyeY = eyes ? eyes.y : head.y + 0.3 * armLen;
+  const faceFwd = eyes
+    ? eyes.clone().sub(R.shoulder).dot(forward)
+    : head.clone().sub(R.shoulder).dot(forward) + 0.3 * armLen;
+
+  return {
+    vrm,
+    facingY: -Math.atan2(forward.x, forward.z),
+    right,
+    up,
+    forward,
+    armLen,
+    chestY: shoulderY - 0.15 * armLen,
+    mouthY: head.y + 0.45 * (eyeY - head.y),
+    faceFwd,
+    arms,
+  };
+}
+
+/** IK analítica de dos huesos; devuelve las direcciones del brazo y antebrazo. */
+function solveArm(
+  arm: ArmRest,
+  target: THREE.Vector3,
+  pole: THREE.Vector3,
+): { upper: THREE.Vector3; lower: THREE.Vector3 } {
+  const a = arm.upperLen;
+  const b = arm.lowerLen;
+  const toTarget = target.clone().sub(arm.shoulder);
+  const dir = toTarget.clone().normalize();
+  const dist = THREE.MathUtils.clamp(toTarget.length(), Math.abs(a - b) + 1e-3, (a + b) * 0.97);
+  const cosA = (a * a + dist * dist - b * b) / (2 * a * dist);
+  const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
+  const bendDir = perp(pole, dir, X.set(0, -1, 0));
+  const elbow = arm.shoulder.clone()
+    .addScaledVector(dir, a * cosA)
+    .addScaledVector(bendDir, a * sinA);
+  const wrist = arm.shoulder.clone().addScaledVector(dir, dist);
+  return {
+    upper: elbow.clone().sub(arm.shoulder).normalize(),
+    lower: wrist.sub(elbow).normalize(),
+  };
+}
+
+type ArmGoal = {
+  target: THREE.Vector3;
+  pole: THREE.Vector3;
+  /** Hacia dónde mira la palma con la muñeca recta (se proyecta ⟂ antebrazo). */
+  palm: THREE.Vector3;
+  /** Pronosupinación extra (rad); positivo gira la palma hacia la línea media. */
+  roll: number;
+  /** Flexión, giro y desviación de la muñeca (rad). */
+  wrist: [number, number, number];
+};
+
+function poseArm(rig: VrmRig, side: Side, goal: ArmGoal) {
+  const arm = rig.arms[side];
+  const sign = side === "Right" ? 1 : -1;
+  const { upper, lower } = solveArm(arm, goal.target, goal.pole);
+
+  const bend = perp(lower, upper, rig.forward);
+  const palm = perp(goal.palm, lower, rig.up.clone().negate())
+    .applyAxisAngle(lower, goal.roll * sign);
+
+  const lateral = new THREE.Vector3().crossVectors(lower, palm).normalize();
+  const wristQ = new THREE.Quaternion()
+    .setFromAxisAngle(lateral, goal.wrist[0])
+    .multiply(new THREE.Quaternion().setFromAxisAngle(lower, goal.wrist[1] * sign))
+    .multiply(new THREE.Quaternion().setFromAxisAngle(palm, goal.wrist[2] * sign));
+  const handDir = lower.clone().applyQuaternion(wristQ);
+  const handPalm = palm.clone().applyQuaternion(wristQ);
+
+  const q1 = rotation(arm.upperRestInv, basis(upper, bend));
+  const q2 = rotation(arm.lowerRestInv, basis(lower, palm));
+  const qh = rotation(arm.handRestInv, basis(handDir, handPalm));
+
+  const bones = ARM[side];
+  setNorm(rig.vrm, bones.upper, q1);
+  setNorm(rig.vrm, bones.lower, q1.clone().invert().multiply(q2));
+  setNorm(rig.vrm, bones.hand, q2.clone().invert().multiply(qh));
+}
+
+function poseFingers(rig: VrmRig, side: Side, fingers: FingersSpec) {
+  const arm = rig.arms[side];
+  const abdSign = side === "Right" ? 1 : -1;
+  arm.fingers.forEach((finger, i) => {
+    const value = fingers[i]!;
+    const flex = distributeFlex(getFingerFlex(value));
+    const scale = i === 0 ? THUMB_FLEX_SCALE : 1;
+    const abd = new THREE.Quaternion().setFromAxisAngle(arm.palmRest, getFingerAbduction(value) * abdSign);
+    const curl = (angle: number) => new THREE.Quaternion().setFromAxisAngle(finger.curlAxis, angle * scale);
+    setNorm(rig.vrm, finger.bones[0], abd.multiply(curl(flex.proximal)));
+    setNorm(rig.vrm, finger.bones[1], curl(flex.middle));
+    setNorm(rig.vrm, finger.bones[2], curl(flex.distal));
+  });
+}
+
+/**
+ * Espacio de signado. x: hacia fuera desde el hombro del propio lado,
+ * y: 0.35 ≈ pecho alto y 0.70 ≈ boca, z: hacia el interlocutor. La mano
+ * nunca queda por detrás del plano de la cara para no atravesar la cabeza.
+ */
+function signingGoal(rig: VrmRig, side: Side, hand: HandSpec): ArmGoal {
+  const L = rig.armLen;
+  const outward = rig.right.clone().multiplyScalar(side === "Right" ? 1 : -1);
+  const minFwd = rig.faceFwd + 0.12 * L;
+  const fwd = Math.max(Math.max(0.55 * L, minFwd) + hand.z * 0.9 * L, minFwd);
+  const height = rig.chestY + ((hand.y - 0.35) / 0.35) * (rig.mouthY - rig.chestY);
+  const target = rig.arms[side].shoulder.clone()
+    .addScaledVector(outward, hand.x * 1.2 * L)
+    .addScaledVector(rig.forward, fwd)
+    .setY(height);
+  const pole = outward.clone().multiplyScalar(0.25)
+    .addScaledVector(rig.up, -1)
+    .addScaledVector(rig.forward, -0.3);
+  return {
+    target,
+    pole,
+    palm: rig.forward,
+    roll: hand.forearmRoll ?? 0,
+    wrist: hand.rot,
+  };
+}
+
+function idleGoal(rig: VrmRig, side: Side, tMs: number): ArmGoal {
+  const L = rig.armLen;
+  const outward = rig.right.clone().multiplyScalar(side === "Right" ? 1 : -1);
+  const breath = Math.sin(tMs * 0.0008) * 0.01 * L;
+  const target = rig.arms[side].shoulder.clone()
+    .addScaledVector(outward, 0.12 * L)
+    .addScaledVector(rig.forward, 0.08 * L)
+    .addScaledVector(rig.up, -0.9 * L + breath);
+  return {
+    target,
+    pole: rig.forward.clone().negate().addScaledVector(outward, 0.3),
+    palm: outward.clone().negate(),
+    roll: 0,
+    wrist: [0, 0, 0],
+  };
+}
+
+const RELAXED: FingersSpec = [0.15, 0.15, 0.15, 0.15, 0.15];
+
+/** Signo en curso: brazo derecho según `hand`; el izquierdo según `hand2` o en reposo. */
+export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number) {
+  poseArm(rig, "Right", signingGoal(rig, "Right", kf.hand));
+  poseFingers(rig, "Right", kf.fingers);
+  if (kf.hand2) {
+    poseArm(rig, "Left", signingGoal(rig, "Left", kf.hand2));
+    poseFingers(rig, "Left", kf.fingers2 ?? kf.fingers);
+  } else {
+    poseArm(rig, "Left", idleGoal(rig, "Left", tMs));
+    poseFingers(rig, "Left", RELAXED);
+  }
+}
+
+/** Reposo: brazos caídos junto al cuerpo, palmas hacia los muslos. */
+export function applyVrmIdle(rig: VrmRig, tMs: number) {
+  for (const side of ["Right", "Left"] as const) {
+    poseArm(rig, side, idleGoal(rig, side, tMs));
+    poseFingers(rig, side, RELAXED);
   }
 }

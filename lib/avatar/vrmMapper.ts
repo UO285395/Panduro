@@ -21,17 +21,28 @@ function setNormRot(vrm: VRM, name: VRMHumanBoneName, q: THREE.Quaternion) {
   if (node) node.quaternion.copy(q);
 }
 
-// En el espacio normalizado VRM1, la T-pose del antebrazo tiene la palma
-// mirando hacia abajo (-Y world). Al girar el brazo hacia arriba para un signo,
-// la palma queda mirando hacia atrás (dorso al espectador). Un offset de PI
-// alrededor del eje Y del antebrazo (su eje longitudinal) corrige esto.
+// En VRM1 normalizado la T-pose del antebrazo tiene la palma hacia abajo.
+// Para que la palma mire al espectador hay que girar PI alrededor del eje
+// longitudinal del antebrazo (Y local normalizado) ANTES de doblar el codo.
+// Con Euler XYZ el eje Y queda inclinado por el codo, lo que desvía la mano
+// al interior del cuerpo. Por eso usamos quaterniones explícitos y aplicamos
+// el roll primero en el eje original: q_total = q_codo * q_roll
+//   (en THREE.js: q_bend.multiply(q_roll) aplica q_roll primero)
 const FOREARM_ROLL_OFFSET = Math.PI;
+
+function lowerArmQuat(elbow: number, forearmRoll: number): THREE.Quaternion {
+  const roll = new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(0, 1, 0), forearmRoll + FOREARM_ROLL_OFFSET);
+  const bend = new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(1, 0, 0), -elbow);
+  return bend.multiply(roll);  // roll primero, luego codo sobre eje original
+}
 
 export function applyPoseRightToVrm(vrm: VRM, pose: Pose) {
   setNormRot(vrm, VRMHumanBoneName.RightUpperArm,
     shoulderQuat(pose.shoulder[0], pose.shoulder[1], "Right"));
   setNormRot(vrm, VRMHumanBoneName.RightLowerArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(-pose.elbow, pose.forearmRoll + FOREARM_ROLL_OFFSET, 0)));
+    lowerArmQuat(pose.elbow, pose.forearmRoll));
   setNormRot(vrm, VRMHumanBoneName.RightHand,
     new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.wrist[0], pose.wrist[1], pose.wrist[2])));
   applyFingers(vrm, pose, "Right");
@@ -41,7 +52,7 @@ export function applyPoseLeftToVrm(vrm: VRM, pose: Pose) {
   setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
     shoulderQuat(pose.shoulder[0], pose.shoulder[1], "Left"));
   setNormRot(vrm, VRMHumanBoneName.LeftLowerArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(-pose.elbow, pose.forearmRoll + FOREARM_ROLL_OFFSET, 0)));
+    lowerArmQuat(pose.elbow, pose.forearmRoll));
   setNormRot(vrm, VRMHumanBoneName.LeftHand,
     new THREE.Quaternion().setFromEuler(new THREE.Euler(pose.wrist[0], pose.wrist[1], pose.wrist[2])));
   applyFingers(vrm, pose, "Left");
@@ -101,7 +112,7 @@ export function applyVrmIdle(vrm: VRM, tMs: number) {
   const breath = Math.sin(tMs * 0.0008) * 0.012;
   const downR = -1.4 - breath * 0.1;
   const downL = 1.4 + breath * 0.1;
-  const elbowQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.1, FOREARM_ROLL_OFFSET, 0));
+  const elbowQ = lowerArmQuat(0.1, 0);
 
   setNormRot(vrm, VRMHumanBoneName.RightUpperArm,
     new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downR)));
@@ -120,7 +131,7 @@ export function applyVrmIdleLeft(vrm: VRM, tMs: number) {
   setNormRot(vrm, VRMHumanBoneName.LeftUpperArm,
     new THREE.Quaternion().setFromEuler(new THREE.Euler(0.08, 0, downL)));
   setNormRot(vrm, VRMHumanBoneName.LeftLowerArm,
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.1, FOREARM_ROLL_OFFSET, 0)));
+    lowerArmQuat(0.1, 0));
   setNormRot(vrm, VRMHumanBoneName.LeftHand, new THREE.Quaternion());
 }
 

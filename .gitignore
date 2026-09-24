@@ -72,3 +72,5 @@ swl-lse*.json
 
 # Modelos de MediaPipe que descargan los scripts de Python
 /.cache/
+
+__pycache__/

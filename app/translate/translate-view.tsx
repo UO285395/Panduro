@@ -1,25 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { CameraFeed } from "@/components/camera/CameraFeed";
-import { HandOverlay } from "@/components/camera/HandOverlay";
-import { PerfBadge } from "@/components/camera/PerfBadge";
-import { HandTracker } from "@/lib/mediapipe/handTracker";
-import type { HandFrame, PerfStats } from "@/lib/mediapipe/types";
-import { extractFeatures } from "@/lib/recognition/features";
-import { KnnClassifier } from "@/lib/recognition/knn";
-import { refineWithRules } from "@/lib/recognition/rules";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { RecognitionUpdate } from "@/lib/esku/application/use-cases/RecognizeSignsUseCase";
 import {
-  loadGlobalTemplates,
-  loadLocalTemplates,
-} from "@/lib/recognition/templates";
-import { SegmentStream } from "@/lib/translator/segment";
-import { TextAssembler } from "@/lib/translator/assembler";
-import { MIN_TRANSLATE_CONFIDENCE } from "@/lib/translator/constants";
-import { saveTranslation, listTranslations } from "@/lib/translator/persistence-client";
-import type { TranslationRow } from "@/lib/translator/persistence";
+  ARM_CONNECTIONS,
+  isVisible,
+  TORSO_CONNECTIONS,
+} from "@/lib/esku/domain/landmarks/value-objects/BodyLandmarks";
+import { HAND_CONNECTIONS, type Landmark } from "@/lib/esku/domain/landmarks/value-objects/Landmark";
+import type { LandmarkFrame } from "@/lib/esku/domain/landmarks/value-objects/LandmarkFrame";
+import { createGloss, type SignCandidate } from "@/lib/esku/domain/recognition/value-objects/Gloss";
+import type { Transcript } from "@/lib/esku/domain/transcript/entities/Transcript";
 import type { AvatarClip } from "@/lib/curriculum/schema";
+import { createRecognizer, VOCABULARY_MANIFEST_URL, type Recognizer } from "@/lib/recognition/engine";
+import { curriculumIdFor } from "@/lib/recognition/vocabularyMap";
+import type { TranslationRow } from "@/lib/translator/persistence";
+import { listTranslations, saveTranslation } from "@/lib/translator/persistence-client";
 import { HistoryPanel } from "./history-panel";
 
 const AvatarPlayer = dynamic(
@@ -27,7 +24,7 @@ const AvatarPlayer = dynamic(
   { ssr: false, loading: () => null },
 );
 
-type Status = "idle" | "loading" | "recording" | "paused" | "error";
+type Status = "idle" | "loading" | "running" | "error";
 
 type Props = {
   initialHistory: TranslationRow[];
@@ -35,134 +32,96 @@ type Props = {
   clipsMap?: Record<string, AvatarClip | null>;
 };
 
+const SOURCE_LABEL: Record<SignCandidate["source"], string> = {
+  alphabet: "letra",
+  vocabulary: "signo",
+  taught: "enseñado",
+};
+
 export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
-  const trackerRef = useRef<HandTracker | null>(null);
-  const rafRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const segmenterRef = useRef<SegmentStream | null>(null);
-  const assemblerRef = useRef<TextAssembler | null>(null);
-  const classifierRef = useRef<KnnClassifier | null>(null);
-  const cardIdsRef = useRef<string[]>([]);
-  const startedAtRef = useRef<number>(0);
-  const lastFrameRef = useRef<import("@/lib/mediapipe/types").HandFrame | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const recognizerRef = useRef<Recognizer | null>(null);
+  const lastTextRef = useRef("");
+  const lastCandidatesRef = useRef("");
 
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [delegate, setDelegate] = useState<"GPU" | "CPU" | "loading">("loading");
-  const [frame, setFrame] = useState<HandFrame | null>(null);
-  const [stats, setStats] = useState<PerfStats>({ fps: 0, p50: 0, p95: 0, samples: 0 });
-  const [text, setText] = useState("");
-  const [active, setActive] = useState<{ label: string; display: string; confidence: number } | null>(null);
-  const [segPhase, setSegPhase] = useState<"idle" | "moving" | "holding">("idle");
-  const [segStableMs, setSegStableMs] = useState(0);
+  const [rearCamera, setRearCamera] = useState(false);
+  const [transcript, setTranscript] = useState<Transcript | null>(null);
+  const [candidates, setCandidates] = useState<readonly SignCandidate[]>([]);
+  const [vocabulary, setVocabulary] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [history, setHistory] = useState<TranslationRow[]>(initialHistory);
   const [saving, setSaving] = useState(false);
 
-  const classifier = useMemo(() => {
-    const c = new KnnClassifier(
-      [...loadGlobalTemplates(), ...loadLocalTemplates()],
-      3,
-    );
-    classifierRef.current = c;
-    return c;
-  }, []);
-
-  const initSession = useCallback(() => {
-    segmenterRef.current = new SegmentStream();
-    assemblerRef.current = new TextAssembler();
-    cardIdsRef.current = [];
-    startedAtRef.current = Date.now();
-    setText("");
-    setActive(null);
-  }, []);
-
-  const loop = useCallback(() => {
-    const step = () => {
-      const tracker = trackerRef.current;
-      const video = videoRef.current;
-      const seg = segmenterRef.current;
-      const asm = assemblerRef.current;
-      if (!tracker || !video || !seg || !asm) return;
-      if (video.readyState >= 2) {
-        const now = performance.now();
-        const detected = tracker.detect(video, now);
-        setFrame(detected);
-        setStats(tracker.stats());
-        lastFrameRef.current = detected;
-
-        const events = seg.push(detected, now);
-        for (const evt of events) {
-          if (evt.kind === "hold") {
-            const features = extractFeatures(evt.centroid);
-            const raw = classifier.predict(features);
-            const pred = refineWithRules(raw, evt.centroid);
-            if (pred && pred.confidence >= MIN_TRANSLATE_CONFIDENCE) {
-              asm.consume({ label: pred.label, confidence: pred.confidence, at: Date.now() });
-              cardIdsRef.current.push(
-                /^[A-ZÑ]$/.test(pred.label) ? `letter:${pred.label}` : `sign:${pred.label}`,
-              );
-            }
-          }
-        }
-        const segState = seg.state();
-        setSegPhase(segState.phase);
-        setSegStableMs(segState.stableMs);
-
-        const nowClient = Date.now();
-        const frameOut = asm.currentFrame(nowClient);
-        setText(frameOut.text);
-        setActive(frameOut.active);
-      }
-      rafRef.current = requestAnimationFrame(step);
-    };
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(step);
-  }, [classifier]);
-
-  const onCameraReady = useCallback(async (video: HTMLVideoElement) => {
-    videoRef.current = video;
-    if (!trackerRef.current) {
-      setStatus("loading");
-      try {
-        const tracker = new HandTracker();
-        const { delegate } = await tracker.init();
-        trackerRef.current = tracker;
-        setDelegate(delegate);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "No se pudo cargar el modelo");
-        setStatus("error");
-        return;
-      }
-    }
-    initSession();
-    setStatus("recording");
-    loop();
-  }, [initSession, loop]);
+  const knownIds = useMemo(() => new Set(Object.keys(clipsMap)), [clipsMap]);
+  const text = transcript?.toText() ?? "";
+  const lastWord = [...(transcript?.entries ?? [])].reverse().find((e) => e.source !== "alphabet");
+  const lastWordId = lastWord ? curriculumIdFor(lastWord.text, knownIds) : null;
 
   useEffect(() => {
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      trackerRef.current?.close();
-      trackerRef.current = null;
-    };
+    fetch(VOCABULARY_MANIFEST_URL)
+      .then((r) => r.json() as Promise<{ concepts: string[]; abstentionConcept: string | null }>)
+      .then((m) => {
+        const words = new Set(
+          m.concepts.filter((c) => c !== m.abstentionConcept).map((c) => createGloss(c).text),
+        );
+        setVocabulary([...words].sort((a, b) => a.localeCompare(b, "es")));
+      })
+      .catch(() => setVocabulary([]));
+    return () => recognizerRef.current?.recognize.stop();
   }, []);
 
-  function onCameraStop() {
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-    setStatus("paused");
-    setFrame(null);
+  function onUpdate(update: RecognitionUpdate) {
+    drawFrame(canvasRef.current, videoRef.current, update.frame);
+    const nextText = update.transcript.toText();
+    if (nextText !== lastTextRef.current || update.transcript.isEmpty) {
+      lastTextRef.current = nextText;
+      setTranscript(update.transcript);
+    }
+    const top = update.candidates.slice(0, 3);
+    const key = top.map((c) => `${c.gloss.id}:${c.confidence.toFixed(2)}`).join("|");
+    if (key !== lastCandidatesRef.current) {
+      lastCandidatesRef.current = key;
+      setCandidates(top);
+    }
   }
 
-  function onNewSentence() {
-    assemblerRef.current?.reset();
-    segmenterRef.current = new SegmentStream();
-    cardIdsRef.current = [];
-    startedAtRef.current = Date.now();
-    setText("");
-    setActive(null);
-    setNotice(null);
+  async function start() {
+    const video = videoRef.current;
+    if (!video) return;
+    setError(null);
+    setStatus("loading");
+    try {
+      const rec = (recognizerRef.current ??= createRecognizer(video));
+      await rec.load();
+      await rec.source.useCamera(rearCamera ? "environment" : "user");
+      await rec.recognize.start(onUpdate);
+      setStatus("running");
+    } catch (e) {
+      setStatus("error");
+      setError(
+        e instanceof Error && e.name === "CameraUnavailableError"
+          ? "No hay cámara disponible o se denegó el permiso."
+          : e instanceof Error
+            ? e.message
+            : "No se pudo iniciar el reconocimiento.",
+      );
+    }
+  }
+
+  function stop() {
+    recognizerRef.current?.recognize.stop();
+    drawFrame(canvasRef.current, videoRef.current, null);
+    setCandidates([]);
+    setStatus("idle");
+  }
+
+  async function switchCamera() {
+    const next = !rearCamera;
+    setRearCamera(next);
+    await recognizerRef.current?.source.useCamera(next ? "environment" : "user");
   }
 
   async function onCopy() {
@@ -175,54 +134,23 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
     }
   }
 
-  function onDownload() {
-    if (!text) return;
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `panduro-traduccion-${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function onCaptureNow() {
-    const seg = segmenterRef.current;
-    const asm = assemblerRef.current;
-    const frame = lastFrameRef.current;
-    if (!seg || !asm || !frame) return;
-    const buf = seg.lastBuffer();
-    const centroid = buf.length > 0 ? averageBuf(buf) : frame.normalized;
-    const features = extractFeatures(centroid);
-    const raw = classifierRef.current?.predict(features) ?? null;
-    const pred = raw ? refineWithRules(raw, centroid) : null;
-    if (pred && pred.confidence >= MIN_TRANSLATE_CONFIDENCE) {
-      asm.consume({ label: pred.label, confidence: pred.confidence, at: Date.now() });
-      cardIdsRef.current.push(
-        /^[A-ZÑ]$/.test(pred.label) ? `letter:${pred.label}` : `sign:${pred.label}`,
-      );
-      const frameOut = asm.currentFrame(Date.now());
-      setText(frameOut.text);
-      setActive(frameOut.active);
-    } else {
-      setNotice(pred ? `Confianza baja: ${((pred.confidence ?? 0) * 100).toFixed(0)}%` : "Sin detección");
-    }
-  }
-
   async function onSave() {
-    if (!text || saving) return;
+    if (!text || saving || !transcript) return;
     setSaving(true);
     try {
+      const cardIds = transcript.entries.flatMap((e) => {
+        if (e.source === "alphabet") return [`letter:${e.text.toUpperCase()}`];
+        const id = curriculumIdFor(e.text, knownIds);
+        return id ? [`sign:${id}`] : [];
+      });
+      const first = transcript.entries[0];
       await saveTranslation({
         text,
-        cardIds: cardIdsRef.current,
-        startedAt: startedAtRef.current || Date.now(),
+        cardIds,
+        startedAt: first ? Date.now() - (performance.now() - first.atMs) : Date.now(),
         endedAt: Date.now(),
       });
-      const next = await listTranslations(10);
-      setHistory(next);
+      setHistory(await listTranslations(10));
       setNotice("Guardado en tu historial");
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Error al guardar");
@@ -231,18 +159,17 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
     }
   }
 
+  const running = status === "running";
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
+    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
       <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">
-          Hito 7 · Práctica libre
-        </p>
-        <h1 className="text-2xl font-bold">Traductor de LSE en tiempo real</h1>
+        <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">Práctica libre</p>
+        <h1 className="text-2xl font-bold">Traductor de LSE</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Signa frente a la cámara y verás la transcripción a castellano. Solo
-          se reconocen signos que el clasificador conoce (alfabeto calibrado y
-          los signos léxicos que hayas capturado en{" "}
-          <code>/dev/capture</code>).
+          Signa con naturalidad, sin pararte entre signos: el texto se escribe cuando cada signo
+          termina. Reconoce el alfabeto dactilológico completo y {vocabulary.length || 286} signos
+          del ámbito sanitario (lista abajo).
         </p>
       </header>
 
@@ -250,79 +177,75 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
         role="note"
         className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
       >
-        La LSE tiene gramática propia. Esta transcripción es una aproximación
-        gloss → castellano, no una traducción literal palabra-a-palabra.
+        Útil, no infalible. Escribe una secuencia de signos, no una traducción gramatical
+        («yo cabeza dolor», no «me duele la cabeza»). Aciertos medidos: ~70 % de los signos a la
+        primera y ~90 % de las letras que escribe.
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-4">
-          <CameraFeed
-            onReady={onCameraReady}
-            onStop={onCameraStop}
-            overlay={
-              status === "recording" ? (
-                <HandOverlay
-                  videoRef={videoRef as React.RefObject<HTMLVideoElement | null>}
-                  frame={frame}
-                />
-              ) : null
-            }
-          />
-          <PerfBadge stats={stats} delegate={delegate} />
-          {status === "loading" && (
-            <p role="status" className="text-sm text-slate-500">
-              Cargando modelo…
-            </p>
-          )}
-          {status === "error" && (
-            <p role="alert" className="text-sm text-red-600">
-              {error}
-            </p>
-          )}
+          <div className="relative overflow-hidden rounded-2xl bg-slate-900">
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              className={`block h-auto w-full ${rearCamera ? "" : "-scale-x-100"} ${running ? "" : "hidden"}`}
+              aria-label="Vista previa de la cámara"
+            />
+            <canvas
+              ref={canvasRef}
+              className={`pointer-events-none absolute inset-0 h-full w-full ${rearCamera ? "" : "-scale-x-100"}`}
+            />
+            {!running && (
+              <div className="flex aspect-video flex-col items-center justify-center gap-3 p-6 text-center text-sm text-slate-200">
+                {status === "loading" ? (
+                  <p>Descargando modelos (unos 20 MB la primera vez)…</p>
+                ) : (
+                  <>
+                    <p>La imagen no sale de tu dispositivo: todo se procesa en el navegador.</p>
+                    <button
+                      type="button"
+                      onClick={start}
+                      className="rounded-full bg-brand-600 px-5 py-2 font-semibold text-white hover:bg-brand-700"
+                    >
+                      Empezar cámara
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {running && (
+              <button type="button" onClick={stop} className="text-slate-500 hover:underline">
+                Detener cámara
+              </button>
+            )}
+            <button type="button" onClick={switchCamera} className="text-slate-500 hover:underline">
+              {rearCamera ? "Usar cámara frontal" : "Usar cámara trasera (leer a otra persona)"}
+            </button>
+          </div>
 
           <section
             aria-live="polite"
-            className="min-h-[6rem] rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+            className="min-h-[6rem] space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
           >
-            <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-wider text-slate-500">
-                Transcripción
-              </p>
-              {status === "recording" && (
-                <span
-                  className={`ml-auto rounded-full px-2 py-0.5 text-xs font-mono ${
-                    segPhase === "holding"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-                      : segPhase === "moving"
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                        : "bg-slate-100 text-slate-500 dark:bg-slate-800"
-                  }`}
-                >
-                  {segPhase === "holding"
-                    ? `hold ${Math.min(segStableMs, 300).toFixed(0)} ms`
-                    : segPhase === "moving"
-                      ? "moviendo"
-                      : "espera"}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-lg font-medium">{text || "…"}</p>
-            {active && (
-              <div className="mt-2 space-y-1">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>
-                    Último signo: <b>{active.display}</b> ({active.label})
+            <p className="text-xs uppercase tracking-wider text-slate-500">Transcripción</p>
+            <p className="text-lg font-medium">{text || "…"}</p>
+            {running && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>Viendo:</span>
+                {candidates.length === 0 && <span>—</span>}
+                {candidates.map((c) => (
+                  <span
+                    key={c.gloss.id}
+                    className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    {c.gloss.text} · {SOURCE_LABEL[c.source]} · {Math.round(c.confidence * 100)} %
                   </span>
-                  <span className={confidenceTextClass(active.confidence)}>
-                    {(active.confidence * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                  <div
-                    className={`h-full rounded-full transition-all duration-200 ${confidenceBarClass(active.confidence)}`}
-                    style={{ width: `${Math.round(active.confidence * 100)}%` }}
-                  />
-                </div>
+                ))}
               </div>
             )}
           </section>
@@ -330,19 +253,22 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={onNewSentence}
-              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              onClick={() => recognizerRef.current?.recognize.undo()}
+              disabled={!text}
+              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
             >
-              Nueva frase
+              Deshacer último
             </button>
             <button
               type="button"
-              onClick={onCaptureNow}
-              disabled={status !== "recording" || !lastFrameRef.current}
-              title="Fuerza el reconocimiento del frame actual sin esperar la pausa de segmentación"
+              onClick={() => {
+                recognizerRef.current?.recognize.clear();
+                setNotice(null);
+              }}
+              disabled={!text}
               className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
             >
-              Capturar ahora
+              Nueva frase
             </button>
             <button
               type="button"
@@ -354,14 +280,6 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
             </button>
             <button
               type="button"
-              onClick={onDownload}
-              disabled={!text}
-              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800"
-            >
-              Descargar .txt
-            </button>
-            <button
-              type="button"
               onClick={onSave}
               disabled={!text || saving}
               className="rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
@@ -370,57 +288,82 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
             </button>
           </div>
           {notice && <p className="text-sm text-slate-600">{notice}</p>}
+
+          <details className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
+            <summary className="cursor-pointer font-semibold">
+              Signos que reconoce ({vocabulary.length} + alfabeto)
+            </summary>
+            <p className="mt-2 leading-relaxed text-slate-600 dark:text-slate-300">
+              {vocabulary.join(" · ")}
+            </p>
+          </details>
         </div>
 
         <aside className="space-y-4">
-          {active && clipsMap[active.label] && (
+          {lastWordId && clipsMap[lastWordId] && (
             <div className="space-y-1">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Signo detectado
+                Así se signa «{lastWord?.text}»
               </h2>
               <div className="overflow-hidden rounded-xl border border-brand-200 dark:border-brand-800">
-                <AvatarPlayer clip={clipsMap[active.label]!} size={260} label={active.label} />
+                <AvatarPlayer clip={clipsMap[lastWordId]!} size={260} />
               </div>
-              <p className="text-center text-sm font-semibold">{active.display}</p>
             </div>
           )}
           <div className="space-y-2">
             <h2 className="text-sm font-semibold">Historial</h2>
             <HistoryPanel entries={history} />
             {demo && (
-              <p className="text-xs text-slate-500">
-                (Modo demo · las traducciones viven en este navegador.)
-              </p>
+              <p className="text-xs text-slate-500">(Modo demo · las traducciones viven en este navegador.)</p>
             )}
           </div>
+          <p className="text-xs text-slate-500">
+            Motor de reconocimiento de{" "}
+            <a href="https://github.com/Endika/esku" className="underline" target="_blank" rel="noreferrer">
+              Esku
+            </a>
+            , entrenado con SWL-LSE, LSE-Health-UVigo y LSE-FS-UVigo (Universidade de Vigo).
+          </p>
         </aside>
       </div>
     </main>
   );
 }
 
-function confidenceTextClass(c: number) {
-  if (c < 0.40) return "text-red-600 dark:text-red-400";
-  if (c < 0.70) return "text-amber-600 dark:text-amber-400";
-  return "text-green-600 dark:text-green-400";
-}
-
-function confidenceBarClass(c: number) {
-  if (c < 0.40) return "bg-red-500";
-  if (c < 0.70) return "bg-amber-500";
-  return "bg-green-500";
-}
-
-function averageBuf(
-  frames: import("@/lib/mediapipe/types").NormalizedLandmark[][],
-): import("@/lib/mediapipe/types").NormalizedLandmark[] {
-  if (frames.length === 0) return [];
-  const n = frames[0]!.length;
-  const out: import("@/lib/mediapipe/types").NormalizedLandmark[] = new Array(n);
-  for (let i = 0; i < n; i++) {
-    let x = 0, y = 0, z = 0;
-    for (const f of frames) { x += f[i]!.x; y += f[i]!.y; z += f[i]!.z; }
-    out[i] = { x: x / frames.length, y: y / frames.length, z: z / frames.length };
+function drawFrame(
+  canvas: HTMLCanvasElement | null,
+  video: HTMLVideoElement | null,
+  frame: LandmarkFrame | null,
+) {
+  if (!canvas || !video) return;
+  if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
+  if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!frame) return;
+  const { width: w, height: h } = canvas;
+  // MediaPipe rellena `visibility` a 0 en las manos: solo la pose la mide de verdad.
+  const line = (
+    pts: readonly Landmark[],
+    pairs: readonly (readonly [number, number])[],
+    checkVisibility: boolean,
+  ) => {
+    ctx.beginPath();
+    for (const [a, b] of pairs) {
+      const A = pts[a];
+      const B = pts[b];
+      if (!A || !B || (checkVisibility && (!isVisible(A) || !isVisible(B)))) continue;
+      ctx.moveTo(A.x * w, A.y * h);
+      ctx.lineTo(B.x * w, B.y * h);
+    }
+    ctx.stroke();
+  };
+  ctx.lineWidth = Math.max(2, w / 300);
+  if (frame.pose) {
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    line(frame.pose.points, [...TORSO_CONNECTIONS, ...ARM_CONNECTIONS], true);
   }
-  return out;
+  ctx.strokeStyle = "#f97316";
+  for (const hand of frame.hands) line(hand.points, HAND_CONNECTIONS, false);
 }

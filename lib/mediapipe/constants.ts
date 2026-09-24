@@ -18,6 +18,12 @@ const LOCAL_MODEL_PATH = "/models/hand_landmarker.task";
 export const POSE_LANDMARKER_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
+/** Pose y cara con las que se entrenó el vocabulario de Esku (mismos archivos que distribuye). */
+export const POSE_LITE_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+export const FACE_LANDMARKER_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
 // Servir el modelo local cuando el navegador está offline; de lo contrario CDN.
 export const HAND_LANDMARKER_MODEL_URL =
   typeof window !== "undefined" && !navigator.onLine

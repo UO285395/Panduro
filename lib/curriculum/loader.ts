@@ -4,19 +4,37 @@ import b1Raw from "@/content/curriculum/b1.json";
 import b2Raw from "@/content/curriculum/b2.json";
 import c1Raw from "@/content/curriculum/c1.json";
 import c2Raw from "@/content/curriculum/c2.json";
-import { LevelSchema, validateLevel, type Level, type Lesson, type Sign, type Unit } from "./schema";
+import capturedRaw from "@/content/signs/captured.json";
+import {
+  CapturedSignsSchema,
+  LevelSchema,
+  validateLevel,
+  type Level,
+  type Lesson,
+  type Sign,
+  type Unit,
+} from "./schema";
 
 let cachedLevels: Level[] | null = null;
 
 function loadAll(): Level[] {
   if (cachedLevels) return cachedLevels;
   const raws = [a1Raw, a2Raw, b1Raw, b2Raw, c1Raw, c2Raw];
+  const captured = CapturedSignsSchema.parse(capturedRaw).signs;
   const levels: Level[] = [];
   for (const raw of raws) {
     const parsed = LevelSchema.parse(raw);
     const check = validateLevel(parsed);
     if (!check.ok) {
       throw new Error(`Currículo inválido:\n${check.errors.join("\n")}`);
+    }
+    // Las grabaciones reales sustituyen al clip generado.
+    for (const sign of parsed.signs) {
+      const rec = captured[sign.id];
+      if (rec) {
+        sign.avatarClip = rec.avatarClip;
+        sign.handedness = rec.avatarClip.handedness;
+      }
     }
     levels.push(parsed);
   }

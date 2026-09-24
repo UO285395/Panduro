@@ -48,67 +48,101 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
   return last;
 }
 
+type Hand = AvatarKeyframe["hand"];
+type Fingers = AvatarKeyframe["fingers"];
+type Vec3 = [number, number, number];
+
+function cr(v0: number, v1: number, v2: number, v3: number, t: number): number {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return 0.5 * (
+    2 * v1 +
+    (v2 - v0) * t +
+    (2 * v0 - 5 * v1 + 4 * v2 - v3) * t2 +
+    (3 * v1 - v0 - 3 * v2 + v3) * t3
+  );
+}
+
+function unit(v: number[], fallback: Vec3): Vec3 {
+  const len = Math.hypot(v[0]!, v[1]!, v[2]!);
+  return len < 1e-6 ? fallback : [v[0]! / len, v[1]! / len, v[2]! / len];
+}
+
+function crVec(p0: Vec3 | undefined, a: Vec3 | undefined, b: Vec3 | undefined, p3: Vec3 | undefined, t: number): Vec3 | undefined {
+  if (!a || !b) return a ?? b;
+  const q0 = p0 ?? a;
+  const q3 = p3 ?? b;
+  return unit([0, 1, 2].map((i) => cr(q0[i]!, a[i]!, b[i]!, q3[i]!, t)), a);
+}
+
+function lerpVec(a: Vec3 | undefined, b: Vec3 | undefined, u: number): Vec3 | undefined {
+  if (!a || !b) return a ?? b;
+  return unit([0, 1, 2].map((i) => lerp(a[i]!, b[i]!, u)), a);
+}
+
+function crHand(p0: Hand, a: Hand, b: Hand, p3: Hand, t: number): Hand {
+  return {
+    x: cr(p0.x, a.x, b.x, p3.x, t),
+    y: cr(p0.y, a.y, b.y, p3.y, t),
+    z: cr(p0.z, a.z, b.z, p3.z, t),
+    rot: [
+      cr(p0.rot[0], a.rot[0], b.rot[0], p3.rot[0], t),
+      cr(p0.rot[1], a.rot[1], b.rot[1], p3.rot[1], t),
+      cr(p0.rot[2], a.rot[2], b.rot[2], p3.rot[2], t),
+    ],
+    forearmRoll: crScalarMaybe(p0.forearmRoll, a.forearmRoll, b.forearmRoll, p3.forearmRoll, t),
+    palmDir: crVec(p0.palmDir, a.palmDir, b.palmDir, p3.palmDir, t),
+    pointDir: crVec(p0.pointDir, a.pointDir, b.pointDir, p3.pointDir, t),
+  };
+}
+
+function lerpHand(a: Hand, b: Hand, u: number): Hand {
+  return {
+    x: lerp(a.x, b.x, u),
+    y: lerp(a.y, b.y, u),
+    z: lerp(a.z, b.z, u),
+    rot: [lerp(a.rot[0], b.rot[0], u), lerp(a.rot[1], b.rot[1], u), lerp(a.rot[2], b.rot[2], u)],
+    forearmRoll: lerpMaybe(a.forearmRoll, b.forearmRoll, u),
+    palmDir: lerpVec(a.palmDir, b.palmDir, u),
+    pointDir: lerpVec(a.pointDir, b.pointDir, u),
+  };
+}
+
+const flexOf = (v: FingerValue) => (typeof v === "number" ? v : v.flex);
+
+function crFingers(p0: Fingers, a: Fingers, b: Fingers, p3: Fingers, t: number): Fingers {
+  return [0, 1, 2, 3, 4].map((i) =>
+    Math.max(0, Math.min(1, cr(flexOf(p0[i]!), flexOf(a[i]!), flexOf(b[i]!), flexOf(p3[i]!), t))),
+  ) as Fingers;
+}
+
 /** Interpolación Catmull-Rom entre a y b usando p0 y p3 como tangentes. */
 function catmullRomBlend(
   p0: AvatarKeyframe, a: AvatarKeyframe, b: AvatarKeyframe, p3: AvatarKeyframe,
   t: number, tMs: number,
 ): AvatarKeyframe {
-  const cr = (v0: number, v1: number, v2: number, v3: number) => {
-    const t2 = t * t;
-    const t3 = t2 * t;
-    return 0.5 * (
-      2 * v1 +
-      (v2 - v0) * t +
-      (2 * v0 - 5 * v1 + 4 * v2 - v3) * t2 +
-      (3 * v1 - v0 - 3 * v2 + v3) * t3
-    );
-  };
-  const crF = (v0: number, v1: number, v2: number, v3: number) =>
-    Math.max(0, Math.min(1, cr(v0, v1, v2, v3)));
-
-  const fFlex = (kf: AvatarKeyframe, i: number) =>
-    typeof kf.fingers[i] === "number" ? (kf.fingers[i] as number) : (kf.fingers[i] as { flex: number }).flex;
-
   return {
     t: tMs,
-    hand: {
-      x: cr(p0.hand.x, a.hand.x, b.hand.x, p3.hand.x),
-      y: cr(p0.hand.y, a.hand.y, b.hand.y, p3.hand.y),
-      z: cr(p0.hand.z, a.hand.z, b.hand.z, p3.hand.z),
-      rot: [
-        cr(p0.hand.rot[0], a.hand.rot[0], b.hand.rot[0], p3.hand.rot[0]),
-        cr(p0.hand.rot[1], a.hand.rot[1], b.hand.rot[1], p3.hand.rot[1]),
-        cr(p0.hand.rot[2], a.hand.rot[2], b.hand.rot[2], p3.hand.rot[2]),
-      ],
-      forearmRoll: crScalarMaybe(p0.hand.forearmRoll, a.hand.forearmRoll, b.hand.forearmRoll, p3.hand.forearmRoll, t),
-    },
-    fingers: [0, 1, 2, 3, 4].map((i) =>
-      crF(fFlex(p0, i), fFlex(a, i), fFlex(b, i), fFlex(p3, i))
-    ) as [number, number, number, number, number],
+    hand: crHand(p0.hand, a.hand, b.hand, p3.hand, t),
+    fingers: crFingers(p0.fingers, a.fingers, b.fingers, p3.fingers, t),
+    hand2: a.hand2 && b.hand2
+      ? crHand(p0.hand2 ?? a.hand2, a.hand2, b.hand2, p3.hand2 ?? b.hand2, t)
+      : a.hand2 ?? b.hand2,
+    fingers2: a.fingers2 && b.fingers2
+      ? crFingers(p0.fingers2 ?? a.fingers2, a.fingers2, b.fingers2, p3.fingers2 ?? b.fingers2, t)
+      : a.fingers2 ?? b.fingers2,
   };
 }
 
 function blendKeyframes(a: AvatarKeyframe, b: AvatarKeyframe, u: number, t: number): AvatarKeyframe {
+  const lerpFingers = (fa: Fingers, fb: Fingers) =>
+    [0, 1, 2, 3, 4].map((i) => lerpFinger(fa[i]!, fb[i]!, u)) as Fingers;
   return {
     t,
-    hand: {
-      x: lerp(a.hand.x, b.hand.x, u),
-      y: lerp(a.hand.y, b.hand.y, u),
-      z: lerp(a.hand.z, b.hand.z, u),
-      rot: [
-        lerp(a.hand.rot[0], b.hand.rot[0], u),
-        lerp(a.hand.rot[1], b.hand.rot[1], u),
-        lerp(a.hand.rot[2], b.hand.rot[2], u),
-      ],
-      forearmRoll: lerpMaybe(a.hand.forearmRoll, b.hand.forearmRoll, u),
-    },
-    fingers: [
-      lerpFinger(a.fingers[0], b.fingers[0], u),
-      lerpFinger(a.fingers[1], b.fingers[1], u),
-      lerpFinger(a.fingers[2], b.fingers[2], u),
-      lerpFinger(a.fingers[3], b.fingers[3], u),
-      lerpFinger(a.fingers[4], b.fingers[4], u),
-    ],
+    hand: lerpHand(a.hand, b.hand, u),
+    fingers: lerpFingers(a.fingers, b.fingers),
+    hand2: a.hand2 && b.hand2 ? lerpHand(a.hand2, b.hand2, u) : a.hand2 ?? b.hand2,
+    fingers2: a.fingers2 && b.fingers2 ? lerpFingers(a.fingers2, b.fingers2) : a.fingers2 ?? b.fingers2,
   };
 }
 
@@ -127,12 +161,7 @@ function crScalarMaybe(
   t: number,
 ): number | undefined {
   if (v0 === undefined && v1 === undefined && v2 === undefined && v3 === undefined) return undefined;
-  const cr = (a: number, b: number, c: number, d: number) => {
-    const t2 = t * t, t3 = t2 * t;
-    return 0.5 * (2*b + (c-a)*t + (2*a-5*b+4*c-d)*t2 + (3*b-a-3*c+d)*t3);
-  };
-  const val = cr(v0 ?? 0, v1 ?? 0, v2 ?? 0, v3 ?? 0);
-  return val || undefined;
+  return cr(v0 ?? 0, v1 ?? 0, v2 ?? 0, v3 ?? 0, t) || undefined;
 }
 
 function lerpFinger(a: FingerValue, b: FingerValue, u: number): FingerValue {

@@ -205,6 +205,8 @@ type ArmGoal = {
   pole: THREE.Vector3;
   /** Hacia dónde mira la palma con la muñeca recta (se proyecta ⟂ antebrazo). */
   palm: THREE.Vector3;
+  /** Dirección medida de los dedos (grabaciones): sustituye a roll y wrist. */
+  point?: THREE.Vector3;
   /** Pronosupinación extra (rad); positivo gira la palma hacia la línea media. */
   roll: number;
   /** Flexión, giro y desviación de la muñeca (rad). */
@@ -217,16 +219,24 @@ function poseArm(rig: VrmRig, side: Side, goal: ArmGoal) {
   const { upper, lower } = solveArm(arm, goal.target, goal.pole);
 
   const bend = perp(lower, upper, rig.forward);
-  const palm = perp(goal.palm, lower, rig.up.clone().negate())
-    .applyAxisAngle(lower, goal.roll * sign);
-
-  const lateral = new THREE.Vector3().crossVectors(lower, palm).normalize();
-  const wristQ = new THREE.Quaternion()
-    .setFromAxisAngle(lateral, goal.wrist[0])
-    .multiply(new THREE.Quaternion().setFromAxisAngle(lower, goal.wrist[1] * sign))
-    .multiply(new THREE.Quaternion().setFromAxisAngle(palm, goal.wrist[2] * sign));
-  const handDir = lower.clone().applyQuaternion(wristQ);
-  const handPalm = palm.clone().applyQuaternion(wristQ);
+  const down = rig.up.clone().negate();
+  let palm: THREE.Vector3;
+  let handDir: THREE.Vector3;
+  let handPalm: THREE.Vector3;
+  if (goal.point) {
+    handDir = goal.point.clone().normalize();
+    handPalm = perp(goal.palm, handDir, down);
+    palm = perp(handPalm, lower, down);
+  } else {
+    palm = perp(goal.palm, lower, down).applyAxisAngle(lower, goal.roll * sign);
+    const lateral = new THREE.Vector3().crossVectors(lower, palm).normalize();
+    const wristQ = new THREE.Quaternion()
+      .setFromAxisAngle(lateral, goal.wrist[0])
+      .multiply(new THREE.Quaternion().setFromAxisAngle(lower, goal.wrist[1] * sign))
+      .multiply(new THREE.Quaternion().setFromAxisAngle(palm, goal.wrist[2] * sign));
+    handDir = lower.clone().applyQuaternion(wristQ);
+    handPalm = palm.clone().applyQuaternion(wristQ);
+  }
 
   const q1 = rotation(arm.upperRestInv, basis(upper, bend));
   const q2 = rotation(arm.lowerRestInv, basis(lower, palm));
@@ -271,10 +281,15 @@ function signingGoal(rig: VrmRig, side: Side, hand: HandSpec): ArmGoal {
   const pole = outward.clone().multiplyScalar(0.25)
     .addScaledVector(rig.up, -1)
     .addScaledVector(rig.forward, -0.3);
+  const toModel = (v: [number, number, number]) =>
+    rig.right.clone().multiplyScalar(v[0])
+      .addScaledVector(rig.up, v[1])
+      .addScaledVector(rig.forward, v[2]);
   return {
     target,
     pole,
-    palm: rig.forward,
+    palm: hand.palmDir ? toModel(hand.palmDir) : rig.forward,
+    point: hand.pointDir ? toModel(hand.pointDir) : undefined,
     roll: hand.forearmRoll ?? 0,
     wrist: hand.rot,
   };

@@ -1,5 +1,7 @@
+import capturedData from "@/content/signs/captured.json";
 import fingerspellingData from "@/content/signs/fingerspelling.json";
 import lexiconData from "@/content/signs/lexicon.json";
+import { CapturedSignsSchema } from "@/lib/curriculum/schema";
 import type { Template } from "./knn";
 import type { NormalizedLandmark } from "@/lib/mediapipe/types";
 import { extractFeatures } from "./features";
@@ -54,8 +56,10 @@ export function loadGlobalTemplates(): Template[] {
       out.push({ label: letter, features: extractFeatures(normalizeLandmarks(landmarks)) });
     }
   }
+  const captured = CapturedSignsSchema.parse(capturedData).signs;
   for (const [signId, entry] of Object.entries(lexicon.signs)) {
-    for (const landmarks of entry.templates) {
+    const recorded = captured[signId]?.templates ?? [];
+    for (const landmarks of recorded.length ? recorded : entry.templates) {
       out.push({ label: signId, features: extractFeatures(normalizeLandmarks(landmarks)) });
     }
   }

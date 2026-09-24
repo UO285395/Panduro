@@ -11,15 +11,25 @@ const FingerValueSchema = z.union([
 ]);
 export type FingerValue = z.infer<typeof FingerValueSchema>;
 
+const Vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
+
+const HandSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  z: z.number(),
+  rot: Vec3Schema.default([0, 0, 0]),
+  forearmRoll: z.number().optional(), // supinación/pronación del antebrazo (rad)
+  // Orientación medida en grabaciones reales, en espacio del signante
+  // (x: su derecha, y: arriba, z: hacia el interlocutor). Si están presentes
+  // sustituyen a rot/forearmRoll.
+  palmDir: Vec3Schema.optional(),
+  pointDir: Vec3Schema.optional(),
+});
+export type HandSpec = z.infer<typeof HandSchema>;
+
 const AvatarKeyframeSchema = z.object({
   t: z.number().min(0), // ms desde el inicio
-  hand: z.object({
-    x: z.number(),
-    y: z.number(),
-    z: z.number(),
-    rot: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
-    forearmRoll: z.number().optional(), // supinación/pronación del antebrazo (rad)
-  }),
+  hand: HandSchema,
   fingers: z
     .tuple([
       FingerValueSchema,
@@ -29,13 +39,7 @@ const AvatarKeyframeSchema = z.object({
       FingerValueSchema,
     ])
     .default([0, 0, 0, 0, 0]),
-  hand2: z.object({
-    x: z.number(),
-    y: z.number(),
-    z: z.number(),
-    rot: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
-    forearmRoll: z.number().optional(),
-  }).optional(),
+  hand2: HandSchema.optional(),
   fingers2: z.tuple([
     FingerValueSchema,
     FingerValueSchema,
@@ -52,6 +56,22 @@ const AvatarClipSchema = z.object({
   keyframes: z.array(AvatarKeyframeSchema).min(2),
 });
 export type AvatarClip = z.infer<typeof AvatarClipSchema>;
+
+/** Signos grabados con /dev/grabar: sustituyen al clip generado del currículo. */
+export const CapturedSignsSchema = z.object({
+  version: z.literal(1),
+  signs: z.record(
+    z.string(),
+    z.object({
+      avatarClip: AvatarClipSchema,
+      /** Landmarks de imagen de la mano dominante en los tramos más quietos. */
+      templates: z.array(z.array(z.object({ x: z.number(), y: z.number(), z: z.number() }))).default([]),
+      recordedAt: z.string(),
+      source: z.string(),
+    }),
+  ),
+});
+export type CapturedSigns = z.infer<typeof CapturedSignsSchema>;
 
 // ---------------------------------------------------------------------------
 // Signos (léxico compartido entre lecciones)

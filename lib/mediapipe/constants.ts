@@ -4,7 +4,8 @@
  * con fallback al CDN de Google para la primera carga o si el archivo local falta.
  */
 
-export const MEDIAPIPE_TASKS_VISION_VERSION = "0.10.14";
+// Debe coincidir con la versión instalada de @mediapipe/tasks-vision (lo comprueba un test).
+export const MEDIAPIPE_TASKS_VISION_VERSION = "1.0.1";
 
 export const WASM_BASE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
 
@@ -12,6 +13,10 @@ const REMOTE_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
 const LOCAL_MODEL_PATH = "/models/hand_landmarker.task";
+
+/** Modelo de pose (hombros, brazos, cara) para grabar signos completos. */
+export const POSE_LANDMARKER_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 // Servir el modelo local cuando el navegador está offline; de lo contrario CDN.
 export const HAND_LANDMARKER_MODEL_URL =

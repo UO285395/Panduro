@@ -74,6 +74,9 @@ export function SignDetailView({ sign, levelId, lessons }: Props) {
               </button>
             ))}
           </div>
+          <Link href={`/dev/grabar?sign=${sign.id}`} className="text-xs text-slate-500 hover:text-brand-600 hover:underline">
+            ¿Está mal? Grabar este signo
+          </Link>
         </div>
 
         {/* Info del signo */}

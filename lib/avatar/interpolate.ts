@@ -3,6 +3,9 @@ import type { AvatarClip, AvatarKeyframe, FingerValue } from "@/lib/curriculum/s
 /** Porción del clip usada para la transición de bucle suave (inicio→fin). */
 const LOOP_FADE = 0.12; // 12 % de la duración
 
+/** Velocidad de reproducción de los signos (0.8 = un 20 % más despacio). */
+export const SIGN_PLAYBACK_RATE = 0.8;
+
 /**
  * Interpola entre keyframes para obtener la pose en `tMs`.
  * Usa spline Catmull-Rom para trayectorias suaves con C1-continuidad

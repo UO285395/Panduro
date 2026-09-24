@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
-import { sampleClip } from "@/lib/avatar/interpolate";
+import { SIGN_PLAYBACK_RATE, sampleClip } from "@/lib/avatar/interpolate";
 import { getFingerFlex } from "@/lib/avatar/pose";
 
 /**
@@ -30,7 +30,7 @@ export function AvatarFallback({
     const started = performance.now();
     let raf = 0;
     const step = () => {
-      const dt = performance.now() - started;
+      const dt = (performance.now() - started) * SIGN_PLAYBACK_RATE;
       setTMs(dt % clip.duration);
       raf = requestAnimationFrame(step);
     };

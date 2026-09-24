@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
-import { sampleClip } from "@/lib/avatar/interpolate";
+import { SIGN_PLAYBACK_RATE, sampleClip } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
 import { applyVrmIdle, applyVrmKeyframe, createVrmRig } from "@/lib/avatar/vrmMapper";
@@ -291,7 +291,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         const loop = () => {
           if (disposed) return;
           const { clip: active, startedAt } = clipRef.current;
-          const dt = performance.now() - startedAt;
+          const dt = (performance.now() - startedAt) * SIGN_PLAYBACK_RATE;
           const kf = active ? sampleClip(active, dt % active.duration) : null;
           // setNormalizedLocalRotation ANTES de vrm.update() para que
           // update() propague normalized→raw en el mismo frame.
@@ -314,7 +314,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         const loop = () => {
           if (disposed) return;
           const { clip: active, startedAt } = clipRef.current;
-          const dt = performance.now() - startedAt;
+          const dt = (performance.now() - startedAt) * SIGN_PLAYBACK_RATE;
           const kf = active ? sampleClip(active, dt % active.duration) : null;
           if (kf) {
             const poseR = poseFromKeyframe(kf);

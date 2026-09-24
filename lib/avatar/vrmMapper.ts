@@ -1,7 +1,8 @@
 import type { VRM } from "@pixiv/three-vrm";
 import { VRMHumanBoneName as B } from "@pixiv/three-vrm";
 import * as THREE from "three";
-import type { AvatarKeyframe } from "@/lib/curriculum/schema";
+import type { AvatarClip, AvatarKeyframe, Contact } from "@/lib/curriculum/schema";
+import { measureBody, surfaceFor, type BodyMap, type Cloud } from "./bodyPoints";
 import { distributeFlex, getFingerAbduction, getFingerFlex } from "./pose";
 
 /**
@@ -14,11 +15,15 @@ import { distributeFlex, getFingerAbduction, getFingerFlex } from "./pose";
  * posición de la muñeca sale de una IK de dos huesos con las longitudes reales
  * del modelo, y el espacio de signado se ancla a la cara y el pecho del propio
  * modelo (VRM0 mira a -Z, VRM1 a +Z; se detecta a partir de los hombros).
+ *
+ * Los contactos (yemas en la barbilla, índice en la sien…) se resuelven una vez
+ * por clip con `resolveClip`: se busca la posición de muñeca que deja esa parte
+ * de la mano sobre el punto del cuerpo medido en la malla, y el clip resultante
+ * ya solo tiene posiciones, que se interpolan como cualquier otro.
  */
 
 type Side = "Right" | "Left";
 type HandSpec = AvatarKeyframe["hand"];
-type FingersSpec = AvatarKeyframe["fingers"];
 
 const ARM = {
   Right: { upper: B.RightUpperArm, lower: B.RightLowerArm, hand: B.RightHand },
@@ -45,6 +50,7 @@ const FINGERS: Record<Side, [B, B, B][]> = {
 const THUMB_FLEX_SCALE = 0.7;
 
 type FingerRest = { bones: [B, B, B]; curlAxis: THREE.Vector3 };
+type Fingers = AvatarKeyframe["fingers"];
 
 type ArmRest = {
   shoulder: THREE.Vector3;
@@ -70,6 +76,11 @@ export type VrmRig = {
   /** Distancia de la cara por delante del plano de los hombros. */
   faceFwd: number;
   arms: Record<Side, ArmRest>;
+  /** Origen (entre los ojos) de las coordenadas de `body`. */
+  eyes: THREE.Vector3;
+  body: BodyMap;
+  /** Clips con los contactos ya resueltos para este modelo. */
+  resolved: WeakMap<AvatarClip, AvatarClip>;
 };
 
 const X = new THREE.Vector3();
@@ -162,6 +173,20 @@ export function createVrmRig(vrm: VRM): VrmRig {
     ? eyes.clone().sub(R.shoulder).dot(forward)
     : head.clone().sub(R.shoulder).dot(forward) + 0.3 * armLen;
 
+  const origin = eyes ?? head.clone().addScaledVector(up, 0.3 * armLen).addScaledVector(forward, 0.1 * armLen);
+  const local = (p: THREE.Vector3): [number, number, number] => {
+    const d = p.clone().sub(origin);
+    return [d.dot(right), d.y, d.dot(forward)];
+  };
+  const body = measureBody(collectCloud(vrm, toModel, origin, right, forward), {
+    eyeSep: eyeL && eyeR ? eyeL.distanceTo(eyeR) : 0.12 * armLen,
+    neckU: (pos(B.Neck) ?? head).y - origin.y,
+    hipsU: (pos(B.Hips) ?? R.shoulder.clone().setY(shoulderY - armLen)).y - origin.y,
+    shoulderU: shoulderY - origin.y,
+    shoulder: local(R.shoulder),
+    armLen,
+  });
+
   return {
     vrm,
     facingY: -Math.atan2(forward.x, forward.z),
@@ -173,6 +198,51 @@ export function createVrmRig(vrm: VRM): VrmRig {
     mouthY: head.y + 0.45 * (eyeY - head.y),
     faceFwd,
     arms,
+    eyes: origin,
+    body,
+    resolved: new WeakMap(),
+  };
+}
+
+const HAIR = /hair|kami|bang|ahoge|髪/i;
+
+/** Vértices de las mallas en reposo, en coordenadas del signante (r, u, f). */
+function collectCloud(
+  vrm: VRM,
+  toModel: THREE.Matrix4,
+  origin: THREE.Vector3,
+  right: THREE.Vector3,
+  forward: THREE.Vector3,
+): Cloud {
+  vrm.scene.updateMatrixWorld(true);
+  const r: number[] = [];
+  const u: number[] = [];
+  const f: number[] = [];
+  const hair: number[] = [];
+  const v = new THREE.Vector3();
+  vrm.scene.traverse((obj) => {
+    const mesh = obj as THREE.SkinnedMesh;
+    if (!mesh.isSkinnedMesh) return;
+    const position = mesh.geometry.getAttribute("position");
+    if (!position) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    const isHair = HAIR.test(mesh.name) || materials.some((m) => HAIR.test(m.name));
+    const toLocal = mesh.matrixWorld.clone().premultiply(toModel);
+    for (let i = 0; i < position.count; i++) {
+      v.fromBufferAttribute(position, i);
+      mesh.applyBoneTransform(i, v);
+      v.applyMatrix4(toLocal).sub(origin);
+      r.push(v.dot(right));
+      u.push(v.y);
+      f.push(v.dot(forward));
+      hair.push(isHair ? 1 : 0);
+    }
+  });
+  return {
+    r: Float32Array.from(r),
+    u: Float32Array.from(u),
+    f: Float32Array.from(f),
+    hair: Uint8Array.from(hair),
   };
 }
 
@@ -248,7 +318,7 @@ function poseArm(rig: VrmRig, side: Side, goal: ArmGoal) {
   setNorm(rig.vrm, bones.hand, q2.clone().invert().multiply(qh));
 }
 
-function poseFingers(rig: VrmRig, side: Side, fingers: FingersSpec) {
+function poseFingers(rig: VrmRig, side: Side, fingers: Fingers) {
   const arm = rig.arms[side];
   const abdSign = side === "Right" ? 1 : -1;
   arm.fingers.forEach((finger, i) => {
@@ -265,19 +335,17 @@ function poseFingers(rig: VrmRig, side: Side, fingers: FingersSpec) {
 
 /**
  * Espacio de signado. x: hacia fuera desde el hombro del propio lado,
- * y: 0.35 ≈ pecho alto y 0.70 ≈ boca, z: hacia el interlocutor. La mano
- * nunca queda por detrás del plano de la cara para no atravesar la cabeza.
+ * y: 0.35 ≈ pecho alto y 0.70 ≈ boca, z: hacia el interlocutor (0 ≈ 0.55
+ * brazos por delante del hombro). Relación lineal: `resolveClip` ya ha
+ * colocado cada keyframe donde debe estar para este modelo.
  */
 function signingGoal(rig: VrmRig, side: Side, hand: HandSpec): ArmGoal {
   const L = rig.armLen;
   const outward = rig.right.clone().multiplyScalar(side === "Right" ? 1 : -1);
-  const minFwd = rig.faceFwd + 0.12 * L;
-  const fwd = Math.max(Math.max(0.55 * L, minFwd) + hand.z * 0.9 * L, minFwd);
-  const height = rig.chestY + ((hand.y - 0.35) / 0.35) * (rig.mouthY - rig.chestY);
   const target = rig.arms[side].shoulder.clone()
     .addScaledVector(outward, hand.x * 1.2 * L)
-    .addScaledVector(rig.forward, fwd)
-    .setY(height);
+    .addScaledVector(rig.forward, (0.55 + hand.z * 0.9) * L)
+    .setY(rig.chestY + ((hand.y - 0.35) / 0.35) * (rig.mouthY - rig.chestY));
   const pole = outward.clone().multiplyScalar(0.25)
     .addScaledVector(rig.up, -1)
     .addScaledVector(rig.forward, -0.3);
@@ -293,6 +361,206 @@ function signingGoal(rig: VrmRig, side: Side, hand: HandSpec): ArmGoal {
     roll: hand.forearmRoll ?? 0,
     wrist: hand.rot,
   };
+}
+
+/** Inversa de la posición de `signingGoal`. */
+function toSigningSpace(rig: VrmRig, side: Side, target: THREE.Vector3): Pick<HandSpec, "x" | "y" | "z"> {
+  const L = rig.armLen;
+  const outward = rig.right.clone().multiplyScalar(side === "Right" ? 1 : -1);
+  const d = target.clone().sub(rig.arms[side].shoulder);
+  return {
+    x: d.dot(outward) / (1.2 * L),
+    y: 0.35 + (0.35 * (target.y - rig.chestY)) / (rig.mouthY - rig.chestY),
+    z: (d.dot(rig.forward) / L - 0.55) / 0.9,
+  };
+}
+
+// --- Contactos -------------------------------------------------------------
+
+/** Piel entre el eje del dedo o de la palma y la superficie que toca. */
+const SKIN = 0.012;
+
+function bonePos(rig: VrmRig, toModel: THREE.Matrix4, name: B): THREE.Vector3 | null {
+  const node = rig.vrm.humanoid.getNormalizedBoneNode(name);
+  return node ? new THREE.Vector3().setFromMatrixPosition(node.matrixWorld).applyMatrix4(toModel) : null;
+}
+
+/** Posición actual (tras posar) de la parte de la mano que toca. */
+function handPart(
+  rig: VrmRig,
+  side: Side,
+  part: NonNullable<Contact["with"]>,
+  fingers: Fingers,
+  toModel: THREE.Matrix4,
+): THREE.Vector3 {
+  const arm = rig.arms[side];
+  const wrist = bonePos(rig, toModel, ARM[side].hand)!;
+  const tip = (i: number) => {
+    const [, b, c] = arm.fingers[i]!.bones;
+    const pb = bonePos(rig, toModel, b);
+    const pc = bonePos(rig, toModel, c);
+    return pb && pc ? pc.clone().addScaledVector(pc.clone().sub(pb), 0.85) : wrist.clone();
+  };
+  const mean = (ps: THREE.Vector3[]) =>
+    ps.reduce((acc, p) => acc.add(p), new THREE.Vector3()).multiplyScalar(1 / ps.length);
+  const palmCenter = () => {
+    const ps = [1, 4].map((i) => bonePos(rig, toModel, arm.fingers[i]!.bones[0])).filter(Boolean) as THREE.Vector3[];
+    const c = mean([wrist, wrist, ...ps]);
+    const handNode = rig.vrm.humanoid.getNormalizedBoneNode(ARM[side].hand)!;
+    const q = handNode.getWorldQuaternion(new THREE.Quaternion())
+      .premultiply(new THREE.Quaternion().setFromRotationMatrix(toModel));
+    const normal = arm.palmRest.clone().applyQuaternion(q);
+    const knuckle = bonePos(rig, toModel, arm.fingers[2]!.bones[0]) ?? wrist;
+    return { c, normal, thick: 0.2 * knuckle.distanceTo(wrist) };
+  };
+  switch (part) {
+    case "index":
+      return tip(1);
+    case "middle":
+      return tip(2);
+    case "thumb":
+      return tip(0);
+    case "palm": {
+      const { c, normal, thick } = palmCenter();
+      return c.addScaledVector(normal, thick);
+    }
+    case "back": {
+      const { c, normal, thick } = palmCenter();
+      return c.addScaledVector(normal, -thick);
+    }
+    case "knuckles": {
+      const ps = [1, 2].map((i) => bonePos(rig, toModel, arm.fingers[i]!.bones[1])).filter(Boolean) as THREE.Vector3[];
+      return ps.length ? mean(ps) : wrist;
+    }
+    case "tips": {
+      const extended = [1, 2, 3, 4].filter((i) => getFingerFlex(fingers[i]!) < 0.5);
+      if (extended.length) return mean(extended.map(tip));
+      if (getFingerFlex(fingers[0]!) < 0.5) return tip(0);
+      return handPart(rig, side, "knuckles", fingers, toModel);
+    }
+  }
+}
+
+/** Punto (en el modelo) donde debe quedar la parte de la mano. */
+function contactPoint(rig: VrmRig, side: Side, c: Contact): THREE.Vector3 {
+  const L = rig.armLen;
+  const s = surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
+  const local = (v: [number, number, number]) =>
+    rig.right.clone().multiplyScalar(v[0]).addScaledVector(rig.up, v[1]).addScaledVector(rig.forward, v[2]);
+  const outward = rig.right.clone().multiplyScalar(side === "Right" ? 1 : -1);
+  const skin = c.with === "palm" || c.with === "back" ? SKIN / 2 : SKIN;
+  return rig.eyes.clone()
+    .add(local(s.p))
+    .addScaledVector(local(s.n), ((c.gap ?? 0) + skin) * L)
+    .addScaledVector(outward, (c.offset?.[0] ?? 0) * L)
+    .addScaledVector(rig.up, (c.offset?.[1] ?? 0) * L);
+}
+
+/**
+ * Muñeca que deja la parte de la mano sobre el punto de contacto. La mano
+ * cambia un poco de orientación al mover el antebrazo, así que se corrige
+ * unas cuantas veces hasta que el error es despreciable.
+ */
+function reachContact(rig: VrmRig, side: Side, goal: ArmGoal, fingers: Fingers, c: Contact): THREE.Vector3 {
+  const want = contactPoint(rig, side, c);
+  const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
+  root.updateWorldMatrix(true, false);
+  const toModel = root.matrixWorld.clone().invert();
+  const target = want.clone();
+  poseFingers(rig, side, fingers);
+  for (let k = 0; k < 8; k++) {
+    poseArm(rig, side, { ...goal, target });
+    root.updateWorldMatrix(false, true);
+    const err = want.clone().sub(handPart(rig, side, c.with ?? "tips", fingers, toModel));
+    target.add(err);
+    if (err.length() < 1e-3 * rig.armLen) break;
+  }
+  return target;
+}
+
+/**
+ * Mano del clip → mano en posición para este modelo. Con contacto, la muñeca
+ * sale de `reachContact`; sin él, se mantiene delante de la cara para que la
+ * mano no atraviese la cabeza.
+ */
+function resolveHand(rig: VrmRig, side: Side, hand: HandSpec, fingers: Fingers): HandSpec {
+  const { contact, ...rest } = hand;
+  const L = rig.armLen;
+  if (!contact) {
+    const minFwd = rig.faceFwd + 0.12 * L;
+    const fwd = Math.max(Math.max(0.55 * L, minFwd) + hand.z * 0.9 * L, minFwd);
+    return { ...rest, z: (fwd / L - 0.55) / 0.9 };
+  }
+  const oriented = { ...rest, ...contactOrientation(rig, side, contact, hand) };
+  const goal = signingGoal(rig, side, oriented);
+  const free = goal.target.clone();
+  const touch = reachContact(rig, side, goal, fingers, contact);
+  return { ...oriented, ...toSigningSpace(rig, side, free.lerp(touch, contact.weight ?? 1)) };
+}
+
+/**
+ * Orientación por defecto al tocar, en espacio del signante:
+ * - yemas, palma o puño: esa cara de la mano mira a la piel y los dedos
+ *   siguen la superficie hacia arriba (el dorso, al revés);
+ * - índice o corazón: el dedo apunta a la piel, algo hacia arriba;
+ * - pulgar: en un lateral (sien, oreja) el puño queda por fuera con el pulgar
+ *   hacia dentro; en el centro (barbilla, pecho), puño de lado y pulgar arriba.
+ * Lo que el clip indique explícitamente manda.
+ */
+function contactOrientation(
+  rig: VrmRig,
+  side: Side,
+  c: Contact,
+  hand: HandSpec,
+): Pick<HandSpec, "palmDir" | "pointDir"> {
+  const n = new THREE.Vector3(...surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left").n);
+  const up = new THREE.Vector3(0, 1, 0);
+  const fwd = new THREE.Vector3(0, 0, 1);
+  const medial = new THREE.Vector3(side === "Right" ? -1 : 1, 0, 0);
+  const alongUp = () => (Math.abs(n.y) > 0.97 ? fwd.clone() : perp(up, n, fwd));
+  let palm: THREE.Vector3;
+  let point: THREE.Vector3;
+  switch (c.with) {
+    case "index":
+    case "middle":
+      point = n.clone().negate().addScaledVector(up, Math.abs(n.y) > 0.97 ? 0 : 0.4).normalize();
+      palm = perp(up.clone().negate(), point, fwd.clone().negate());
+      break;
+    case "thumb":
+      if (Math.abs(n.x) > 0.5) {
+        palm = fwd.clone();
+        point = up.clone();
+      } else {
+        palm = medial;
+        point = fwd.clone();
+      }
+      break;
+    case "back":
+      palm = n.clone();
+      point = alongUp();
+      break;
+    default:
+      palm = n.clone().negate();
+      point = alongUp();
+  }
+  const arr = (v: THREE.Vector3): [number, number, number] => [v.x, v.y, v.z];
+  return { palmDir: hand.palmDir ?? arr(palm), pointDir: hand.pointDir ?? arr(point) };
+}
+
+/** Clip listo para `applyVrmKeyframe` en este modelo (se calcula una vez). */
+export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
+  const cached = rig.resolved.get(clip);
+  if (cached) return cached;
+  const resolved: AvatarClip = {
+    ...clip,
+    keyframes: clip.keyframes.map((kf) => ({
+      ...kf,
+      hand: resolveHand(rig, "Right", kf.hand, kf.fingers),
+      hand2: kf.hand2 && resolveHand(rig, "Left", kf.hand2, kf.fingers2 ?? kf.fingers),
+    })),
+  };
+  rig.resolved.set(clip, resolved);
+  return resolved;
 }
 
 function idleGoal(rig: VrmRig, side: Side, tMs: number): ArmGoal {
@@ -312,9 +580,12 @@ function idleGoal(rig: VrmRig, side: Side, tMs: number): ArmGoal {
   };
 }
 
-const RELAXED: FingersSpec = [0.15, 0.15, 0.15, 0.15, 0.15];
+const RELAXED: Fingers = [0.15, 0.15, 0.15, 0.15, 0.15];
 
-/** Signo en curso: brazo derecho según `hand`; el izquierdo según `hand2` o en reposo. */
+/**
+ * Signo en curso: brazo derecho según `hand`; el izquierdo según `hand2` o en
+ * reposo. El keyframe tiene que venir de un clip pasado por `resolveClip`.
+ */
 export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number) {
   poseArm(rig, "Right", signingGoal(rig, "Right", kf.hand));
   poseFingers(rig, "Right", kf.fingers);
@@ -332,5 +603,33 @@ export function applyVrmIdle(rig: VrmRig, tMs: number) {
   for (const side of ["Right", "Left"] as const) {
     poseArm(rig, side, idleGoal(rig, side, tMs));
     poseFingers(rig, side, RELAXED);
+  }
+}
+
+/** Huesos que anima el mapper (brazos y dedos de los dos lados). */
+const POSED: B[] = (["Right", "Left"] as const).flatMap((side) => [
+  ARM[side].upper,
+  ARM[side].lower,
+  ARM[side].hand,
+  ...FINGERS[side].flat(),
+]);
+
+export type PoseSnapshot = Map<B, THREE.Quaternion>;
+
+/** Copia de la pose actual, para fundirla con la siguiente. */
+export function snapshotPose(rig: VrmRig): PoseSnapshot {
+  const snap: PoseSnapshot = new Map();
+  for (const name of POSED) {
+    const node = rig.vrm.humanoid.getNormalizedBoneNode(name);
+    if (node) snap.set(name, node.quaternion.clone());
+  }
+  return snap;
+}
+
+/** Mezcla la pose recién aplicada con una anterior (u = 0 anterior, 1 nueva). */
+export function blendFromSnapshot(rig: VrmRig, from: PoseSnapshot, u: number) {
+  for (const [name, q] of from) {
+    const node = rig.vrm.humanoid.getNormalizedBoneNode(name);
+    if (node) node.quaternion.copy(q.clone().slerp(node.quaternion, u));
   }
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BODY_POINTS } from "@/lib/avatar/bodyPoints";
 
 // ---------------------------------------------------------------------------
 // Avatar clip (keyframes ligeros interpretados por AvatarPlayer)
@@ -13,6 +14,18 @@ export type FingerValue = z.infer<typeof FingerValueSchema>;
 
 const Vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
 
+// Contacto con el cuerpo: la parte `with` de la mano se lleva al punto `at`,
+// medido sobre la malla de cada modelo. Sustituye a x/y/z en ese keyframe.
+export const HAND_PARTS = ["tips", "index", "middle", "thumb", "palm", "back", "knuckles"] as const;
+const ContactSchema = z.object({
+  at: z.enum(BODY_POINTS),
+  with: z.enum(HAND_PARTS).optional(), // por defecto, las yemas de los dedos extendidos
+  gap: z.number().min(0).optional(), // separación de la piel, en longitudes de brazo
+  offset: z.tuple([z.number(), z.number()]).optional(), // [hacia fuera, arriba] sobre la piel
+  weight: z.number().min(0).max(1).optional(), // 1 = contacto; menos, mezcla con x/y/z
+});
+export type Contact = z.infer<typeof ContactSchema>;
+
 const HandSchema = z.object({
   x: z.number(),
   y: z.number(),
@@ -24,6 +37,7 @@ const HandSchema = z.object({
   // sustituyen a rot/forearmRoll.
   palmDir: Vec3Schema.optional(),
   pointDir: Vec3Schema.optional(),
+  contact: ContactSchema.optional(),
 });
 export type HandSpec = z.infer<typeof HandSchema>;
 

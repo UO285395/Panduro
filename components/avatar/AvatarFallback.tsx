@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
-import { SIGN_PLAYBACK_RATE, sampleClip } from "@/lib/avatar/interpolate";
+import { SIGN_PLAYBACK_RATE, sampleLoop } from "@/lib/avatar/interpolate";
 import { getFingerFlex } from "@/lib/avatar/pose";
 
 /**
@@ -31,7 +31,7 @@ export function AvatarFallback({
     let raf = 0;
     const step = () => {
       const dt = (performance.now() - started) * SIGN_PLAYBACK_RATE;
-      setTMs(dt % clip.duration);
+      setTMs(dt);
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -52,7 +52,7 @@ export function AvatarFallback({
     );
   }
 
-  const pose = sampleClip(clip, tMs);
+  const pose = sampleLoop(clip, tMs);
   // Mapea el rango normalizado (~ -1..1) a coordenadas SVG.
   const cx = size / 2 + pose.hand.x * (size * 0.25);
   const cy = size / 2 - pose.hand.y * (size * 0.25);

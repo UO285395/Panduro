@@ -1,16 +1,164 @@
 import type { AvatarClip, AvatarKeyframe, FingerValue } from "@/lib/curriculum/schema";
 
-/** Porción del clip usada para la transición de bucle suave (inicio→fin). */
-const LOOP_FADE = 0.12; // 12 % de la duración
-
 /** Velocidad de reproducción de los signos (0.8 = un 20 % más despacio). */
 export const SIGN_PLAYBACK_RATE = 0.8;
 
-/**
- * Interpola entre keyframes para obtener la pose en `tMs`.
- * Usa spline Catmull-Rom para trayectorias suaves con C1-continuidad
- * y una ventana de cross-fade al final del bucle.
+/** Al repetir un signo: pausa en la posición final y vuelta suave al inicio (ms de clip). */
+export const LOOP_HOLD_MS = 350;
+export const LOOP_RETURN_MS = 500;
+
+type Hand = AvatarKeyframe["hand"];
+type Fingers = AvatarKeyframe["fingers"];
+type Vec3 = [number, number, number];
+
+/*
+ * Cada keyframe se aplana en canales numéricos y cada canal se interpola con
+ * una spline de Hermite cuyas tangentes salen de los keyframes vecinos y de
+ * sus tiempos reales (Catmull-Rom no uniforme). Así la velocidad es continua
+ * al pasar por un keyframe aunque estén desigualmente espaciados, y al
+ * principio y al final del signo la mano arranca y se detiene sin tirones.
  */
+
+const HAND_CHANNELS = 13; // x y z · rot×3 · roll · palm×3 · point×3
+const FINGER_CHANNELS = 10; // flexión×5 · abducción×5
+
+type Layout = {
+  roll: boolean;
+  palm: boolean;
+  point: boolean;
+};
+
+type Prepared = {
+  times: number[];
+  values: number[][];
+  tangents: number[][];
+  hand: Layout;
+  hand2: Layout | null;
+  abduction: boolean[];
+  abduction2: boolean[];
+  twoHands: boolean;
+  fingers2: boolean;
+};
+
+const cache = new WeakMap<AvatarClip, Prepared>();
+
+const flexOf = (v: FingerValue) => (typeof v === "number" ? v : v.flex);
+const abdOf = (v: FingerValue) => (typeof v === "number" ? 0 : (v.abduction ?? 0));
+
+/** Valor del keyframe más cercano que tenga el campo (o `undefined`). */
+function nearest<T>(kfs: AvatarKeyframe[], i: number, get: (k: AvatarKeyframe) => T | undefined): T | undefined {
+  for (let d = 0; d < kfs.length; d++) {
+    const a = kfs[i - d] && get(kfs[i - d]!);
+    if (a !== undefined) return a;
+    const b = kfs[i + d] && get(kfs[i + d]!);
+    if (b !== undefined) return b;
+  }
+  return undefined;
+}
+
+function handChannels(kfs: AvatarKeyframe[], i: number, pick: (k: AvatarKeyframe) => Hand | undefined): number[] {
+  const h = nearest(kfs, i, pick);
+  if (!h) return new Array(HAND_CHANNELS).fill(0);
+  const palm = nearest(kfs, i, (k) => pick(k)?.palmDir) ?? [0, 0, 1];
+  const point = nearest(kfs, i, (k) => pick(k)?.pointDir) ?? [0, 1, 0];
+  return [h.x, h.y, h.z, ...h.rot, h.forearmRoll ?? 0, ...palm, ...point];
+}
+
+function fingerChannels(f: Fingers): number[] {
+  return [...f.map(flexOf), ...f.map(abdOf)];
+}
+
+function layoutOf(kfs: AvatarKeyframe[], pick: (k: AvatarKeyframe) => Hand | undefined): Layout {
+  return {
+    roll: kfs.some((k) => pick(k)?.forearmRoll !== undefined),
+    palm: kfs.some((k) => pick(k)?.palmDir !== undefined),
+    point: kfs.some((k) => pick(k)?.pointDir !== undefined),
+  };
+}
+
+function prepare(clip: AvatarClip): Prepared {
+  const hit = cache.get(clip);
+  if (hit) return hit;
+  const kfs = clip.keyframes;
+  const twoHands = kfs.some((k) => k.hand2);
+  const fingers2 = kfs.some((k) => k.fingers2);
+  const values = kfs.map((kf, i) => [
+    ...handChannels(kfs, i, (k) => k.hand),
+    ...fingerChannels(kf.fingers),
+    ...(twoHands ? handChannels(kfs, i, (k) => k.hand2) : []),
+    ...(fingers2 ? fingerChannels(nearest(kfs, i, (k) => k.fingers2)!) : []),
+  ]);
+  const times = kfs.map((k) => k.t);
+  const n = kfs.length;
+  const tangents = values.map((v, i) =>
+    v.map((_, c) => {
+      if (i === 0 || i === n - 1) return 0;
+      const span = times[i + 1]! - times[i - 1]!;
+      return span > 0 ? (values[i + 1]![c]! - values[i - 1]![c]!) / span : 0;
+    }),
+  );
+  const abd = (get: (k: AvatarKeyframe) => Fingers | undefined) =>
+    [0, 1, 2, 3, 4].map((f) => kfs.some((k) => {
+      const v = get(k)?.[f];
+      return v !== undefined && typeof v !== "number" && v.abduction !== undefined;
+    }));
+  const prepared: Prepared = {
+    times,
+    values,
+    tangents,
+    hand: layoutOf(kfs, (k) => k.hand),
+    hand2: twoHands ? layoutOf(kfs, (k) => k.hand2) : null,
+    abduction: abd((k) => k.fingers),
+    abduction2: abd((k) => k.fingers2),
+    twoHands,
+    fingers2,
+  };
+  cache.set(clip, prepared);
+  return prepared;
+}
+
+function unit(v: number[]): Vec3 {
+  const len = Math.hypot(v[0]!, v[1]!, v[2]!) || 1;
+  return [v[0]! / len, v[1]! / len, v[2]! / len];
+}
+
+function toHand(c: number[], at: number, layout: Layout): Hand {
+  const hand: Hand = {
+    x: c[at]!,
+    y: c[at + 1]!,
+    z: c[at + 2]!,
+    rot: [c[at + 3]!, c[at + 4]!, c[at + 5]!],
+  };
+  if (layout.roll) hand.forearmRoll = c[at + 6]!;
+  if (layout.palm) hand.palmDir = unit(c.slice(at + 7, at + 10));
+  if (layout.point) hand.pointDir = unit(c.slice(at + 10, at + 13));
+  return hand;
+}
+
+function toFingers(c: number[], at: number, abduction: boolean[]): Fingers {
+  return [0, 1, 2, 3, 4].map((i) => {
+    const flex = Math.max(0, Math.min(1, c[at + i]!));
+    return abduction[i] ? { flex, abduction: c[at + 5 + i]! } : flex;
+  }) as Fingers;
+}
+
+function toKeyframe(p: Prepared, c: number[], t: number): AvatarKeyframe {
+  let at = 0;
+  const kf: AvatarKeyframe = {
+    t,
+    hand: toHand(c, at, p.hand),
+    fingers: toFingers(c, (at += HAND_CHANNELS), p.abduction),
+  };
+  at += FINGER_CHANNELS;
+  if (p.hand2) {
+    kf.hand2 = toHand(c, at, p.hand2);
+    at += HAND_CHANNELS;
+  }
+  if (p.fingers2) kf.fingers2 = toFingers(c, at, p.abduction2);
+  return kf;
+}
+
+/** Pose del clip en `tMs` (sin bucle: antes del inicio, el primero; después, el último). */
 export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
   const kfs = clip.keyframes;
   if (kfs.length === 0) throw new Error("sampleClip: clip vacío");
@@ -19,160 +167,50 @@ export function sampleClip(clip: AvatarClip, tMs: number): AvatarKeyframe {
   if (tMs <= first.t) return first;
   if (tMs >= last.t) return last;
 
-  // Ventana de cross-fade: blend suave del último keyframe al primero en los
-  // últimos LOOP_FADE% del clip para eliminar el salto visual al hacer loop.
-  const fadeStart = last.t - clip.duration * LOOP_FADE;
-  if (tMs >= fadeStart) {
-    const raw = (tMs - fadeStart) / (clip.duration * LOOP_FADE);
-    const u = raw * raw * (3 - 2 * raw);
-    return blendKeyframes(last, first, u, tMs);
-  }
-
-  // Buscar el segmento (i, i+1) tal que kfs[i].t <= t < kfs[i+1].t
-  const n = kfs.length;
-  for (let i = 0; i < n - 1; i++) {
-    const a = kfs[i]!;
-    const b = kfs[i + 1]!;
-    if (tMs >= a.t && tMs < b.t) {
-      const span = b.t - a.t;
-      const tRaw = span > 0 ? (tMs - a.t) / span : 0;
-      // Ease-in-out: aplica smoothstep para dar aceleración/desaceleración
-      // natural a cada segmento (lento al principio y al final, rápido en medio).
-      const t01 = tRaw * tRaw * (3 - 2 * tRaw);
-      // Catmull-Rom: puntos de control envolventes (loop en los extremos).
-      const p0 = kfs[(i - 1 + n) % n]!;
-      const p3 = kfs[(i + 2) % n]!;
-      return catmullRomBlend(p0, a, b, p3, t01, tMs);
-    }
-  }
-  return last;
+  const p = prepare(clip);
+  let i = 0;
+  while (i < kfs.length - 2 && tMs >= p.times[i + 1]!) i++;
+  const span = p.times[i + 1]! - p.times[i]!;
+  if (span <= 0) return kfs[i + 1]!;
+  const s = (tMs - p.times[i]!) / span;
+  const s2 = s * s;
+  const s3 = s2 * s;
+  const h00 = 2 * s3 - 3 * s2 + 1;
+  const h10 = s3 - 2 * s2 + s;
+  const h01 = -2 * s3 + 3 * s2;
+  const h11 = s3 - s2;
+  const a = p.values[i]!;
+  const b = p.values[i + 1]!;
+  const ma = p.tangents[i]!;
+  const mb = p.tangents[i + 1]!;
+  const c = a.map((_, k) => h00 * a[k]! + h10 * span * ma[k]! + h01 * b[k]! + h11 * span * mb[k]!);
+  return toKeyframe(p, c, tMs);
 }
 
-type Hand = AvatarKeyframe["hand"];
-type Fingers = AvatarKeyframe["fingers"];
-type Vec3 = [number, number, number];
-
-function cr(v0: number, v1: number, v2: number, v3: number, t: number): number {
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return 0.5 * (
-    2 * v1 +
-    (v2 - v0) * t +
-    (2 * v0 - 5 * v1 + 4 * v2 - v3) * t2 +
-    (3 * v1 - v0 - 3 * v2 + v3) * t3
-  );
+function blend(p: Prepared, a: number[], b: number[], u: number, t: number): AvatarKeyframe {
+  return toKeyframe(p, a.map((v, k) => v + (b[k]! - v) * u), t);
 }
 
-function unit(v: number[], fallback: Vec3): Vec3 {
-  const len = Math.hypot(v[0]!, v[1]!, v[2]!);
-  return len < 1e-6 ? fallback : [v[0]! / len, v[1]! / len, v[2]! / len];
+/** Duración de una repetición: el signo, la pausa final y la vuelta al inicio. */
+export function loopDuration(clip: AvatarClip): number {
+  return clip.duration + LOOP_HOLD_MS + LOOP_RETURN_MS;
 }
 
-function crVec(p0: Vec3 | undefined, a: Vec3 | undefined, b: Vec3 | undefined, p3: Vec3 | undefined, t: number): Vec3 | undefined {
-  if (!a || !b) return a ?? b;
-  const q0 = p0 ?? a;
-  const q3 = p3 ?? b;
-  return unit([0, 1, 2].map((i) => cr(q0[i]!, a[i]!, b[i]!, q3[i]!, t)), a);
-}
-
-function lerpVec(a: Vec3 | undefined, b: Vec3 | undefined, u: number): Vec3 | undefined {
-  if (!a || !b) return a ?? b;
-  return unit([0, 1, 2].map((i) => lerp(a[i]!, b[i]!, u)), a);
-}
-
-function crHand(p0: Hand, a: Hand, b: Hand, p3: Hand, t: number): Hand {
-  return {
-    x: cr(p0.x, a.x, b.x, p3.x, t),
-    y: cr(p0.y, a.y, b.y, p3.y, t),
-    z: cr(p0.z, a.z, b.z, p3.z, t),
-    rot: [
-      cr(p0.rot[0], a.rot[0], b.rot[0], p3.rot[0], t),
-      cr(p0.rot[1], a.rot[1], b.rot[1], p3.rot[1], t),
-      cr(p0.rot[2], a.rot[2], b.rot[2], p3.rot[2], t),
-    ],
-    forearmRoll: crScalarMaybe(p0.forearmRoll, a.forearmRoll, b.forearmRoll, p3.forearmRoll, t),
-    palmDir: crVec(p0.palmDir, a.palmDir, b.palmDir, p3.palmDir, t),
-    pointDir: crVec(p0.pointDir, a.pointDir, b.pointDir, p3.pointDir, t),
-  };
-}
-
-function lerpHand(a: Hand, b: Hand, u: number): Hand {
-  return {
-    x: lerp(a.x, b.x, u),
-    y: lerp(a.y, b.y, u),
-    z: lerp(a.z, b.z, u),
-    rot: [lerp(a.rot[0], b.rot[0], u), lerp(a.rot[1], b.rot[1], u), lerp(a.rot[2], b.rot[2], u)],
-    forearmRoll: lerpMaybe(a.forearmRoll, b.forearmRoll, u),
-    palmDir: lerpVec(a.palmDir, b.palmDir, u),
-    pointDir: lerpVec(a.pointDir, b.pointDir, u),
-  };
-}
-
-const flexOf = (v: FingerValue) => (typeof v === "number" ? v : v.flex);
-
-function crFingers(p0: Fingers, a: Fingers, b: Fingers, p3: Fingers, t: number): Fingers {
-  return [0, 1, 2, 3, 4].map((i) =>
-    Math.max(0, Math.min(1, cr(flexOf(p0[i]!), flexOf(a[i]!), flexOf(b[i]!), flexOf(p3[i]!), t))),
-  ) as Fingers;
-}
-
-/** Interpolación Catmull-Rom entre a y b usando p0 y p3 como tangentes. */
-function catmullRomBlend(
-  p0: AvatarKeyframe, a: AvatarKeyframe, b: AvatarKeyframe, p3: AvatarKeyframe,
-  t: number, tMs: number,
-): AvatarKeyframe {
-  return {
-    t: tMs,
-    hand: crHand(p0.hand, a.hand, b.hand, p3.hand, t),
-    fingers: crFingers(p0.fingers, a.fingers, b.fingers, p3.fingers, t),
-    hand2: a.hand2 && b.hand2
-      ? crHand(p0.hand2 ?? a.hand2, a.hand2, b.hand2, p3.hand2 ?? b.hand2, t)
-      : a.hand2 ?? b.hand2,
-    fingers2: a.fingers2 && b.fingers2
-      ? crFingers(p0.fingers2 ?? a.fingers2, a.fingers2, b.fingers2, p3.fingers2 ?? b.fingers2, t)
-      : a.fingers2 ?? b.fingers2,
-  };
-}
-
-function blendKeyframes(a: AvatarKeyframe, b: AvatarKeyframe, u: number, t: number): AvatarKeyframe {
-  const lerpFingers = (fa: Fingers, fb: Fingers) =>
-    [0, 1, 2, 3, 4].map((i) => lerpFinger(fa[i]!, fb[i]!, u)) as Fingers;
-  return {
-    t,
-    hand: lerpHand(a.hand, b.hand, u),
-    fingers: lerpFingers(a.fingers, b.fingers),
-    hand2: a.hand2 && b.hand2 ? lerpHand(a.hand2, b.hand2, u) : a.hand2 ?? b.hand2,
-    fingers2: a.fingers2 && b.fingers2 ? lerpFingers(a.fingers2, b.fingers2) : a.fingers2 ?? b.fingers2,
-  };
-}
-
-function lerp(a: number, b: number, u: number): number {
-  return a + (b - a) * u;
-}
-
-function lerpMaybe(a: number | undefined, b: number | undefined, u: number): number | undefined {
-  if (a === undefined && b === undefined) return undefined;
-  return lerp(a ?? 0, b ?? 0, u) || undefined;
-}
-
-function crScalarMaybe(
-  v0: number | undefined, v1: number | undefined,
-  v2: number | undefined, v3: number | undefined,
-  t: number,
-): number | undefined {
-  if (v0 === undefined && v1 === undefined && v2 === undefined && v3 === undefined) return undefined;
-  return cr(v0 ?? 0, v1 ?? 0, v2 ?? 0, v3 ?? 0, t) || undefined;
-}
-
-function lerpFinger(a: FingerValue, b: FingerValue, u: number): FingerValue {
-  const af = typeof a === "number" ? a : a.flex;
-  const bf = typeof b === "number" ? b : b.flex;
-  const aa = typeof a === "number" ? 0 : (a.abduction ?? 0);
-  const ba = typeof b === "number" ? 0 : (b.abduction ?? 0);
-  const flex = lerp(af, bf, u);
-  const abduction = lerp(aa, ba, u);
-  if (aa === 0 && ba === 0) return flex;
-  return { flex, abduction };
+/**
+ * Pose de un signo que se repite: tras cada repetición la mano se queda quieta
+ * un momento y vuelve al primer keyframe con aceleración y frenada suaves, en
+ * lugar de saltar.
+ */
+export function sampleLoop(clip: AvatarClip, tMs: number): AvatarKeyframe {
+  const period = loopDuration(clip);
+  const t = ((tMs % period) + period) % period;
+  if (t <= clip.duration) return sampleClip(clip, t);
+  const back = t - clip.duration - LOOP_HOLD_MS;
+  if (back <= 0) return clip.keyframes[clip.keyframes.length - 1]!;
+  const p = prepare(clip);
+  const u = back / LOOP_RETURN_MS;
+  const eased = u * u * u * (u * (u * 6 - 15) + 10);
+  return blend(p, p.values[p.values.length - 1]!, p.values[0]!, eased, t);
 }
 
 /**

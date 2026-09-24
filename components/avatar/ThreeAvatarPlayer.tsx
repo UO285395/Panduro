@@ -2,10 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
-import { SIGN_PLAYBACK_RATE, sampleClip } from "@/lib/avatar/interpolate";
+import { SIGN_PLAYBACK_RATE, sampleLoop } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
-import { applyVrmIdle, applyVrmKeyframe, createVrmRig } from "@/lib/avatar/vrmMapper";
+import {
+  applyVrmIdle,
+  applyVrmKeyframe,
+  blendFromSnapshot,
+  createVrmRig,
+  resolveClip,
+  snapshotPose,
+} from "@/lib/avatar/vrmMapper";
 import { addHandOutline } from "@/lib/avatar/handOutline";
 import {
   BONE_LENGTHS,
@@ -18,6 +25,9 @@ import {
   SHOULDER_HEIGHT,
   THUMB_ABDUCTION,
 } from "@/lib/avatar/rig";
+
+/** Fundido entre la pose anterior y la nueva al cambiar de signo. */
+const CLIP_FADE_MS = 350;
 
 type Props = {
   clip: AvatarClip | null;
@@ -287,18 +297,31 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         }
 
         const clock = new THREE.Clock();
+        // Al cambiar de signo (o de signo a reposo) se funde la pose anterior
+        // con la nueva en lugar de saltar.
+        let shown: typeof clipRef.current.clip | undefined;
+        let fade: { from: ReturnType<typeof snapshotPose>; at: number } | null = null;
 
         const loop = () => {
           if (disposed) return;
           const { clip: active, startedAt } = clipRef.current;
-          const dt = (performance.now() - startedAt) * SIGN_PLAYBACK_RATE;
-          const kf = active ? sampleClip(active, dt % active.duration) : null;
-          // setNormalizedLocalRotation ANTES de vrm.update() para que
-          // update() propague normalized→raw en el mismo frame.
-          if (kf) {
-            applyVrmKeyframe(rig, kf, dt);
+          const now = performance.now();
+          if (active !== shown) {
+            if (shown !== undefined) fade = { from: snapshotPose(rig), at: now };
+            shown = active;
+          }
+          const dt = (now - startedAt) * SIGN_PLAYBACK_RATE;
+          // Rotaciones normalizadas ANTES de vrm.update(), que las pasa a los
+          // huesos reales en el mismo frame.
+          if (active) {
+            applyVrmKeyframe(rig, sampleLoop(resolveClip(rig, active), dt), dt);
           } else {
             applyVrmIdle(rig, dt);
+          }
+          if (fade) {
+            const u = (now - fade.at) / CLIP_FADE_MS;
+            if (u >= 1) fade = null;
+            else blendFromSnapshot(rig, fade.from, u * u * (3 - 2 * u));
           }
           vrm.update(clock.getDelta());
           renderer.render(scene, camera);
@@ -315,7 +338,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           if (disposed) return;
           const { clip: active, startedAt } = clipRef.current;
           const dt = (performance.now() - startedAt) * SIGN_PLAYBACK_RATE;
-          const kf = active ? sampleClip(active, dt % active.duration) : null;
+          const kf = active ? sampleLoop(active, dt) : null;
           if (kf) {
             const poseR = poseFromKeyframe(kf);
             const poseL = poseFromKeyframeLeft(kf);

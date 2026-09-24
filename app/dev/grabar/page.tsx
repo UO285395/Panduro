@@ -1,5 +1,6 @@
 import captured from "@/content/signs/captured.json";
 import { getAllLevels } from "@/lib/curriculum/loader";
+import { ImportPanel } from "./import-panel";
 import { RecordView, type SignOption } from "./record-view";
 
 export const metadata = { title: "Grabar signos · dev" };
@@ -35,6 +36,7 @@ export default function Page({ searchParams }: { searchParams: { sign?: string }
         </p>
       </header>
       <RecordView signs={signs} initialSign={searchParams.sign} />
+      <ImportPanel />
     </main>
   );
 }

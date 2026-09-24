@@ -61,3 +61,7 @@ pnpm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Datos de terceros descargados en local (SWL-LSE de Zenodo, etc.) y exportaciones intermedias
+/data/
+swl-lse*.json

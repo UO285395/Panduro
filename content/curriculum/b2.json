@@ -2024,94 +2024,164 @@
       "description": "Índice sobre muñeca, toma el pulso.",
       "videoUrl": null,
       "posterUrl": null,
-      "handedness": "one",
+      "handedness": "two",
       "tags": [],
       "avatarClip": {
-        "handedness": "one",
-        "duration": 1200,
+        "handedness": "two",
+        "duration": 1000,
         "keyframes": [
           {
             "t": 0,
             "hand": {
-              "x": 0.28,
-              "y": 0.5,
-              "z": 0.0,
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.31,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "contact": {
+                "at": "otherWrist",
+                "with": "tips",
+                "gap": 0.06
+              }
             },
             "fingers": [
-              1.0,
-              0.0,
-              1.0,
-              1.0,
-              1.0
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
+            },
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
             ]
           },
           {
-            "t": 240,
+            "t": 350,
             "hand": {
-              "x": 0.31,
-              "y": 0.5,
-              "z": 0.0,
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.25,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "contact": {
+                "at": "otherWrist",
+                "with": "tips"
+              }
             },
             "fingers": [
-              1.0,
-              0.0,
-              1.0,
-              1.0,
-              1.0
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
+            },
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
             ]
           },
           {
-            "t": 720,
+            "t": 1000,
             "hand": {
-              "x": 0.31,
-              "y": 0.5,
-              "z": 0.0,
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.25,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "contact": {
+                "at": "otherWrist",
+                "with": "tips"
+              }
             },
             "fingers": [
-              1.0,
-              0.0,
-              1.0,
-              1.0,
-              1.0
-            ]
-          },
-          {
-            "t": 1200,
-            "hand": {
-              "x": 0.28,
-              "y": 0.5,
-              "z": 0.0,
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
             },
-            "fingers": [
-              1.0,
-              0.0,
-              1.0,
-              1.0,
-              1.0
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
             ]
           }
         ]
@@ -4208,94 +4278,268 @@
       "description": "Puño golpea palma.",
       "videoUrl": null,
       "posterUrl": null,
-      "handedness": "one",
+      "handedness": "two",
       "tags": [],
       "avatarClip": {
-        "handedness": "one",
-        "duration": 1200,
+        "handedness": "two",
+        "duration": 800,
         "keyframes": [
           {
             "t": 0,
             "hand": {
-              "x": 0.28,
-              "y": 0.5,
-              "z": 0.0,
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.4,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "contact": {
+                "at": "otherPalm",
+                "with": "palm",
+                "gap": 0.15
+              }
             },
             "fingers": [
-              1.0,
-              1.0,
-              1.0,
-              1.0,
-              1.0
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
+            },
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
             ]
           },
           {
-            "t": 240,
+            "t": 200,
             "hand": {
-              "x": 0.31,
-              "y": 0.5,
-              "z": 0.0,
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.25,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "contact": {
+                "at": "otherPalm",
+                "with": "palm"
+              }
             },
             "fingers": [
-              1.0,
-              1.0,
-              1.0,
-              1.0,
-              1.0
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
+            },
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
             ]
           },
           {
-            "t": 720,
+            "t": 400,
             "hand": {
-              "x": 0.31,
-              "y": 0.5,
-              "z": 0.0,
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.33999999999999997,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "contact": {
+                "at": "otherPalm",
+                "with": "palm",
+                "gap": 0.09
+              }
             },
             "fingers": [
-              1.0,
-              1.0,
-              1.0,
-              1.0,
-              1.0
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
+            },
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
             ]
           },
           {
-            "t": 1200,
+            "t": 600,
             "hand": {
-              "x": 0.28,
-              "y": 0.5,
-              "z": 0.0,
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.25,
               "rot": [
                 0,
                 0,
                 0
               ],
-              "forearmRoll": 0.0
+              "contact": {
+                "at": "otherPalm",
+                "with": "palm"
+              }
             },
             "fingers": [
-              1.0,
-              1.0,
-              1.0,
-              1.0,
-              1.0
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
+            },
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "t": 800,
+            "hand": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 0.4,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "contact": {
+                "at": "otherPalm",
+                "with": "palm",
+                "gap": 0.15
+              }
+            },
+            "fingers": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "hand2": {
+              "x": -0.12,
+              "y": 0.3,
+              "z": 0.22,
+              "rot": [
+                0,
+                0,
+                0
+              ],
+              "palmDir": [
+                0,
+                1,
+                0
+              ],
+              "pointDir": [
+                0.45,
+                0,
+                1
+              ]
+            },
+            "fingers2": [
+              0.3,
+              0,
+              0,
+              0,
+              0
             ]
           }
         ]

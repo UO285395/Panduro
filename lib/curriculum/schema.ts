@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BODY_POINTS } from "@/lib/avatar/bodyPoints";
+import { BODY_POINTS, OTHER_HAND_POINTS } from "@/lib/avatar/bodyPoints";
 
 // ---------------------------------------------------------------------------
 // Avatar clip (keyframes ligeros interpretados por AvatarPlayer)
@@ -18,7 +18,7 @@ const Vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
 // medido sobre la malla de cada modelo. Sustituye a x/y/z en ese keyframe.
 export const HAND_PARTS = ["tips", "index", "middle", "thumb", "palm", "back", "knuckles"] as const;
 const ContactSchema = z.object({
-  at: z.enum(BODY_POINTS),
+  at: z.enum([...BODY_POINTS, ...OTHER_HAND_POINTS]),
   with: z.enum(HAND_PARTS).optional(), // por defecto, las yemas de los dedos extendidos
   gap: z.number().min(0).optional(), // separación de la piel, en longitudes de brazo
   offset: z.tuple([z.number(), z.number()]).optional(), // [hacia fuera, arriba] sobre la piel

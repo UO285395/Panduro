@@ -2,7 +2,7 @@ import type { VRM } from "@pixiv/three-vrm";
 import { VRMHumanBoneName as B } from "@pixiv/three-vrm";
 import * as THREE from "three";
 import type { AvatarClip, AvatarKeyframe, Contact } from "@/lib/curriculum/schema";
-import { measureBody, surfaceFor, type BodyMap, type Cloud } from "./bodyPoints";
+import { isOtherHand, measureBody, surfaceFor, type BodyMap, type Cloud } from "./bodyPoints";
 import { distributeFlex, getFingerAbduction, getFingerFlex } from "./pose";
 
 /**
@@ -385,6 +385,22 @@ function bonePos(rig: VrmRig, toModel: THREE.Matrix4, name: B): THREE.Vector3 | 
   return node ? new THREE.Vector3().setFromMatrixPosition(node.matrixWorld).applyMatrix4(toModel) : null;
 }
 
+/** Normal de la palma (hacia el lado de la palma) y grosor de la mano, tras posar. */
+function palmFrame(rig: VrmRig, side: Side, toModel: THREE.Matrix4) {
+  const arm = rig.arms[side];
+  const wrist = bonePos(rig, toModel, ARM[side].hand)!;
+  const handNode = rig.vrm.humanoid.getNormalizedBoneNode(ARM[side].hand)!;
+  const q = handNode.getWorldQuaternion(new THREE.Quaternion())
+    .premultiply(new THREE.Quaternion().setFromRotationMatrix(toModel));
+  const knuckle = bonePos(rig, toModel, arm.fingers[2]!.bones[0]) ?? wrist;
+  return {
+    wrist,
+    knuckle,
+    normal: arm.palmRest.clone().applyQuaternion(q).normalize(),
+    thick: 0.2 * knuckle.distanceTo(wrist),
+  };
+}
+
 /** Posición actual (tras posar) de la parte de la mano que toca. */
 function handPart(
   rig: VrmRig,
@@ -406,12 +422,8 @@ function handPart(
   const palmCenter = () => {
     const ps = [1, 4].map((i) => bonePos(rig, toModel, arm.fingers[i]!.bones[0])).filter(Boolean) as THREE.Vector3[];
     const c = mean([wrist, wrist, ...ps]);
-    const handNode = rig.vrm.humanoid.getNormalizedBoneNode(ARM[side].hand)!;
-    const q = handNode.getWorldQuaternion(new THREE.Quaternion())
-      .premultiply(new THREE.Quaternion().setFromRotationMatrix(toModel));
-    const normal = arm.palmRest.clone().applyQuaternion(q);
-    const knuckle = bonePos(rig, toModel, arm.fingers[2]!.bones[0]) ?? wrist;
-    return { c, normal, thick: 0.2 * knuckle.distanceTo(wrist) };
+    const { normal, thick } = palmFrame(rig, side, toModel);
+    return { c, normal, thick };
   };
   switch (part) {
     case "index":
@@ -441,17 +453,48 @@ function handPart(
   }
 }
 
-/** Punto (en el modelo) donde debe quedar la parte de la mano. */
-function contactPoint(rig: VrmRig, side: Side, c: Contact): THREE.Vector3 {
-  const L = rig.armLen;
+/** Superficie tocada, en el modelo: punto de la piel y normal hacia fuera. */
+type Touched = { p: THREE.Vector3; n: THREE.Vector3 };
+
+/**
+ * Dónde está lo que se toca. Los puntos del cuerpo salen de la malla; las partes de la
+ * otra mano, de su pose en este mismo keyframe (tiene que estar ya posada).
+ */
+function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Fingers): Touched {
+  if (isOtherHand(c.at)) {
+    const other: Side = side === "Right" ? "Left" : "Right";
+    const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
+    root.updateWorldMatrix(true, true);
+    const toModel = root.matrixWorld.clone().invert();
+    const frame = palmFrame(rig, other, toModel);
+    switch (c.at) {
+      case "otherPalm":
+        return { p: handPart(rig, other, "palm", otherFingers, toModel), n: frame.normal };
+      case "otherBack":
+        return { p: handPart(rig, other, "back", otherFingers, toModel), n: frame.normal.clone().negate() };
+      case "otherTips":
+        return {
+          p: handPart(rig, other, "tips", otherFingers, toModel),
+          n: frame.knuckle.clone().sub(frame.wrist).normalize(),
+        };
+      case "otherWrist":
+        return { p: frame.wrist.clone().addScaledVector(frame.normal, frame.thick), n: frame.normal };
+    }
+  }
   const s = surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
   const local = (v: [number, number, number]) =>
     rig.right.clone().multiplyScalar(v[0]).addScaledVector(rig.up, v[1]).addScaledVector(rig.forward, v[2]);
+  return { p: rig.eyes.clone().add(local(s.p)), n: local(s.n) };
+}
+
+/** Punto (en el modelo) donde debe quedar la parte de la mano. */
+function contactPoint(rig: VrmRig, side: Side, c: Contact, otherFingers: Fingers): THREE.Vector3 {
+  const L = rig.armLen;
+  const touched = touchedSurface(rig, side, c, otherFingers);
   const outward = rig.right.clone().multiplyScalar(side === "Right" ? 1 : -1);
   const skin = c.with === "palm" || c.with === "back" ? SKIN / 2 : SKIN;
-  return rig.eyes.clone()
-    .add(local(s.p))
-    .addScaledVector(local(s.n), ((c.gap ?? 0) + skin) * L)
+  return touched.p
+    .addScaledVector(touched.n, ((c.gap ?? 0) + skin) * L)
     .addScaledVector(outward, (c.offset?.[0] ?? 0) * L)
     .addScaledVector(rig.up, (c.offset?.[1] ?? 0) * L);
 }
@@ -461,8 +504,15 @@ function contactPoint(rig: VrmRig, side: Side, c: Contact): THREE.Vector3 {
  * cambia un poco de orientación al mover el antebrazo, así que se corrige
  * unas cuantas veces hasta que el error es despreciable.
  */
-function reachContact(rig: VrmRig, side: Side, goal: ArmGoal, fingers: Fingers, c: Contact): THREE.Vector3 {
-  const want = contactPoint(rig, side, c);
+function reachContact(
+  rig: VrmRig,
+  side: Side,
+  goal: ArmGoal,
+  fingers: Fingers,
+  c: Contact,
+  otherFingers: Fingers,
+): THREE.Vector3 {
+  const want = contactPoint(rig, side, c, otherFingers);
   const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
   root.updateWorldMatrix(true, false);
   const toModel = root.matrixWorld.clone().invert();
@@ -483,18 +533,27 @@ function reachContact(rig: VrmRig, side: Side, goal: ArmGoal, fingers: Fingers, 
  * sale de `reachContact`; sin él, se mantiene delante de la cara para que la
  * mano no atraviese la cabeza.
  */
-function resolveHand(rig: VrmRig, side: Side, hand: HandSpec, fingers: Fingers): HandSpec {
+function resolveHand(
+  rig: VrmRig,
+  side: Side,
+  hand: HandSpec,
+  fingers: Fingers,
+  /** Dedos de la otra mano si está signando (y ya posada); null si está en reposo. */
+  otherFingers: Fingers | null,
+): HandSpec {
   const { contact, ...rest } = hand;
   const L = rig.armLen;
-  if (!contact) {
+  // Tocar la otra mano solo tiene sentido si la otra mano está en el signo.
+  if (!contact || (isOtherHand(contact.at) && !otherFingers)) {
     const minFwd = rig.faceFwd + 0.12 * L;
     const fwd = Math.max(Math.max(0.55 * L, minFwd) + hand.z * 0.9 * L, minFwd);
     return { ...rest, z: (fwd / L - 0.55) / 0.9 };
   }
-  const oriented = { ...rest, ...contactOrientation(rig, side, contact, hand) };
+  const other = otherFingers ?? RELAXED;
+  const oriented = { ...rest, ...contactOrientation(rig, side, contact, hand, other) };
   const goal = signingGoal(rig, side, oriented);
   const free = goal.target.clone();
-  const touch = reachContact(rig, side, goal, fingers, contact);
+  const touch = reachContact(rig, side, goal, fingers, contact, other);
   return { ...oriented, ...toSigningSpace(rig, side, free.lerp(touch, contact.weight ?? 1)) };
 }
 
@@ -512,8 +571,11 @@ function contactOrientation(
   side: Side,
   c: Contact,
   hand: HandSpec,
+  otherFingers: Fingers,
 ): Pick<HandSpec, "palmDir" | "pointDir"> {
-  const n = new THREE.Vector3(...surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left").n);
+  // Normal de lo tocado, en espacio del signante (x su derecha, y arriba, z adelante).
+  const m = touchedSurface(rig, side, c, otherFingers).n;
+  const n = new THREE.Vector3(m.dot(rig.right), m.dot(rig.up), m.dot(rig.forward)).normalize();
   const up = new THREE.Vector3(0, 1, 0);
   const fwd = new THREE.Vector3(0, 0, 1);
   const medial = new THREE.Vector3(side === "Right" ? -1 : 1, 0, 0);
@@ -553,11 +615,16 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
   if (cached) return cached;
   const resolved: AvatarClip = {
     ...clip,
-    keyframes: clip.keyframes.map((kf) => ({
-      ...kf,
-      hand: resolveHand(rig, "Right", kf.hand, kf.fingers),
-      hand2: kf.hand2 && resolveHand(rig, "Left", kf.hand2, kf.fingers2 ?? kf.fingers),
-    })),
+    keyframes: clip.keyframes.map((kf) => {
+      // La mano pasiva primero: la dominante puede tocarla, y para eso tiene que estar posada.
+      const fingers2 = kf.fingers2 ?? kf.fingers;
+      const hand2 = kf.hand2 && resolveHand(rig, "Left", kf.hand2, fingers2, null);
+      if (hand2) {
+        poseArm(rig, "Left", signingGoal(rig, "Left", hand2));
+        poseFingers(rig, "Left", fingers2);
+      }
+      return { ...kf, hand: resolveHand(rig, "Right", kf.hand, kf.fingers, hand2 ? fingers2 : null), hand2 };
+    }),
   };
   rig.resolved.set(clip, resolved);
   return resolved;

@@ -15,6 +15,12 @@ export const BODY_POINTS = [
 ] as const;
 export type BodyPointName = (typeof BODY_POINTS)[number];
 
+/** Partes de la otra mano (signos a dos manos): se calculan con la pose de cada keyframe. */
+export const OTHER_HAND_POINTS = ["otherPalm", "otherBack", "otherTips", "otherWrist"] as const;
+export type OtherHandPoint = (typeof OTHER_HAND_POINTS)[number];
+export const isOtherHand = (name: string): name is OtherHandPoint =>
+  (OTHER_HAND_POINTS as readonly string[]).includes(name);
+
 /** Puntos que existen a cada lado; el lado lo pone la mano que toca. */
 const SIDED = ["eye", "cheek", "temple", "ear", "shoulder"] as const;
 type SidedPoint = (typeof SIDED)[number];

@@ -47,6 +47,17 @@
               "answer": "lluvia"
             },
             {
+              "id": "B2.U1.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "LLUVIA",
+              "options": [
+                "LLUVIA",
+                "SOL",
+                "VIENTO"
+              ]
+            },
+            {
               "id": "B2.U1.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -127,6 +138,17 @@
                 "temperatura"
               ],
               "answer": "verano"
+            },
+            {
+              "id": "B2.U1.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "VERANO",
+              "options": [
+                "VERANO",
+                "PRIMAVERA",
+                "OTONO"
+              ]
             },
             {
               "id": "B2.U1.L2.E3",
@@ -216,6 +238,17 @@
               "answer": "enfermero / enfermera"
             },
             {
+              "id": "B2.U2.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "ENFERMERO",
+              "options": [
+                "ENFERMERO",
+                "MEDICO_P",
+                "PROFESOR"
+              ]
+            },
+            {
               "id": "B2.U2.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -298,6 +331,17 @@
                 "conductor / conductora"
               ],
               "answer": "ingeniero / ingeniera"
+            },
+            {
+              "id": "B2.U2.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "ABOGADO",
+              "options": [
+                "ABOGADO",
+                "INGENIERO",
+                "PERIODISTA"
+              ]
             },
             {
               "id": "B2.U2.L2.E3",
@@ -388,6 +432,17 @@
               "answer": "libertad"
             },
             {
+              "id": "B2.U3.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "DERECHO",
+              "options": [
+                "DERECHO",
+                "LIBERTAD",
+                "IGUALDAD"
+              ]
+            },
+            {
               "id": "B2.U3.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -468,6 +523,17 @@
                 "solidario"
               ],
               "answer": "democracia"
+            },
+            {
+              "id": "B2.U3.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "VOTO",
+              "options": [
+                "VOTO",
+                "DEMOCRACIA",
+                "PROHIBIDO"
+              ]
             },
             {
               "id": "B2.U3.L2.E3",
@@ -559,6 +625,17 @@
               "answer": "redes sociales"
             },
             {
+              "id": "B2.U4.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "REDES_SOCIALES",
+              "options": [
+                "REDES_SOCIALES",
+                "INTERNET",
+                "PROGRAMA"
+              ]
+            },
+            {
               "id": "B2.U4.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -639,6 +716,17 @@
                 "videollamada"
               ],
               "answer": "privacidad"
+            },
+            {
+              "id": "B2.U4.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "NOTICIAS",
+              "options": [
+                "NOTICIAS",
+                "PRIVACIDAD",
+                "TECNOLOGIA"
+              ]
             },
             {
               "id": "B2.U4.L2.E3",

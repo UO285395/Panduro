@@ -21,7 +21,7 @@ export function cardIdsForLesson(lesson: Lesson): CardId[] {
   for (const s of lesson.signs) out.add(signCardId(s));
   for (const ex of lesson.exercises) {
     if (ex.type === "sign_this") out.add(letterCardId(ex.letterId));
-    else if (ex.type === "multiple_choice" || ex.type === "type_word") {
+    else if (ex.type === "multiple_choice" || ex.type === "type_word" || ex.type === "pick_sign") {
       out.add(signCardId(ex.signId));
     } else if (ex.type === "match_pairs") {
       for (const p of ex.pairs) out.add(signCardId(p.signId));

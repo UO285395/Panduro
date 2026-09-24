@@ -11337,6 +11337,17 @@
               "answer": "Adiós"
             },
             {
+              "id": "a1.u1.l1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "BUENAS_TARDES",
+              "options": [
+                "BUENAS_TARDES",
+                "HOLA",
+                "ADIOS"
+              ]
+            },
+            {
               "id": "a1.u1.l1.e3",
               "type": "multiple_choice",
               "prompt": "Es de mañana. ¿Cómo saludas?",
@@ -11421,6 +11432,17 @@
                 "No"
               ],
               "answer": "Por favor"
+            },
+            {
+              "id": "a1.u1.l2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "PERDON",
+              "options": [
+                "PERDON",
+                "GRACIAS",
+                "POR_FAVOR"
+              ]
             },
             {
               "id": "a1.u1.l2.e3",
@@ -11509,6 +11531,17 @@
                 "Perdón"
               ],
               "answer": "¿Cómo estás?"
+            },
+            {
+              "id": "a1.u1.l3.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "MAL",
+              "options": [
+                "MAL",
+                "YO",
+                "TU"
+              ]
             },
             {
               "id": "a1.u1.l3.e3",
@@ -11880,6 +11913,17 @@
               "answer": "Tres"
             },
             {
+              "id": "a1.u3.l1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "NUM_2",
+              "options": [
+                "NUM_2",
+                "NUM_1",
+                "NUM_3"
+              ]
+            },
+            {
               "id": "a1.u3.l1.e3",
               "type": "type_word",
               "prompt": "Escribe el número.",
@@ -11938,6 +11982,17 @@
                 "Nueve"
               ],
               "answer": "Siete"
+            },
+            {
+              "id": "a1.u3.l2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "NUM_6",
+              "options": [
+                "NUM_6",
+                "NUM_7",
+                "NUM_8"
+              ]
             },
             {
               "id": "a1.u3.l2.e2",
@@ -12020,6 +12075,17 @@
               "answer": "Madre"
             },
             {
+              "id": "a1.u4.l1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "HERMANO",
+              "options": [
+                "HERMANO",
+                "PADRE",
+                "MADRE"
+              ]
+            },
+            {
               "id": "a1.u4.l1.e3",
               "type": "type_word",
               "prompt": "Escribe la traducción.",
@@ -12092,6 +12158,17 @@
                 "Fruta"
               ],
               "answer": "Comida"
+            },
+            {
+              "id": "a1.u4.l2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "PAN",
+              "options": [
+                "PAN",
+                "AGUA",
+                "LECHE"
+              ]
             },
             {
               "id": "a1.u4.l2.e3",
@@ -12189,6 +12266,17 @@
                 "Rosa"
               ],
               "answer": "Verde"
+            },
+            {
+              "id": "a1.u5.l1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "NARANJA",
+              "options": [
+                "NARANJA",
+                "ROJO",
+                "AZUL"
+              ]
             },
             {
               "id": "a1.u5.l1.e4",
@@ -12289,6 +12377,17 @@
                 "Blanco"
               ],
               "answer": "Rosa"
+            },
+            {
+              "id": "a1.u5.l2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "MORADO",
+              "options": [
+                "MORADO",
+                "NARANJA",
+                "ROSA"
+              ]
             },
             {
               "id": "a1.u5.l2.e4",
@@ -12399,6 +12498,17 @@
               "answer": "Enfadado"
             },
             {
+              "id": "a1.u6.l1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "NERVIOSO",
+              "options": [
+                "NERVIOSO",
+                "FELIZ",
+                "TRISTE"
+              ]
+            },
+            {
               "id": "a1.u6.l1.e4",
               "type": "multiple_choice",
               "prompt": "¿Cómo se siente?",
@@ -12500,6 +12610,17 @@
               "answer": "Alegre"
             },
             {
+              "id": "a1.u6.l2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "COMO_ESTAS",
+              "options": [
+                "COMO_ESTAS",
+                "BIEN",
+                "FELIZ"
+              ]
+            },
+            {
               "id": "a1.u6.l2.e4",
               "type": "multiple_choice",
               "prompt": "¿Qué signo expresa esta emoción?",
@@ -12594,6 +12715,17 @@
               "answer": "Entender"
             },
             {
+              "id": "a1.u7.l1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "NO_ENTIENDO",
+              "options": [
+                "NO_ENTIENDO",
+                "HABLAR",
+                "ENTENDER"
+              ]
+            },
+            {
               "id": "a1.u7.l1.e3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa?",
@@ -12678,6 +12810,17 @@
                 "Hablar"
               ],
               "answer": "No entiendo"
+            },
+            {
+              "id": "a1.u7.l2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "PUEDE_REPETIR",
+              "options": [
+                "PUEDE_REPETIR",
+                "ENTENDER",
+                "MAS_DESPACIO"
+              ]
             },
             {
               "id": "a1.u7.l2.e3",
@@ -12788,6 +12931,17 @@
               "answer": "Domingo"
             },
             {
+              "id": "a1.u8.l1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "JUEVES",
+              "options": [
+                "JUEVES",
+                "LUNES",
+                "MARTES"
+              ]
+            },
+            {
               "id": "a1.u8.l1.e4",
               "type": "multiple_choice",
               "prompt": "¿Qué día es este?",
@@ -12885,6 +13039,17 @@
                 "Ahora"
               ],
               "answer": "Mañana"
+            },
+            {
+              "id": "a1.u8.l2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "MANANA_DIA",
+              "options": [
+                "MANANA_DIA",
+                "HOY",
+                "AYER"
+              ]
             },
             {
               "id": "a1.u8.l2.e4",

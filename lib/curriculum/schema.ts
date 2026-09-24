@@ -158,8 +158,16 @@ const SignWordExercise = ExerciseBase.extend({
   voteWindowMs: z.number().int().min(500).max(6000).default(2500),
 });
 
+// Al revés que multiple_choice: se da la palabra y se elige su signo entre varios.
+const PickSignExercise = ExerciseBase.extend({
+  type: z.literal("pick_sign"),
+  signId: z.string().min(1), // la respuesta
+  options: z.array(z.string().min(1)).min(2).max(4), // signIds, incluye signId
+});
+
 export const ExerciseSchema = z.discriminatedUnion("type", [
   MultipleChoiceExercise,
+  PickSignExercise,
   MatchPairsExercise,
   TypeWordExercise,
   SignThisExercise,
@@ -233,6 +241,14 @@ export function validateLevel(level: Level): { ok: true } | { ok: false; errors:
         if (ex.type === "type_word") {
           if (!signIds.has(ex.signId)) {
             errors.push(`Ejercicio ${ex.id}: signo desconocido "${ex.signId}"`);
+          }
+        }
+        if (ex.type === "pick_sign") {
+          for (const sid of ex.options) {
+            if (!signIds.has(sid)) errors.push(`Ejercicio ${ex.id}: signo desconocido "${sid}"`);
+          }
+          if (!ex.options.includes(ex.signId)) {
+            errors.push(`Ejercicio ${ex.id}: la respuesta "${ex.signId}" no está entre las opciones`);
           }
         }
       }

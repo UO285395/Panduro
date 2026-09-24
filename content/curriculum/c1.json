@@ -47,6 +47,17 @@
               "answer": "conferencia"
             },
             {
+              "id": "C1.U1.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "CONFERENCIA",
+              "options": [
+                "CONFERENCIA",
+                "DISCURSO",
+                "PRESENTAR"
+              ]
+            },
+            {
               "id": "C1.U1.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -127,6 +138,17 @@
                 "llegar a un acuerdo"
               ],
               "answer": "debatir"
+            },
+            {
+              "id": "C1.U1.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "PROPONER",
+              "options": [
+                "PROPONER",
+                "DEBATIR",
+                "NEGOCIAR"
+              ]
             },
             {
               "id": "C1.U1.L2.E3",
@@ -218,6 +240,17 @@
               "answer": "poesía"
             },
             {
+              "id": "C1.U2.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "POESIA",
+              "options": [
+                "POESIA",
+                "NOVELA",
+                "TEATRO"
+              ]
+            },
+            {
               "id": "C1.U2.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -298,6 +331,17 @@
                 "tradición"
               ],
               "answer": "historia"
+            },
+            {
+              "id": "C1.U2.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "ARQUITECTURA",
+              "options": [
+                "ARQUITECTURA",
+                "FILOSOFIA",
+                "HISTORIA"
+              ]
             },
             {
               "id": "C1.U2.L2.E3",
@@ -390,6 +434,17 @@
               "answer": "hipótesis"
             },
             {
+              "id": "C1.U3.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "HIPOTESIS",
+              "options": [
+                "HIPOTESIS",
+                "INVESTIGAR",
+                "EXPERIMENTO"
+              ]
+            },
+            {
               "id": "C1.U3.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -470,6 +525,17 @@
                 "interpretar"
               ],
               "answer": "demostrar"
+            },
+            {
+              "id": "C1.U3.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "DEMOSTRAR",
+              "options": [
+                "DEMOSTRAR",
+                "ANALIZAR",
+                "COMPARAR"
+              ]
             },
             {
               "id": "C1.U3.L2.E3",
@@ -561,6 +627,17 @@
               "answer": "migración"
             },
             {
+              "id": "C1.U4.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "MIGRACION",
+              "options": [
+                "MIGRACION",
+                "GLOBALIZACION",
+                "MEDIOAMBIENTE"
+              ]
+            },
+            {
               "id": "C1.U4.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -642,6 +719,17 @@
                 "riqueza"
               ],
               "answer": "paz"
+            },
+            {
+              "id": "C1.U4.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "RIQUEZA",
+              "options": [
+                "RIQUEZA",
+                "CONFLICTO",
+                "PAZ_C1"
+              ]
             },
             {
               "id": "C1.U4.L2.E3",

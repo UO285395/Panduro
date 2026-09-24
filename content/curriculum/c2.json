@@ -47,6 +47,17 @@
               "answer": "ambigüedad"
             },
             {
+              "id": "C2.U1.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "SUTILEZA",
+              "options": [
+                "SUTILEZA",
+                "MATIZ",
+                "AMBIGUEDAD"
+              ]
+            },
+            {
               "id": "C2.U1.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -127,6 +138,17 @@
                 "registro lingüístico"
               ],
               "answer": "metáfora"
+            },
+            {
+              "id": "C2.U1.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "REGISTRO_C2",
+              "options": [
+                "REGISTRO_C2",
+                "FORMAL_C2",
+                "COLOQUIAL"
+              ]
             },
             {
               "id": "C2.U1.L2.E3",
@@ -219,6 +241,17 @@
               "answer": "identidad"
             },
             {
+              "id": "C2.U2.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "IDENTIDAD",
+              "options": [
+                "IDENTIDAD",
+                "CULTURA_SORDA",
+                "COMUNIDAD"
+              ]
+            },
+            {
               "id": "C2.U2.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -299,6 +332,17 @@
                 "accesibilidad"
               ],
               "answer": "discriminación"
+            },
+            {
+              "id": "C2.U2.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "ACCESIBILIDAD",
+              "options": [
+                "ACCESIBILIDAD",
+                "ADAPTACION",
+                "NORMALIZACION"
+              ]
             },
             {
               "id": "C2.U2.L2.E3",
@@ -390,6 +434,17 @@
               "answer": "concepto"
             },
             {
+              "id": "C2.U3.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "CONCRETO",
+              "options": [
+                "CONCRETO",
+                "ABSTRACTO",
+                "CONCEPTO"
+              ]
+            },
+            {
               "id": "C2.U3.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -470,6 +525,17 @@
                 "sintetizar"
               ],
               "answer": "coherencia"
+            },
+            {
+              "id": "C2.U3.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "DIMENSION",
+              "options": [
+                "DIMENSION",
+                "COMPLEJIDAD",
+                "COHERENCIA"
+              ]
             },
             {
               "id": "C2.U3.L2.E3",
@@ -561,6 +627,17 @@
               "answer": "consecutivo"
             },
             {
+              "id": "C2.U4.L1.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "SIMULTANEOUS",
+              "options": [
+                "SIMULTANEOUS",
+                "CONSECUTIVO",
+                "FIDELIDAD"
+              ]
+            },
+            {
               "id": "C2.U4.L1.E3",
               "type": "multiple_choice",
               "prompt": "¿Qué significa este signo?",
@@ -641,6 +718,17 @@
                 "glosado"
               ],
               "answer": "espontáneo"
+            },
+            {
+              "id": "C2.U4.L2.p1",
+              "type": "pick_sign",
+              "prompt": "¿Cuál es el signo de…?",
+              "signId": "ESPONTANEO",
+              "options": [
+                "ESPONTANEO",
+                "PROSODIA",
+                "PLANIFICADO"
+              ]
             },
             {
               "id": "C2.U4.L2.E3",

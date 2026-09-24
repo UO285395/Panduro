@@ -14,7 +14,10 @@ import { TypeWord } from "@/components/exercises/TypeWord";
 import { SignThis } from "@/components/exercises/SignThis";
 import { MotionThis } from "@/components/exercises/MotionThis";
 import { SignWord } from "@/components/exercises/SignWord";
+import { PickSign } from "@/components/exercises/PickSign";
+import { LearnCard } from "@/components/lesson/LearnCard";
 import type { MascotState } from "@/components/mascot/ThingMascot";
+import { isRetryable, planLesson, type LessonStep } from "@/lib/lesson/plan";
 
 const ThingMascot = dynamic(
   () => import("@/components/mascot/ThingMascot").then((m) => ({ default: m.ThingMascot })),
@@ -33,6 +36,10 @@ export function LessonRunner({
   signs: SignRecord;
 }) {
   const router = useRouter();
+  // Presentaciones intercaladas y, al final, los fallos para repetir una vez.
+  const [steps, setSteps] = useState<LessonStep[]>(() =>
+    planLesson(lesson, new Set(Object.keys(signs).filter((id) => signs[id]))),
+  );
   const [step, setStep] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [heartsUsed, setHeartsUsed] = useState(0);
@@ -52,8 +59,11 @@ export function LessonRunner({
     };
   }, []);
 
+  // La puntuación cuenta el primer intento de cada ejercicio; las repeticiones son práctica.
   const total = lesson.exercises.length;
-  const current = lesson.exercises[step];
+  const currentStep = steps[step]!;
+  const current = currentStep.kind === "exercise" ? currentStep.exercise : null;
+  const retrying = currentStep.kind === "exercise" && currentStep.retry;
   const heartsLeft = Math.max(0, MAX_HEARTS - heartsUsed);
   const outOfHearts = heartsLeft === 0;
 
@@ -64,18 +74,26 @@ export function LessonRunner({
   }
 
   function onAnswer(isCorrect: boolean) {
+    if (!current) return;
     if (isCorrect) {
-      setCorrect((c) => c + 1);
-      setFeedback({ kind: "correct", message: "¡Correcto!" });
+      if (!retrying) setCorrect((c) => c + 1);
+      setFeedback({ kind: "correct", message: retrying ? "¡Ahora sí!" : "¡Correcto!" });
       triggerMascot("correct", 2000);
     } else {
-      // Los ejercicios de cámara no consumen corazones: el ruido óptico puede
-      // provocar falsos negativos que frustrarían al estudiante sin motivo.
-      const consumes = current.type !== "sign_this" && current.type !== "motion_this" && current.type !== "sign_word";
-      if (consumes) setHeartsUsed((h) => h + 1);
+      // Los ejercicios de cámara no consumen corazones ni se repiten: el ruido óptico
+      // puede provocar falsos negativos que frustrarían al estudiante sin motivo.
+      const consumes = isRetryable(current);
+      if (consumes && !retrying) {
+        setHeartsUsed((h) => h + 1);
+        setSteps((all) => [...all, { kind: "exercise", exercise: current, retry: true }]);
+      }
       setFeedback({
         kind: "wrong",
-        message: consumes ? "Casi. ¡Sigue!" : "No se reconoció bien. Vamos a otra.",
+        message: !consumes
+          ? "No se reconoció bien. Vamos a otra."
+          : retrying
+            ? "Repásalo en el glosario cuando acabes."
+            : "Casi. Lo repetirás al final.",
       });
       triggerMascot("incorrect", 2000);
     }
@@ -83,7 +101,7 @@ export function LessonRunner({
 
   function onNext() {
     setFeedback(null);
-    if (step + 1 < total) {
+    if (step + 1 < steps.length) {
       setStep(step + 1);
     } else {
       triggerMascot("celebrate", 2500);
@@ -119,6 +137,7 @@ export function LessonRunner({
     return (
       <Result
         result={result}
+        learned={lesson.signs.map((id) => signs[id]).filter((x): x is Sign => !!x)}
         onContinue={() => {
           router.push("/dashboard");
           router.refresh();
@@ -132,17 +151,29 @@ export function LessonRunner({
       <Header
         title={lesson.title}
         step={step}
-        total={total}
+        total={steps.length}
         heartsLeft={heartsLeft}
       />
 
-      <ExerciseView
-        key={current.id}
-        exercise={current}
-        signs={signs}
-        onAnswer={onAnswer}
-        disabled={feedback !== null}
-      />
+      {retrying && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+          Repaso: este lo fallaste antes.
+        </p>
+      )}
+
+      {currentStep.kind === "learn" ? (
+        signs[currentStep.signId] ? (
+          <LearnCard key={`learn-${step}`} sign={signs[currentStep.signId]!} onContinue={onNext} />
+        ) : null
+      ) : (
+        <ExerciseView
+          key={`${currentStep.exercise.id}-${step}`}
+          exercise={currentStep.exercise}
+          signs={signs}
+          onAnswer={onAnswer}
+          disabled={feedback !== null}
+        />
+      )}
 
       {feedback && (
         <FeedbackBar
@@ -150,7 +181,7 @@ export function LessonRunner({
           message={feedback.message}
           onNext={onNext}
           submitting={submitting}
-          isLast={step + 1 === total}
+          isLast={step + 1 === steps.length}
         />
       )}
 
@@ -239,6 +270,14 @@ function ExerciseView({
           onAnswer={onAnswer}
           disabled={disabled}
         />
+      );
+    }
+    case "pick_sign": {
+      const sign = signs[exercise.signId];
+      const options = exercise.options.map((id) => signs[id]).filter((x): x is Sign => !!x);
+      if (!sign || options.length < 2) return null;
+      return (
+        <PickSign exercise={exercise} sign={sign} options={options} onAnswer={onAnswer} disabled={disabled} />
       );
     }
     case "type_word": {
@@ -351,9 +390,11 @@ function OutOfHearts({ onExit }: { onExit: () => void }) {
 
 function Result({
   result,
+  learned,
   onContinue,
 }: {
   result: { xp: number; bestScore: number; perfected: boolean };
+  learned: Sign[];
   onContinue: () => void;
 }) {
   return (
@@ -368,6 +409,23 @@ function Result({
         <dt className="text-slate-500">Puntuación</dt>
         <dd className="text-right font-semibold">{result.bestScore}%</dd>
       </dl>
+      {learned.length > 0 && (
+        <div className="space-y-2 text-left">
+          <h2 className="text-sm font-semibold text-slate-500">Signos de esta lección</h2>
+          <ul className="flex flex-wrap gap-2">
+            {learned.map((s) => (
+              <li key={s.id}>
+                <Link
+                  href={`/glossary/${s.id}`}
+                  className="inline-block rounded-full border border-slate-200 px-3 py-1 text-sm hover:border-brand-400 dark:border-slate-700"
+                >
+                  {s.translation}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <button
         type="button"
         onClick={onContinue}

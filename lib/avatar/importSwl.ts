@@ -1,7 +1,7 @@
 import type { Point3 } from "@/lib/mediapipe/types";
 import { assignHands, framesToClip, type CaptureFrame, type CaptureResult } from "./capture";
 
-/** Formato que escribe scripts/swl_lse_export.py. */
+/** Formato que escriben scripts/swl_lse_export.py y scripts/videos_to_signs.py. */
 type Triple = [number, number, number];
 export type SwlFrame = {
   poseWorld: [number, number, number, number][] | null;
@@ -9,7 +9,8 @@ export type SwlFrame = {
   wrists: [Triple, Triple] | null;
   hands: { image: Triple[]; world: Triple[] }[];
 };
-export type SwlSample = { sample: string; label: string; frames: SwlFrame[] };
+/** `fps` por muestra cuando los vídeos no comparten frecuencia (scripts/videos_to_signs.py). */
+export type SwlSample = { sample: string; label: string; frames: SwlFrame[]; fps?: number };
 export type SwlExport = {
   source: string;
   license: string;

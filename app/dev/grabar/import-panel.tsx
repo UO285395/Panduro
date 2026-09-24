@@ -20,7 +20,7 @@ export function ImportPanel() {
       const data = JSON.parse(await file.text()) as SwlExport;
       if (!data.signs || !data.fps) throw new Error();
       const next = Object.entries(data.signs).map(([signId, samples]) => {
-        const converted = samples.map((s) => ({ sample: s.sample, label: s.label, ...convertSample(s.frames, data.fps) }));
+        const converted = samples.map((s) => ({ sample: s.sample, label: s.label, ...convertSample(s.frames, s.fps ?? data.fps) }));
         const firstOk = converted.findIndex((c) => c.result.ok);
         return { signId, samples: converted, chosen: Math.max(0, firstOk), include: firstOk >= 0 };
       });
@@ -28,7 +28,7 @@ export function ImportPanel() {
       setMeta({ source: data.source, license: data.license, doi: data.doi });
       setPreview(next.find((r) => r.include)?.signId ?? null);
     } catch {
-      setError("No es un archivo generado con scripts/swl_lse_export.py.");
+      setError("No es un archivo generado con scripts/swl_lse_export.py ni scripts/videos_to_signs.py.");
     }
   }
 
@@ -47,7 +47,7 @@ export function ImportPanel() {
         avatarClip: c.result.clip,
         templates: c.result.templates,
         recordedAt: new Date().toISOString(),
-        source: `${meta.source} (${meta.license}, doi:${meta.doi}) · muestra ${c.sample}${c.leftHanded ? " · signante zurdo" : ""}`,
+        source: `${meta.source} (${meta.license}${meta.doi ? `, ${/^https?:/.test(meta.doi) ? meta.doi : `doi:${meta.doi}`}` : ""}) · muestra ${c.sample}${c.leftHanded ? " · signante zurdo" : ""}`,
       };
     }
     const url = URL.createObjectURL(
@@ -66,11 +66,12 @@ export function ImportPanel() {
   return (
     <section className="space-y-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">Importar de SWL-LSE</h2>
+        <h2 className="text-lg font-semibold">Importar landmarks (SWL-LSE o vídeos)</h2>
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          Carga el JSON que genera <code>python scripts/swl_lse_export.py</code> a partir de los
-          datos de Zenodo. Cada muestra se convierte aquí, con el mismo proceso que una grabación;
-          elige la mejor de cada signo mirando el avatar y descarga las seleccionadas.
+          Carga el JSON de <code>scripts/swl_lse_export.py</code> (datos de SWL-LSE en Zenodo) o
+          de <code>scripts/videos_to_signs.py</code> (cualquier carpeta de vídeos de signos, p. ej.
+          los del diccionario DILSE). Cada muestra se convierte aquí, con el mismo proceso que una
+          grabación; elige la mejor de cada signo mirando el avatar y descarga las seleccionadas.
         </p>
         <input
           type="file"
@@ -164,8 +165,8 @@ export function ImportPanel() {
             Descargar {selected.length} signo{selected.length === 1 ? "" : "s"}
           </button>
           <p className="text-xs text-slate-500">
-            Después: <code>node scripts/add-captured.mjs swl-lse-signos.json</code>. La atribución
-            (CC BY 4.0) queda guardada en cada signo.
+            Después: <code>node scripts/add-captured.mjs swl-lse-signos.json</code>. La fuente y la
+            licencia ({meta?.license}) quedan guardadas en cada signo: añádelas también a CREDITS.md.
           </p>
         </div>
       )}

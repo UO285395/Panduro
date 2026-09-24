@@ -69,3 +69,6 @@ swl-lse*.json
 # Modelo 3D de la mascota (cada modelo de Sketchfab tiene su licencia): solo en local.
 /public/mascot/*
 !/public/mascot/README.md
+
+# Modelos de MediaPipe que descargan los scripts de Python
+/.cache/

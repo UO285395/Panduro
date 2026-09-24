@@ -1,0 +1,45 @@
+import type { LandmarkFrame } from '@/lib/esku/domain/landmarks/value-objects/LandmarkFrame';
+import type { SignCandidate } from '../value-objects/Gloss';
+import type { RawScore, SignatureProfile } from '../value-objects/RecognitionDiagnostics';
+
+/**
+ * The single port every recognition engine implements, so the application layer never
+ * knows whether an answer came from a trained ONNX head, a geometric handshape table or
+ * the user's own taught examples.
+ *
+ * `classify` takes a window rather than a frame because dynamic signs only exist over
+ * time; a static-handshape engine is free to look at the last frame alone.
+ */
+/**
+ * `frame` engines read a held pose and are asked on every frame — a fingerspelled letter is
+ * a shape you hold. `window` engines read a whole movement and are asked only once a sign
+ * has visibly ended. Routing on this is the difference between spelling a letter as you hold
+ * it and waiting for a sign to finish.
+ */
+export type Granularity = 'frame' | 'window';
+
+export interface ISignClassifier {
+  readonly id: string;
+  readonly granularity: Granularity;
+  /** Whether this engine can answer right now (weights loaded, prototypes present…). */
+  isReady(): boolean;
+  /** Loads whatever the engine needs. Safe to call twice. */
+  load(): Promise<void>;
+  classify(window: readonly LandmarkFrame[]): Promise<readonly SignCandidate[]>;
+  /**
+   * Best guesses from the last `classify`, *before* the engine's own confidence floor.
+   *
+   * Optional because only the vocabulary engine has a floor worth seeing through. Without
+   * it a rejected sign is indistinguishable from a sign never classified: `classify`
+   * returns an empty array in both cases.
+   */
+  readonly lastScores?: readonly RawScore[];
+  /** The feature vector the last `classify` was fed, summarised per body part. */
+  readonly lastSignatureProfile?: SignatureProfile | null;
+  /**
+   * Whether the last `classify` returned nothing because the model said so, rather than
+   * because its floor rejected every option. Both leave `classify` empty and they mean
+   * opposite things: an abstention is an answer, a floor rejection is a near miss.
+   */
+  readonly lastAbstained?: boolean;
+}

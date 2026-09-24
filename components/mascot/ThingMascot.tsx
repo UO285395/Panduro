@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { THING_CLIPS } from "@/lib/mascot/clips";
+import { loadMascotModel, type LoadedMascot } from "@/lib/mascot/loadMascot";
+import { MOOD_MS, mascotPose, pickClip, type MascotMood } from "@/lib/mascot/modelMotion";
 import { sampleClip } from "@/lib/avatar/interpolate";
 import { distributeFlex } from "@/lib/avatar/pose";
 import type { AvatarKeyframe } from "@/lib/curriculum/schema";
@@ -15,28 +17,41 @@ import {
   THUMB_ABDUCTION,
 } from "@/lib/avatar/rig";
 
-export type MascotState = "idle" | "correct" | "incorrect" | "celebrate";
+export type MascotState = MascotMood;
 
 type Props = {
   state: MascotState;
   className?: string;
+  /** Alto del lienzo en píxeles (el ancho es 4/5). */
+  size?: number;
 };
 
+const ASPECT = 96 / 120;
+
 /**
- * Mascota "Thing" de la Familia Addams: mano aislada con el antebrazo
- * emergiendo desde la parte inferior del canvas y los dedos apuntando
- * hacia arriba. Dedos con LatheGeometry cónica (misma calidad que el avatar).
+ * Mascota "Thing" de la Familia Addams. Si hay un modelo en public/mascot/ (p. ej. el
+ * de Sketchfab, ver public/mascot/README.md) se usa ese, animado entero según el estado
+ * y con sus propias animaciones si las trae. Si no, una mano procedimental con el
+ * antebrazo emergiendo y los dedos animados con THING_CLIPS.
  */
-export function ThingMascot({ state, className }: Props) {
+export function ThingMascot({ state, className, size = 120 }: Props) {
+  const H = size;
+  const W = Math.round(size * ASPECT);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mounted, setMounted] = useState(false);
+  // El estado cambia sin reconstruir la escena ni volver a cargar el modelo.
+  const moodRef = useRef({ state, since: 0 });
 
   useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    moodRef.current = { state, since: performance.now() };
+  }, [state]);
 
   useEffect(() => {
     if (!mounted) return;
     let disposed = false;
     let raf = 0;
+    let cleanup: (() => void) | null = null;
 
     (async () => {
       if (!canvasRef.current) return;
@@ -48,24 +63,13 @@ export function ThingMascot({ state, className }: Props) {
       }
       if (disposed) return;
 
-      const W = 96;
-      const H = 120;
       const canvas = canvasRef.current;
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(W, H, false);
+      cleanup = () => renderer.dispose();
 
       const scene = new THREE.Scene();
-
-      // Cámara ortográfica ampliada para que los clips no salgan del frustum.
-      const halfH = 0.28;
-      const halfW = halfH * (W / H);
-      const camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.01, 10);
-      camera.position.set(0, 0.02, 1.5);
-      camera.lookAt(0, 0.02, 0);
-      // Invertir el viewport: los dedos (+Y) aparecen abajo, el brazo (-Y) arriba.
-      camera.up.set(0, -1, 0);
-
       scene.add(new THREE.AmbientLight(0xffffff, 0.40));
       const key = new THREE.DirectionalLight(0xfffaf0, 1.00);
       key.position.set(0.8, 2, 2);
@@ -77,45 +81,140 @@ export function ThingMascot({ state, className }: Props) {
       rim.position.set(0, 1.5, -1.5);
       scene.add(rim);
 
-      const rig = buildThingRig(THREE);
-      scene.add(rig.group);
+      const loaded = await loadMascotModel();
+      if (disposed) return;
+      const frame = loaded
+        ? await modelScene(THREE, scene, loaded)
+        : proceduralScene(THREE, scene);
+      if (disposed) return;
 
-      const started = performance.now();
-      const clip = THING_CLIPS[state];
-      const looping = state === "idle";
-
+      const clock = new THREE.Clock();
       const loop = () => {
         if (disposed) return;
-        const dt = performance.now() - started;
-        const t = looping ? dt % clip.duration : Math.min(dt, clip.duration - 1);
-        const kf = sampleClip(clip, t);
-        rig.apply(kf);
-        renderer.render(scene, camera);
+        frame.update(moodRef.current.state, performance.now() - moodRef.current.since, clock.getDelta());
+        renderer.render(scene, frame.camera);
         raf = requestAnimationFrame(loop);
       };
       loop();
-
-      return () => { renderer.dispose(); };
     })();
 
     return () => {
       disposed = true;
       if (raf) cancelAnimationFrame(raf);
+      cleanup?.();
     };
-  }, [mounted, state]);
+  }, [mounted, W, H]);
 
   if (!mounted) return null;
 
   return (
     <canvas
       ref={canvasRef}
-      width={96}
-      height={120}
+      width={W}
+      height={H}
       aria-hidden
       className={className}
-      style={{ width: 96, height: 120 }}
+      style={{ width: W, height: H }}
     />
   );
+}
+
+type MascotFrame = {
+  camera: import("three").Camera;
+  update: (mood: MascotMood, sinceMoodMs: number, deltaS: number) => void;
+};
+
+/** Mano procedimental con los dedos animados por THING_CLIPS. */
+function proceduralScene(THREE: typeof import("three"), scene: import("three").Scene): MascotFrame {
+  // Cámara ortográfica ampliada para que los clips no salgan del frustum.
+  const halfH = 0.28;
+  const halfW = halfH * ASPECT;
+  const camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.01, 10);
+  camera.position.set(0, 0.02, 1.5);
+  camera.lookAt(0, 0.02, 0);
+  // Invertir el viewport: los dedos (+Y) aparecen abajo, el brazo (-Y) arriba.
+  camera.up.set(0, -1, 0);
+
+  const rig = buildThingRig(THREE);
+  scene.add(rig.group);
+  return {
+    camera,
+    update(mood, since) {
+      const clip = THING_CLIPS[mood];
+      const t = mood === "idle" ? since % clip.duration : Math.min(since, clip.duration - 1);
+      rig.apply(sampleClip(clip, t));
+    },
+  };
+}
+
+/**
+ * Modelo descargado: se normaliza a altura 1 apoyado en el suelo, se encuadra con sitio
+ * para los saltos y se anima entero (mascotPose). Si trae animaciones, suenan debajo.
+ */
+async function modelScene(
+  THREE: typeof import("three"),
+  scene: import("three").Scene,
+  { gltf, config }: LoadedMascot,
+): Promise<MascotFrame> {
+  const { clone } = await import("three/examples/jsm/utils/SkeletonUtils.js");
+  const model = clone(gltf.scene);
+  model.rotation.y = THREE.MathUtils.degToRad(config.rotateY ?? 0);
+
+  const fit = new THREE.Group();
+  fit.add(model);
+  const box = new THREE.Box3().setFromObject(fit, true);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  // Altura 1, apoyado en el suelo y centrado: los movimientos van en esas unidades.
+  const scale = 1 / Math.max(size.y, 1e-6);
+  model.position.set(-center.x, -box.min.y, -center.z);
+  fit.scale.setScalar(scale);
+
+  const holder = new THREE.Group();
+  holder.add(fit);
+  scene.add(holder);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a6a, 0.5));
+
+  // Encuadre: de los pies a lo más alto de un salto, y el ancho que ocupa al girar.
+  const reach = Math.hypot(size.x, size.z) * scale / 2;
+  const camera = new THREE.PerspectiveCamera(28, ASPECT, 0.01, 100);
+  const top = 1.32;
+  const bottom = -0.06;
+  const cy = (top + bottom) / 2;
+  const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = Math.max((top - bottom) / 2 / tanV, reach / (tanV * ASPECT)) + reach;
+  camera.position.set(0, cy + 0.08, dist);
+  camera.lookAt(0, cy, 0);
+
+  const mixer = gltf.animations.length && config.animation !== false ? new THREE.AnimationMixer(model) : null;
+  let playing: { mood: MascotMood; action: import("three").AnimationAction } | null = null;
+  const play = (mood: MascotMood) => {
+    if (!mixer || playing?.mood === mood) return;
+    const clip = pickClip(gltf.animations, mood);
+    if (!clip) return;
+    const action = mixer.clipAction(clip);
+    if (playing?.action === action) {
+      playing = { mood, action };
+      return;
+    }
+    action.reset().fadeIn(0.25).play();
+    playing?.action.fadeOut(0.25);
+    playing = { mood, action };
+  };
+
+  return {
+    camera,
+    update(mood, since, delta) {
+      const active = since < MOOD_MS[mood] ? mood : "idle";
+      play(active);
+      mixer?.update(delta);
+      const pose = mascotPose(mood, since, performance.now());
+      holder.position.y = pose.y;
+      holder.rotation.set(pose.rotX, pose.rotY, pose.rotZ);
+      const side = 1 / Math.sqrt(pose.squash);
+      holder.scale.set(side, pose.squash, side);
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------

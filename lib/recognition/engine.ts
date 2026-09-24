@@ -13,12 +13,9 @@ import {
 
 export const VOCABULARY_MANIFEST_URL = "/models/lse-vocabulary.json";
 
-/**
- * Motor de reconocimiento de Esku con las rutas de Panduro: cámara → MediaPipe (manos,
- * pose y cara) → alfabeto CTC por fotograma y vocabulario GRU por signo completo.
- */
-export function createRecognizer(video: HTMLVideoElement, opts: { vocabulary?: boolean } = {}) {
-  const source = new MediaPipeLandmarkSource(video, {
+/** Cámara → manos, pose y cara con MediaPipe, con la configuración de Esku. */
+export function createLandmarkSource(video: HTMLVideoElement) {
+  return new MediaPipeLandmarkSource(video, {
     wasmPath: WASM_BASE_URL,
     handModelPath: HAND_LANDMARKER_MODEL_URL,
     poseModelPath: POSE_LITE_MODEL_URL,
@@ -26,12 +23,37 @@ export function createRecognizer(video: HTMLVideoElement, opts: { vocabulary?: b
     maxHands: 2,
     faceIntervalMs: 1000,
   });
-  const alphabet = new CtcAlphabetClassifier("/models/lse-alphabet.json", "/models/lse-alphabet.bin");
-  const vocabulary =
-    opts.vocabulary === false
-      ? null
-      : new VocabularySignClassifier(VOCABULARY_MANIFEST_URL, "/models/lse-vocabulary.bin");
-  const classifiers = vocabulary ? [alphabet, vocabulary] : [alphabet];
+}
+
+export const createAlphabet = () =>
+  new CtcAlphabetClassifier("/models/lse-alphabet.json", "/models/lse-alphabet.bin");
+
+export const createVocabulary = () =>
+  new VocabularySignClassifier(VOCABULARY_MANIFEST_URL, "/models/lse-vocabulary.bin");
+
+let manifestConcepts: Promise<string[]> | null = null;
+
+/** Glosas que conoce el modelo de vocabulario (se descarga una vez). */
+export function vocabularyConcepts(): Promise<string[]> {
+  manifestConcepts ??= fetch(VOCABULARY_MANIFEST_URL)
+    .then((r) => r.json() as Promise<{ concepts: string[]; abstentionConcept: string | null }>)
+    .then((m) => m.concepts.filter((c) => c !== m.abstentionConcept))
+    .catch(() => {
+      manifestConcepts = null;
+      return [];
+    });
+  return manifestConcepts;
+}
+
+/**
+ * Motor completo para el traductor: alfabeto CTC por fotograma y vocabulario GRU por signo
+ * completo, orquestados por RecognizeSignsUseCase.
+ */
+export function createRecognizer(video: HTMLVideoElement) {
+  const source = createLandmarkSource(video);
+  const alphabet = createAlphabet();
+  const vocabulary = createVocabulary();
+  const classifiers = [alphabet, vocabulary];
   const recognize = new RecognizeSignsUseCase(source, classifiers);
 
   return {

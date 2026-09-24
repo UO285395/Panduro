@@ -1,23 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CameraFeed } from "@/components/camera/CameraFeed";
-import { HandOverlay } from "@/components/camera/HandOverlay";
-import { PerfBadge } from "@/components/camera/PerfBadge";
-import { HandTracker } from "@/lib/mediapipe/handTracker";
-import type { HandFrame, PerfStats } from "@/lib/mediapipe/types";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { LandmarkCamera } from "@/components/camera/LandmarkCamera";
 import type { Exercise } from "@/lib/curriculum/schema";
-import { extractFeatures } from "@/lib/recognition/features";
-import { KnnClassifier, withoutSameHandshape } from "@/lib/recognition/knn";
-import { refineWithRules } from "@/lib/recognition/rules";
-import {
-  getLetterMeta,
-  loadGlobalTemplates,
-  loadLocalTemplates,
-  saveLocalTemplate,
-} from "@/lib/recognition/templates";
-
-const MIN_TEMPLATES_PER_LETTER = 3;
+import type { LandmarkFrame } from "@/lib/esku/domain/landmarks/value-objects/LandmarkFrame";
+import { WEAK_LETTERS } from "@/lib/esku/infrastructure/recognition/CtcAlphabetClassifier";
+import { createAlphabet } from "@/lib/recognition/engine";
+import { getLetterMeta } from "@/lib/recognition/templates";
 
 type Props = {
   exercise: Extract<Exercise, { type: "sign_this" }>;
@@ -27,179 +16,74 @@ type Props = {
 
 type Phase =
   | { kind: "await_camera" }
-  | { kind: "calibrating"; captured: number }
-  | { kind: "evaluating"; startedAt: number }
+  | { kind: "evaluating"; startedAt: number | null }
   | { kind: "done"; correct: boolean };
 
+/** Tiempo mínimo para subir la mano y hacer la letra. */
+const MIN_ATTEMPT_MS = 8000;
+/** El mismo umbral con el que el traductor escribe una letra. */
+const ACCEPT = 0.5;
+/** Letras que el modelo reconoce peor: basta con que aparezcan entre las 3 primeras. */
+const ACCEPT_WEAK = 0.25;
+
+/**
+ * Signar una letra del alfabeto dactilológico. Lo evalúa el modelo CTC de Esku, entrenado
+ * con deletreo real (LSE-FS-UVigo), que marca cada letra en uno o dos fotogramas: se da por
+ * buena en cuanto aparece como la más probable.
+ */
 export function SignThis({ exercise, onAnswer, disabled }: Props) {
-  const trackerRef = useRef<HandTracker | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const videoElRef = useRef<HTMLVideoElement | null>(null);
-  const lastCaptureRef = useRef<number>(0);
-  const captureCooldownMs = 700;
-
+  const alphabet = useMemo(() => createAlphabet(), []);
   const meta = getLetterMeta(exercise.letterId);
-  const [phase, setPhase] = useState<Phase>({ kind: "await_camera" });
-  const [frame, setFrame] = useState<HandFrame | null>(null);
-  const [stats, setStats] = useState<PerfStats>({ fps: 0, p50: 0, p95: 0, samples: 0 });
-  const [delegate, setDelegate] = useState<"GPU" | "CPU" | "loading">("loading");
-  const [templatesTick, setTemplatesTick] = useState(0);
+  const target = exercise.letterId.toUpperCase();
+  const weak = WEAK_LETTERS.includes(target.toLowerCase());
+  const windowMs = Math.max(exercise.voteWindowMs, MIN_ATTEMPT_MS);
 
-  const classifier = useMemo(() => {
-    // Se recalcula cuando `templatesTick` cambia (tras cada saveLocalTemplate).
-    void templatesTick;
-    return new KnnClassifier(
-      withoutSameHandshape(
-        [...loadGlobalTemplates(), ...loadLocalTemplates()],
-        exercise.letterId,
-      ),
-      5,
-    );
-  }, [templatesTick, exercise.letterId]);
+  const phaseRef = useRef<Phase>({ kind: "await_camera" });
+  const busyRef = useRef(false);
+  const [phase, setPhaseState] = useState<Phase>(phaseRef.current);
+  const [seen, setSeen] = useState<string | null>(null);
 
-  const availableTemplates = useMemo(
-    () => classifier.countFor(exercise.letterId),
-    [classifier, exercise.letterId],
+  const setPhase = (next: Phase) => {
+    phaseRef.current = next;
+    setPhaseState(next);
+  };
+
+  const finish = useCallback(
+    (correct: boolean) => {
+      if (phaseRef.current.kind === "done") return;
+      setPhase({ kind: "done", correct });
+      onAnswer(correct);
+    },
+    [onAnswer],
   );
 
-  // Buffer de votos para la fase de evaluación.
-  const votesRef = useRef<{ label: string; confidence: number }[]>([]);
-  // Votación adaptativa: momento en que la confianza superó el umbral alto.
-  const highConfSinceRef = useRef<number | null>(null);
-  const EARLY_EXIT_CONF = 0.85;
-  const EARLY_EXIT_MS = 300;
-
-  const finishEvaluation = useCallback(() => {
-    const votes = votesRef.current;
-    if (votes.length === 0) {
-      setPhase({ kind: "done", correct: false });
-      onAnswer(false);
-      return;
-    }
-    const counts = new Map<string, { n: number; conf: number }>();
-    for (const v of votes) {
-      const c = counts.get(v.label) ?? { n: 0, conf: 0 };
-      c.n += 1;
-      c.conf += v.confidence;
-      counts.set(v.label, c);
-    }
-    // Voto ponderado por confianza: gana quien acumula mayor confianza total
-    let winner = "";
-    let winnerScore = -1;
-    for (const [label, c] of counts) {
-      if (c.conf > winnerScore) {
-        winner = label;
-        winnerScore = c.conf;
-      }
-    }
-    const winnerAvg = (counts.get(winner)?.conf ?? 0) / Math.max(1, counts.get(winner)?.n ?? 1);
-    const correct =
-      winner === exercise.letterId && winnerAvg >= exercise.minConfidence;
-    setPhase({ kind: "done", correct });
-    onAnswer(correct);
-  }, [exercise.letterId, exercise.minConfidence, onAnswer]);
-
-  const step = useCallback(() => {
-    const tracker = trackerRef.current;
-    const video = videoElRef.current;
-    if (!tracker || !video) return;
-    if (video.readyState >= 2) {
-      const now = performance.now();
-      const detected = tracker.detect(video, now);
-      setFrame(detected);
-      setStats(tracker.stats());
-
-      // Fase actual:
-      setPhase((prev) => {
-        if (!detected) return prev;
-        if (prev.kind === "calibrating") {
-          if (now - lastCaptureRef.current < captureCooldownMs) return prev;
-          lastCaptureRef.current = now;
-          const features = extractFeatures(detected.normalized);
-          saveLocalTemplate(exercise.letterId, features);
-          const captured = prev.captured + 1;
-          if (captured >= MIN_TEMPLATES_PER_LETTER) {
-            // Refresca clasificador y pasa a evaluación.
-            setTemplatesTick((t) => t + 1);
-            return { kind: "evaluating", startedAt: now };
-          }
-          return { kind: "calibrating", captured };
-        }
-        if (prev.kind === "evaluating") {
-          const features = extractFeatures(detected.normalized);
-          const raw = classifier.predict(features);
-          const pred = refineWithRules(raw, detected.normalized);
-          if (pred) {
-            votesRef.current.push({ label: pred.label, confidence: pred.confidence });
-            // Salida anticipada: confianza alta sostenida >= EARLY_EXIT_MS
-            if (pred.label === exercise.letterId && pred.confidence >= EARLY_EXIT_CONF) {
-              if (highConfSinceRef.current === null) highConfSinceRef.current = now;
-              if (now - highConfSinceRef.current >= EARLY_EXIT_MS) {
-                queueMicrotask(finishEvaluation);
-                return { kind: "done", correct: false };
-              }
-            } else {
-              highConfSinceRef.current = null;
-            }
-          } else {
-            highConfSinceRef.current = null;
-          }
-          if (now - prev.startedAt >= exercise.voteWindowMs) {
-            queueMicrotask(finishEvaluation);
-            return { kind: "done", correct: false };
-          }
-          return prev;
-        }
-        return prev;
-      });
-    }
-    rafRef.current = requestAnimationFrame(step);
-  }, [
-    classifier,
-    exercise.letterId,
-    exercise.voteWindowMs,
-    finishEvaluation,
-  ]);
-
-  const startCameraAndModel = useCallback(async (video: HTMLVideoElement) => {
-    videoElRef.current = video;
-    if (!trackerRef.current) {
-      try {
-        const tracker = new HandTracker();
-        const { delegate } = await tracker.init();
-        trackerRef.current = tracker;
-        setDelegate(delegate);
-      } catch {
-        setDelegate("loading");
-        setPhase({ kind: "done", correct: false });
-        onAnswer(false);
+  const onFrame = useCallback(
+    async (frame: LandmarkFrame) => {
+      const p = phaseRef.current;
+      if (p.kind !== "evaluating" || busyRef.current) return;
+      // El plazo empieza con el primer fotograma: en un móvil lento el modelo tarda en arrancar.
+      if (p.startedAt === null) phaseRef.current = { kind: "evaluating", startedAt: frame.timestampMs };
+      const startedAt = (phaseRef.current as { startedAt: number }).startedAt;
+      if (frame.timestampMs - startedAt > windowMs) {
+        finish(false);
         return;
       }
-    }
-    votesRef.current = [];
-    highConfSinceRef.current = null;
-    if (availableTemplates < MIN_TEMPLATES_PER_LETTER) {
-      setPhase({ kind: "calibrating", captured: 0 });
-    } else {
-      setPhase({ kind: "evaluating", startedAt: performance.now() });
-    }
-    step();
-  }, [availableTemplates, onAnswer, step]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      trackerRef.current?.close();
-      trackerRef.current = null;
-    };
-  }, []);
-
-  const banner = renderBanner({
-    phase,
-    letterId: exercise.letterId,
-    voteWindowMs: exercise.voteWindowMs,
-    availableTemplates,
-  });
+      if (frame.hands.length === 0) return;
+      busyRef.current = true;
+      try {
+        const candidates = await alphabet.classify([frame]);
+        const top = candidates[0];
+        if (top) setSeen(`${top.gloss.text} · ${Math.round(top.confidence * 100)} %`);
+        const hit = weak
+          ? candidates.some((c) => c.gloss.text === target && c.confidence >= ACCEPT_WEAK)
+          : top?.gloss.text === target && top.confidence >= ACCEPT;
+        if (hit) finish(true);
+      } finally {
+        busyRef.current = false;
+      }
+    },
+    [alphabet, finish, target, weak, windowMs],
+  );
 
   return (
     <section className="space-y-4" aria-labelledby={`ex-${exercise.id}`}>
@@ -212,97 +96,57 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
             aria-hidden
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-3xl font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-100"
           >
-            {exercise.letterId}
+            {target}
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            {meta?.description ?? "Signa esta letra en el aire con una mano."}
+            {meta?.description ?? "Signa esta letra con la mano dominante."}
           </p>
         </div>
       </div>
 
-      <CameraFeed
-        onReady={startCameraAndModel}
-        onStop={() => {
-          if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-          setPhase({ kind: "await_camera" });
+      <LandmarkCamera
+        onFrame={onFrame}
+        prepare={() => alphabet.load()}
+        onStart={() => {
+          alphabet.reset();
+          setSeen(null);
+          setPhase({ kind: "evaluating", startedAt: null });
         }}
-        overlay={
-          <HandOverlay
-            videoRef={videoElRef as React.RefObject<HTMLVideoElement | null>}
-            frame={frame}
-          />
-        }
+        stop={phase.kind === "done"}
+        disabled={disabled}
       />
 
-      {banner}
-
-      <PerfBadge stats={stats} delegate={delegate} />
-
-      {phase.kind === "done" && !disabled && (
+      {phase.kind === "await_camera" && (
         <p className="text-sm text-slate-500">
-          Los ejercicios de cámara no consumen corazones — el ruido visual puede
-          confundir al clasificador.
+          Pulsa «Empezar cámara» y signa la letra <b>{target}</b>. Tienes {Math.round(windowMs / 1000)} s.
+          {weak && " Esta letra es difícil para el modelo, así que se acepta con menos seguridad."}
         </p>
       )}
+      {phase.kind === "evaluating" && (
+        <div
+          role="status"
+          className="rounded-lg border border-brand-300 bg-brand-50 p-3 text-sm text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-100"
+        >
+          Signa <b>{target}</b>… {seen ? <>Veo: <b>{seen}</b></> : "todavía no veo ninguna letra."}
+        </div>
+      )}
+      {phase.kind === "done" && (
+        <div
+          role="status"
+          className={`rounded-lg border p-3 text-sm ${
+            phase.correct
+              ? "border-green-500 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-950 dark:text-green-100"
+              : "border-red-500 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-950 dark:text-red-100"
+          }`}
+        >
+          {phase.correct
+            ? `¡Reconocido! Has signado la ${target}.`
+            : `No he visto la ${target}${seen ? ` (lo último que vi: ${seen})` : ""}.`}
+        </div>
+      )}
+      {phase.kind === "done" && !disabled && (
+        <p className="text-sm text-slate-500">Los ejercicios de cámara no consumen corazones.</p>
+      )}
     </section>
-  );
-}
-
-function renderBanner({
-  phase,
-  letterId,
-  voteWindowMs,
-  availableTemplates,
-}: {
-  phase: Phase;
-  letterId: string;
-  voteWindowMs: number;
-  availableTemplates: number;
-}) {
-  if (phase.kind === "await_camera") {
-    return (
-      <p className="text-sm text-slate-500">
-        Pulsa «Empezar cámara» y luego signa la letra <b>{letterId}</b>. Tienes{" "}
-        {(voteWindowMs / 1000).toFixed(1)} s para hacerla.
-      </p>
-    );
-  }
-  if (phase.kind === "calibrating") {
-    return (
-      <div
-        role="status"
-        className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
-      >
-        <strong>Calibrando</strong> la letra <b>{letterId}</b> (
-        {availableTemplates} plantilla{availableTemplates === 1 ? "" : "s"}{" "}
-        conocida{availableTemplates === 1 ? "" : "s"}). Mantén la letra 3 veces
-        seguidas — {MIN_TEMPLATES_PER_LETTER - phase.captured} restante
-        {MIN_TEMPLATES_PER_LETTER - phase.captured === 1 ? "" : "s"}.
-      </div>
-    );
-  }
-  if (phase.kind === "evaluating") {
-    return (
-      <div
-        role="status"
-        className="rounded-lg border border-brand-300 bg-brand-50 p-3 text-sm text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-100"
-      >
-        Reconociendo… signa <b>{letterId}</b>.
-      </div>
-    );
-  }
-  return (
-    <div
-      role="status"
-      className={`rounded-lg border p-3 text-sm ${
-        phase.correct
-          ? "border-green-500 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-950 dark:text-green-100"
-          : "border-red-500 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-950 dark:text-red-100"
-      }`}
-    >
-      {phase.correct
-        ? `¡Reconocido! Has signado ${letterId}.`
-        : `No se ha reconocido claramente. Vuelve a intentarlo.`}
-    </div>
   );
 }

@@ -8,6 +8,18 @@ import { TranslateView } from "./translate-view";
 export const metadata = { title: "Traductor" };
 export const dynamic = "force-dynamic";
 
+function buildSignOptions() {
+  const seen = new Set<string>();
+  const out: { id: string; translation: string }[] = [];
+  for (const [id, sign] of getSignsMap()) {
+    const key = sign.translation.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ id, translation: sign.translation });
+  }
+  return out.sort((a, b) => a.translation.localeCompare(b.translation, "es"));
+}
+
 function buildClipsMap() {
   const signsMap = getSignsMap();
   const out: Record<string, import("@/lib/curriculum/schema").AvatarClip | null> = {};
@@ -19,11 +31,12 @@ function buildClipsMap() {
 
 export default async function TranslatePage() {
   const clipsMap = buildClipsMap();
+  const signOptions = buildSignOptions();
   if (DEMO_MODE) {
-    return <TranslateView demo initialHistory={[]} clipsMap={clipsMap} />;
+    return <TranslateView demo initialHistory={[]} clipsMap={clipsMap} signOptions={signOptions} />;
   }
   const snapshot = await getUserSnapshot();
   if (!snapshot) redirect("/login");
   const history = await listTranslations(10);
-  return <TranslateView initialHistory={history} clipsMap={clipsMap} />;
+  return <TranslateView initialHistory={history} clipsMap={clipsMap} signOptions={signOptions} />;
 }

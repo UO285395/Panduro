@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RecognitionUpdate } from "@/lib/esku/application/use-cases/RecognizeSignsUseCase";
 import { createGloss, type SignCandidate } from "@/lib/esku/domain/recognition/value-objects/Gloss";
 import type { Transcript } from "@/lib/esku/domain/transcript/entities/Transcript";
@@ -20,6 +20,7 @@ import { curriculumIdFor } from "@/lib/recognition/vocabularyMap";
 import type { TranslationRow } from "@/lib/translator/persistence";
 import { listTranslations, saveTranslation } from "@/lib/translator/persistence-client";
 import { HistoryPanel } from "./history-panel";
+import { TeachPanel, type SignOption } from "./teach-panel";
 
 const AvatarPlayer = dynamic(
   () => import("@/components/avatar/AvatarPlayer").then((m) => m.AvatarPlayer),
@@ -32,6 +33,7 @@ type Props = {
   initialHistory: TranslationRow[];
   demo?: boolean;
   clipsMap?: Record<string, AvatarClip | null>;
+  signOptions?: SignOption[];
 };
 
 const SOURCE_LABEL: Record<SignCandidate["source"], string> = {
@@ -61,7 +63,7 @@ function readMode(): TranslateMode {
   }
 }
 
-export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
+export function TranslateView({ initialHistory, demo, clipsMap = {}, signOptions = [] }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const recognizerRef = useRef<Recognizer | null>(null);
@@ -142,7 +144,7 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
       setAlternatives((prev) => {
         const next = new Map(prev);
         for (const e of fresh) {
-          if (e.source === "vocabulary") next.set(entryKey(e), others.filter((t) => t !== e.text));
+          if (e.source !== "alphabet") next.set(entryKey(e), others.filter((t) => t !== e.text));
         }
         return next;
       });
@@ -221,6 +223,8 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
     setFps(null);
     setStatus("idle");
   }
+
+  const getRecognizer = useCallback(() => recognizerRef.current, []);
 
   function clearAll() {
     recognizerRef.current?.recognize.clear();
@@ -502,6 +506,15 @@ export function TranslateView({ initialHistory, demo, clipsMap = {} }: Props) {
             </button>
           </div>
           {notice && <p className="text-sm text-slate-600">{notice}</p>}
+
+          <TeachPanel
+            recognizer={getRecognizer}
+            running={running}
+            signOptions={signOptions}
+            clipsMap={clipsMap}
+            words={tokens.map((t) => t.text)}
+            clearTranscript={clearAll}
+          />
 
           <details className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
             <summary className="cursor-pointer font-semibold">Cómo encadenar varios signos o letras</summary>

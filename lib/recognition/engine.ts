@@ -10,6 +10,7 @@ import {
   POSE_LITE_MODEL_URL,
   WASM_BASE_URL,
 } from "@/lib/mediapipe/constants";
+import { SwitchableClassifier, type TranslateMode } from "./session";
 
 export const VOCABULARY_MANIFEST_URL = "/models/lse-vocabulary.json";
 
@@ -47,25 +48,33 @@ export function vocabularyConcepts(): Promise<string[]> {
 
 /**
  * Motor completo para el traductor: alfabeto CTC por fotograma y vocabulario GRU por signo
- * completo, orquestados por RecognizeSignsUseCase.
+ * completo, orquestados por RecognizeSignsUseCase. Cada motor se puede apagar según el modo.
  */
-export function createRecognizer(video: HTMLVideoElement) {
+export function createRecognizer(video: HTMLVideoElement, mode: TranslateMode = "signs") {
   const source = createLandmarkSource(video);
-  const alphabet = createAlphabet();
-  const vocabulary = createVocabulary();
-  const classifiers = [alphabet, vocabulary];
-  const recognize = new RecognizeSignsUseCase(source, classifiers);
+  const alphabetEngine = createAlphabet();
+  const vocabularyEngine = createVocabulary();
+  const alphabet = new SwitchableClassifier(alphabetEngine, () => alphabetEngine.reset());
+  const vocabulary = new SwitchableClassifier(vocabularyEngine);
+  const recognize = new RecognizeSignsUseCase(source, [alphabet, vocabulary]);
 
-  return {
+  const recognizer = {
     source,
     alphabet,
     vocabulary,
     recognize,
     /** Descarga modelos y pesos (~20 MB la primera vez; luego los sirve la caché del navegador). */
     async load() {
-      await Promise.all([source.load(), ...classifiers.map((c) => c.load())]);
+      await Promise.all([source.load(), alphabet.load(), vocabulary.load()]);
+    },
+    setMode(next: TranslateMode) {
+      alphabet.enabled = next !== "signs";
+      vocabulary.enabled = next !== "letters";
+      alphabet.reset();
     },
   };
+  recognizer.setMode(mode);
+  return recognizer;
 }
 
 export type Recognizer = ReturnType<typeof createRecognizer>;

@@ -203,3 +203,135 @@ export function surfaceFor(map: BodyMap, name: BodyPointName, side: "right" | "l
   if ((SIDED as readonly string[]).includes(name)) return map[side][name as SidedPoint];
   return map[name as CentralPoint];
 }
+
+// --- Cara: punto exacto donde toca la mano ------------------------------------
+
+/**
+ * Coordenadas de cara de un contacto, medidas en la imagen de la grabación: h en medias
+ * distancias entre los ojos (positivo hacia la derecha del signante) y v en distancias
+ * ojos→boca (positivo hacia arriba), desde el punto entre los ojos. En una persona la
+ * boca queda en v = −1, la barbilla hacia −1.75, la frente hacia +0.8, la sien hacia
+ * h = 2.1 y el borde de la cara hacia h = 2.3.
+ */
+export type FaceCoords = [number, number];
+
+const HUMAN = { chinV: -1.75, topV: 1.7, edgeH: 2.3 };
+
+/** Profundidad (f) de lo más adelantado de la cabeza en una rejilla de columnas (r, u). */
+export type FaceGrid = {
+  halfEye: number;
+  eyesToMouth: number;
+  /** Semiancho de la cara (sin pelo) a la altura de los ojos. */
+  halfWidth: number;
+  chinU: number;
+  topU: number;
+  r0: number;
+  u0: number;
+  step: number;
+  nr: number;
+  nu: number;
+  skin: Float32Array;
+  hair: Float32Array;
+};
+
+export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
+  const halfEye = a.eyeSep / 2;
+  const eyesToMouth = Math.max(0.3 * a.eyeSep, -map.mouth.p[1]);
+  let halfWidth = 0;
+  for (let i = 0; i < c.r.length; i++) {
+    if (c.hair[i] || Math.abs(c.u[i]!) > 0.25 * eyesToMouth || c.u[i]! < a.neckU) continue;
+    if (c.f[i]! < map.nose.p[2] - 3 * eyesToMouth) continue;
+    halfWidth = Math.max(halfWidth, Math.abs(c.r[i]!));
+  }
+  halfWidth = Math.max(halfWidth, 1.5 * halfEye);
+  const chinU = map.chin.p[1];
+  const topU = map.top.p[1];
+  const step = halfWidth / 12;
+  const r0 = -1.4 * halfWidth;
+  const u0 = chinU - eyesToMouth;
+  const nr = Math.ceil((2.8 * halfWidth) / step);
+  const nu = Math.ceil((topU - u0) / step) + 1;
+  const skin = new Float32Array(nr * nu).fill(-Infinity);
+  const hair = new Float32Array(nr * nu).fill(-Infinity);
+  for (let i = 0; i < c.r.length; i++) {
+    const col = Math.floor((c.r[i]! - r0) / step);
+    const row = Math.floor((c.u[i]! - u0) / step);
+    if (col < 0 || col >= nr || row < 0 || row >= nu) continue;
+    const k = row * nr + col;
+    const grid = c.hair[i] ? hair : skin;
+    if (c.f[i]! > grid[k]!) grid[k] = c.f[i]!;
+  }
+  // Las mallas tienen los vértices separados: se rellenan los huecos rodeados de cabeza
+  // (con al menos 4 vecinas llenas), sin agrandar el contorno.
+  for (const grid of [skin, hair]) {
+    for (let pass = 0; pass < 2; pass++) {
+      const src = grid.slice();
+      for (let row = 1; row < nu - 1; row++) {
+        for (let col = 1; col < nr - 1; col++) {
+          if (Number.isFinite(src[row * nr + col]!)) continue;
+          let n = 0;
+          let best = -Infinity;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              const x = src[(row + dr) * nr + col + dc]!;
+              if (Number.isFinite(x)) {
+                n++;
+                best = Math.max(best, x);
+              }
+            }
+          }
+          if (n >= 4) grid[row * nr + col] = best;
+        }
+      }
+    }
+  }
+  return { halfEye, eyesToMouth, halfWidth, chinU, topU, r0, u0, step, nr, nu, skin, hair };
+}
+
+/** De coordenadas de cara de una persona a (r, u) en este modelo, por tramos. */
+export function faceToModel(g: FaceGrid, [h, v]: FaceCoords): [number, number] {
+  const ah = Math.abs(h);
+  const r = Math.sign(h) * (ah <= 1
+    ? ah * g.halfEye
+    : g.halfEye + ((ah - 1) / (HUMAN.edgeH - 1)) * (g.halfWidth - g.halfEye));
+  const u = v >= 0
+    ? (v / HUMAN.topV) * 0.8 * g.topU
+    : v >= -1
+      ? v * g.eyesToMouth
+      : -g.eyesToMouth + ((v + 1) / (HUMAN.chinV + 1)) * (g.chinU + g.eyesToMouth);
+  return [r, u];
+}
+
+/**
+ * Punto de la cabeza del modelo que se ve en esas coordenadas de cara mirándolo de
+ * frente (lo que vio la cámara), con su normal. El pelo pegado a la piel (flequillo)
+ * cuenta como superficie; el que sobresale mucho, no.
+ */
+export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
+  const [r, u] = faceToModel(g, face);
+  const cell = (col: number, row: number) => {
+    if (col < 0 || col >= g.nr || row < 0 || row >= g.nu) return -Infinity;
+    const k = row * g.nr + col;
+    const s = g.skin[k]!;
+    const hr = g.hair[k]!;
+    return hr > s && hr - s < 0.35 * g.eyesToMouth ? hr : s;
+  };
+  const row = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
+  const start = Math.min(g.nr - 1, Math.max(0, Math.floor((r - g.r0) / g.step)));
+  let col = start;
+  // Fuera del contorno de la cabeza: hacia el centro hasta dar con ella.
+  const center = Math.floor(-g.r0 / g.step);
+  while (!Number.isFinite(cell(col, row)) && col !== center) col += col > center ? -1 : 1;
+  const f = cell(col, row);
+  const at = (dc: number, dr: number) => {
+    const x = cell(col + dc, row + dr);
+    return Number.isFinite(x) ? x : f - 2 * g.step;
+  };
+  // Normal de la superficie f(r, u): (−∂f/∂r, −∂f/∂u, 1), con diferencias centradas.
+  const dfr = (at(1, 0) - at(-1, 0)) / (2 * g.step);
+  const dfu = (at(0, 1) - at(0, -1)) / (2 * g.step);
+  return {
+    p: [col === start ? r : g.r0 + (col + 0.5) * g.step, u, Number.isFinite(f) ? f : 0],
+    n: norm([-dfr, -dfu, 1]),
+  };
+}

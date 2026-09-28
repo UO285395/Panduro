@@ -59,7 +59,16 @@ python -m venv .venv
 - Para revisar uno a uno: `/dev/grabar` → «Importar landmarks», elige la mejor muestra mirando
   el avatar, descarga y `node scripts/add-captured.mjs archivo-descargado.json`.
 - En los dos casos se detectan los contactos (yemas en la barbilla, índice en la sien, mano
-  sobre la palma de la otra…) y el avatar los reproduce sobre su propia cara y manos.
+  sobre la palma de la otra…) y el avatar los reproduce sobre su propia cara y manos. En la
+  cara se guarda el punto exacto (`face`: dónde queda la parte que toca respecto a ojos y
+  boca en la imagen, que se sigue si la mano se desliza) y el avatar lo busca en su propia
+  cabeza, así que toca la mejilla contraria o el lado de la frente aunque su cara sea otra.
+- Cada dedo se guarda como `[azimut, elevación, flexión]`: nudillo y falanges por separado
+  (B doblada frente a garra), separación de los dedos y posición del pulgar. MediaPipe dobla
+  de más los dedos estirados; la calibración sale de los propios vídeos del DILSE.
+- Las trayectorias se suavizan más con la mano casi quieta (donde se nota el temblor) que en
+  los movimientos rápidos (para no perder un saludo o un golpe doble), y se quitan los
+  keyframes que se pueden sacar interpolando.
 - La fuente y la licencia quedan en cada signo; añádelas a `CREDITS.md`.
 
 Con licencias NC (DILSE, LSE-Health) Panduro puede usarlos porque no es comercial; con SA

@@ -8,12 +8,14 @@ export type SwlFrame = {
   /** Muñecas izquierda y derecha de la pose, en coordenadas de imagen. */
   wrists: [Triple, Triple] | null;
   hands: { image: Triple[]; world: Triple[] }[];
+  /** Pose 0-10 (nariz, ojos, orejas, boca) en la imagen. */
+  face?: Triple[];
 };
 /**
  * `fps` por muestra cuando los vídeos no comparten frecuencia y `url` con la página del
  * signo en su diccionario (scripts/videos_to_signs.py).
  */
-export type SwlSample = { sample: string; label: string; frames: SwlFrame[]; fps?: number; url?: string };
+export type SwlSample = { sample: string; label: string; frames: SwlFrame[]; fps?: number; url?: string; aspect?: number };
 export type SwlExport = {
   source: string;
   license: string;
@@ -24,9 +26,9 @@ export type SwlExport = {
 
 const toPoint = (a: readonly number[]): Point3 => ({ x: a[0]!, y: a[1]!, z: a[2]! });
 
-export function toCaptureFrames(frames: SwlFrame[], fps: number): CaptureFrame[] {
+export function toCaptureFrames(frames: SwlFrame[], fps: number, aspect?: number): CaptureFrame[] {
   return frames.map((f, i) => {
-    const poseImage: Point3[] = [];
+    const poseImage: Point3[] = (f.face ?? []).map(toPoint);
     if (f.wrists) {
       poseImage[15] = toPoint(f.wrists[0]);
       poseImage[16] = toPoint(f.wrists[1]);
@@ -35,6 +37,7 @@ export function toCaptureFrames(frames: SwlFrame[], fps: number): CaptureFrame[]
     return {
       t: (i * 1000) / fps,
       poseWorld: f.poseWorld ? f.poseWorld.map((a) => ({ ...toPoint(a), visibility: a[3] })) : null,
+      ...(f.face ? { poseImage, aspect } : {}),
       hands: f.wrists ? assignHands(poseImage, hands) : {},
     };
   });
@@ -47,8 +50,9 @@ export function toCaptureFrames(frames: SwlFrame[], fps: number): CaptureFrame[]
 export function convertSample(
   frames: SwlFrame[],
   fps: number,
+  aspect?: number,
 ): { result: CaptureResult; leftHanded: boolean } {
-  const capture = toCaptureFrames(frames, fps);
+  const capture = toCaptureFrames(frames, fps, aspect);
   const right = framesToClip(capture);
   const left = framesToClip(capture, { leftHanded: true });
   if (!right.ok) return left.ok ? { result: left, leftHanded: true } : { result: right, leftHanded: false };

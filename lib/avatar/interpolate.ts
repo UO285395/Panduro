@@ -1,4 +1,5 @@
 import type { AvatarClip, AvatarKeyframe, FingerValue } from "@/lib/curriculum/schema";
+import { getFingerFlex, isMeasured, MCP_MAX, PIP_MAX, REST_AZIMUTH, type MeasuredFinger } from "./pose";
 
 /** Velocidad de reproducción de los signos (0.8 = un 20 % más despacio). */
 export const SIGN_PLAYBACK_RATE = 0.8;
@@ -13,14 +14,16 @@ type Vec3 = [number, number, number];
 
 /*
  * Cada keyframe se aplana en canales numéricos y cada canal se interpola con
- * una spline de Hermite cuyas tangentes salen de los keyframes vecinos y de
- * sus tiempos reales (Catmull-Rom no uniforme). Así la velocidad es continua
- * al pasar por un keyframe aunque estén desigualmente espaciados, y al
- * principio y al final del signo la mano arranca y se detiene sin tirones.
+ * una spline de Hermite con tangentes monótonas (Fritsch-Carlson), calculadas
+ * con los tiempos reales de los keyframes. La velocidad es continua al pasar
+ * por un keyframe y, a diferencia de Catmull-Rom, la curva no se pasa de largo:
+ * donde el movimiento se para o cambia de sentido la tangente es cero, así que
+ * la mano no tiembla antes de arrancar tras una pausa ni rebasa los extremos de
+ * una oscilación. Al principio y al final del signo arranca y se detiene sin tirones.
  */
 
 const HAND_CHANNELS = 13; // x y z · rot×3 · roll · palm×3 · point×3
-const FINGER_CHANNELS = 10; // flexión×5 · abducción×5
+const FINGER_CHANNELS = 15; // por dedo: flexión y abducción, o azimut, elevación y flexión (medido)
 
 type Layout = {
   roll: boolean;
@@ -36,14 +39,23 @@ type Prepared = {
   hand2: Layout | null;
   abduction: boolean[];
   abduction2: boolean[];
+  /** Dedos medidos ([azimut, elevación, flexión]) en el clip. */
+  measured: boolean[];
+  measured2: boolean[];
   twoHands: boolean;
   fingers2: boolean;
 };
 
 const cache = new WeakMap<AvatarClip, Prepared>();
 
-const flexOf = (v: FingerValue) => (typeof v === "number" ? v : v.flex);
-const abdOf = (v: FingerValue) => (typeof v === "number" ? 0 : (v.abduction ?? 0));
+const abdOf = (v: FingerValue) => (typeof v === "number" || isMeasured(v) ? 0 : (v.abduction ?? 0));
+
+/** Un dedo sin medir como medido: estirado en su azimut de reposo y la flexión repartida. */
+function asMeasured(v: FingerValue, i: number): MeasuredFinger {
+  if (isMeasured(v)) return v;
+  const f = getFingerFlex(v);
+  return [REST_AZIMUTH[i]!, f * MCP_MAX, f * PIP_MAX];
+}
 
 /** Valor del keyframe más cercano que tenga el campo (o `undefined`). */
 function nearest<T>(kfs: AvatarKeyframe[], i: number, get: (k: AvatarKeyframe) => T | undefined): T | undefined {
@@ -64,8 +76,8 @@ function handChannels(kfs: AvatarKeyframe[], i: number, pick: (k: AvatarKeyframe
   return [h.x, h.y, h.z, ...h.rot, h.forearmRoll ?? 0, ...palm, ...point];
 }
 
-function fingerChannels(f: Fingers): number[] {
-  return [...f.map(flexOf), ...f.map(abdOf)];
+function fingerChannels(f: Fingers, measured: boolean[]): number[] {
+  return f.flatMap((v, i) => (measured[i] ? asMeasured(v, i) : [getFingerFlex(v), abdOf(v), 0]));
 }
 
 function layoutOf(kfs: AvatarKeyframe[], pick: (k: AvatarKeyframe) => Hand | undefined): Layout {
@@ -82,25 +94,38 @@ function prepare(clip: AvatarClip): Prepared {
   const kfs = clip.keyframes;
   const twoHands = kfs.some((k) => k.hand2);
   const fingers2 = kfs.some((k) => k.fingers2);
+  const measuredIn = (get: (k: AvatarKeyframe) => Fingers | undefined) =>
+    [0, 1, 2, 3, 4].map((f) => kfs.some((k) => {
+      const v = get(k)?.[f];
+      return v !== undefined && isMeasured(v);
+    }));
+  const measured = measuredIn((k) => k.fingers);
+  const measured2 = measuredIn((k) => k.fingers2);
   const values = kfs.map((kf, i) => [
     ...handChannels(kfs, i, (k) => k.hand),
-    ...fingerChannels(kf.fingers),
+    ...fingerChannels(kf.fingers, measured),
     ...(twoHands ? handChannels(kfs, i, (k) => k.hand2) : []),
-    ...(fingers2 ? fingerChannels(nearest(kfs, i, (k) => k.fingers2)!) : []),
+    ...(fingers2 ? fingerChannels(nearest(kfs, i, (k) => k.fingers2)!, measured2) : []),
   ]);
   const times = kfs.map((k) => k.t);
   const n = kfs.length;
   const tangents = values.map((v, i) =>
     v.map((_, c) => {
       if (i === 0 || i === n - 1) return 0;
-      const span = times[i + 1]! - times[i - 1]!;
-      return span > 0 ? (values[i + 1]![c]! - values[i - 1]![c]!) / span : 0;
+      const h0 = times[i]! - times[i - 1]!;
+      const h1 = times[i + 1]! - times[i]!;
+      if (h0 <= 0 || h1 <= 0) return 0;
+      const d0 = (values[i]![c]! - values[i - 1]![c]!) / h0;
+      const d1 = (values[i + 1]![c]! - values[i]![c]!) / h1;
+      if (d0 * d1 <= 0) return 0;
+      // Media armónica ponderada: nunca más empinada que los tramos de al lado.
+      return (3 * (h0 + h1)) / ((2 * h1 + h0) / d0 + (h1 + 2 * h0) / d1);
     }),
   );
   const abd = (get: (k: AvatarKeyframe) => Fingers | undefined) =>
     [0, 1, 2, 3, 4].map((f) => kfs.some((k) => {
       const v = get(k)?.[f];
-      return v !== undefined && typeof v !== "number" && v.abduction !== undefined;
+      return v !== undefined && typeof v !== "number" && !isMeasured(v) && v.abduction !== undefined;
     }));
   const prepared: Prepared = {
     times,
@@ -110,6 +135,8 @@ function prepare(clip: AvatarClip): Prepared {
     hand2: twoHands ? layoutOf(kfs, (k) => k.hand2) : null,
     abduction: abd((k) => k.fingers),
     abduction2: abd((k) => k.fingers2),
+    measured,
+    measured2,
     twoHands,
     fingers2,
   };
@@ -135,10 +162,12 @@ function toHand(c: number[], at: number, layout: Layout): Hand {
   return hand;
 }
 
-function toFingers(c: number[], at: number, abduction: boolean[]): Fingers {
+function toFingers(c: number[], at: number, abduction: boolean[], measured: boolean[]): Fingers {
   return [0, 1, 2, 3, 4].map((i) => {
-    const flex = Math.max(0, Math.min(1, c[at + i]!));
-    return abduction[i] ? { flex, abduction: c[at + 5 + i]! } : flex;
+    const k = at + 3 * i;
+    if (measured[i]) return [c[k]!, c[k + 1]!, c[k + 2]!];
+    const flex = Math.max(0, Math.min(1, c[k]!));
+    return abduction[i] ? { flex, abduction: c[k + 1]! } : flex;
   }) as Fingers;
 }
 
@@ -147,14 +176,14 @@ function toKeyframe(p: Prepared, c: number[], t: number): AvatarKeyframe {
   const kf: AvatarKeyframe = {
     t,
     hand: toHand(c, at, p.hand),
-    fingers: toFingers(c, (at += HAND_CHANNELS), p.abduction),
+    fingers: toFingers(c, (at += HAND_CHANNELS), p.abduction, p.measured),
   };
   at += FINGER_CHANNELS;
   if (p.hand2) {
     kf.hand2 = toHand(c, at, p.hand2);
     at += HAND_CHANNELS;
   }
-  if (p.fingers2) kf.fingers2 = toFingers(c, at, p.abduction2);
+  if (p.fingers2) kf.fingers2 = toFingers(c, at, p.abduction2, p.measured2);
   return kf;
 }
 

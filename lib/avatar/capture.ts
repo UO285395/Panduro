@@ -1,6 +1,16 @@
 import type { AvatarClip, AvatarKeyframe, Contact } from "@/lib/curriculum/schema";
 import type { Point3 } from "@/lib/mediapipe/types";
-import { distributeFlex } from "./pose";
+import type { FaceCoords } from "./bodyPoints";
+import {
+  distributeFlex,
+  MCP_MAX,
+  PIP_MAX,
+  REST_AZIMUTH,
+  Y_CHEST,
+  Y_MOUTH,
+  Y_PER_FACE,
+  type MeasuredFinger,
+} from "./pose";
 
 /**
  * Convierte una grabación con MediaPipe (pose + manos) en un AvatarClip.
@@ -21,6 +31,9 @@ export type CaptureFrame = {
   t: number;
   /** worldLandmarks de PoseLandmarker (33 puntos, metros). */
   poseWorld: Landmark[] | null;
+  /** landmarks de PoseLandmarker en la imagen (al menos la cara, 0-10) y ancho/alto del vídeo. */
+  poseImage?: Point3[] | null;
+  aspect?: number;
   /** Manos ya asignadas a su lado anatómico (ver assignHands). */
   hands: Partial<Record<Side, HandSample>>;
 };
@@ -41,7 +54,19 @@ type Vec = [number, number, number];
 
 const P = { mouthL: 9, mouthR: 10, lShoulder: 11, rShoulder: 12, lElbow: 13, rElbow: 14, lWrist: 15, rWrist: 16 };
 const STEP_MS = 100;
-const SMOOTH_RADIUS = 2;
+/** σ del suavizado de las trayectorias: con la mano rápida y quieta, y la velocidad (u/s) entre medias. */
+// Ajustado con los 305 vídeos del DILSE: frente a un σ fijo de 60 ms, el temblor con la
+// mano casi quieta baja un 28 % y los signos que oscilan (ADIÓS, AMIGO, NOMBRE…) conservan
+// todos sus giros; más fuerte, las oscilaciones pequeñas y rápidas se perdían.
+const SMOOTH_FAST_MS = 40;
+const SMOOTH_SLOW_MS = 170;
+const SMOOTH_SPEED = 1.0;
+/**
+ * Error admitido al quitar un keyframe que se puede sacar interpolando sus vecinos:
+ * posición en unidades del espacio de signado (~1.5 % del brazo), direcciones de la mano
+ * (~5°) y dedos (rad, ~7°). Sin los keyframes sobrantes la spline no sigue el temblor.
+ */
+const SIMPLIFY_TOL = { pos: 0.015, dir: 0.09, finger: 0.12 };
 const FULL = distributeFlex(1);
 const FINGER_MAX = FULL.proximal + FULL.middle + FULL.distal;
 /** Igual que THUMB_FLEX_SCALE del mapper: el pulgar dobla menos. */
@@ -141,6 +166,51 @@ export function fingerFlex(world: Point3[], side: Side): number[] {
   ];
 }
 
+/** Calibración de cada articulación con el DILSE: medianas de dedos estirados y cerrados. */
+const MCP_OPEN = 14 * DEG;
+const MCP_CLOSED = 67 * DEG;
+const PIP_OPEN = 3 * DEG;
+const PIP_CLOSED = 80 * DEG;
+/** El eje muñeca→nudillo del corazón se desvía unos 8° del propio dedo corazón. */
+const AZ_SHIFT = 8 * DEG;
+const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
+const perpUnit = (a: Vec, axis: Vec): Vec => unit(sub(a, scale(axis, dot(a, axis))));
+
+/**
+ * Cada dedo como [azimut, elevación, flexión] (rad) en el marco de la mano: hacia el
+ * corazón, hacia el lado del índice y hacia la palma. Distingue lo que una sola flexión
+ * no puede: la B doblada (solo el nudillo) de la garra (solo las falanges), los dedos
+ * juntos de separados, y dónde está el pulgar (junto al índice, cruzado, fuera).
+ * Nudillo y falange media, calibrados con el DILSE (MediaPipe los da doblados de más con
+ * la mano estirada); el azimut de un dedo muy doblado no se ve bien y tiende al de reposo.
+ */
+export function fingerPose(world: Point3[], side: Side): MeasuredFinger[] {
+  const at = (i: number) => v(world[i]!);
+  const P = unit(sub(at(9), at(0)));
+  const N = perpUnit(handOrientation(world, side).palm, P);
+  const A = perpUnit(perpUnit(sub(at(5), at(17)), P), N);
+  const chains = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]];
+  return chains.map((c, i) => {
+    const s1 = unit(sub(at(c[1]!), at(c[0]!)));
+    const s2 = unit(sub(at(c[2]!), at(c[1]!)));
+    const s3 = unit(sub(at(c[3]!), at(c[2]!)));
+    const az = Math.atan2(dot(s1, A), dot(s1, P)) + AZ_SHIFT;
+    const el = Math.atan2(dot(s1, N), Math.hypot(dot(s1, A), dot(s1, P)));
+    // Flexión en el plano del dedo, con signo (hacia la palma, positiva).
+    const k = unit(cross(s1, perpUnit(N, s1)));
+    const bendOf = (a: Vec, b: Vec) => {
+      const pa = perpUnit(a, k);
+      const pb = perpUnit(b, k);
+      return Math.atan2(dot(cross(pa, pb), k), dot(pa, pb));
+    };
+    if (i === 0) return [az, el, clamp(bendOf(s1, s2) + bendOf(s2, s3), -0.3, 1.6)];
+    const mcp = clamp(((el - MCP_OPEN) / (MCP_CLOSED - MCP_OPEN)) * MCP_MAX, -10 * DEG, MCP_MAX + 10 * DEG);
+    const pip = clamp(((bendOf(s1, s2) - PIP_OPEN) / (PIP_CLOSED - PIP_OPEN)) * PIP_MAX, -10 * DEG, PIP_MAX + 10 * DEG);
+    const seen = clamp((70 * DEG - mcp) / (40 * DEG), 0, 1);
+    return [seen * az + (1 - seen) * REST_AZIMUTH[i]!, mcp, pip];
+  });
+}
+
 /**
  * La mano que dan los landmarks dobla los dedos hacia el dorso: MediaPipe la ha
  * reflejado en profundidad o es la otra mano. Su palma sale al revés, así que
@@ -179,9 +249,10 @@ export function assignHands(
 type Sample = {
   t: number;
   pos: Vec;
-  hand?: { fingers: number[]; palm: Vec; point: Vec; image: Point3[] };
+  /** fingers: flexión 0..1; joints: fingerPose aplanado (5 × 3). */
+  hand?: { fingers: number[]; joints: number[]; palm: Vec; point: Vec; image: Point3[] };
   /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
-  touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number };
+  touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number; face?: FaceCoords };
 };
 
 // Pose de MediaPipe: nariz, ojos, comisuras de los ojos, orejas y boca (lado anatómico).
@@ -214,13 +285,18 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   const meanOf = (ps: Vec[]): Vec => scale(ps.reduce((a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], [0, 0, 0]), 1 / ps.length);
   const extended = [1, 2, 3, 4].filter((i) => (fingers[i] ?? 1) < 0.5);
   const tipIndex = [4, 8, 12, 16, 20];
-  const parts: [NonNullable<Contact["with"]>, Vec][] = [
-    ["index", at(h, wrist, 8)],
-    ["thumb", at(h, wrist, 4)],
-    ["palm", meanOf([0, 5, 17].map((i) => at(h, wrist, i)))],
-    ["knuckles", meanOf([6, 10].map((i) => at(h, wrist, i)))],
+  // Cada parte con los landmarks de la mano que la forman (para situarla también en la imagen).
+  const partIds: [NonNullable<Contact["with"]>, number[]][] = [
+    ["index", [8]],
+    ["thumb", [4]],
+    ["palm", [0, 5, 17]],
+    ["knuckles", [6, 10]],
   ];
-  if (extended.length > 1) parts.unshift(["tips", meanOf(extended.map((i) => at(h, wrist, tipIndex[i]!)))]);
+  if (extended.length > 1) partIds.unshift(["tips", extended.map((i) => tipIndex[i]!)]);
+  const parts: [NonNullable<Contact["with"]>, Vec][] = partIds.map(([name, ids]) => [
+    name,
+    meanOf(ids.map((i) => at(h, wrist, i))),
+  ]);
 
   const r = side === "right";
   const nose = v(p[FACE.nose]!);
@@ -255,10 +331,31 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
     targets.push(["otherPalm", otherPalm], ["otherTips", meanOf([8, 12].map((i) => at(oh, ow, i)))], ["otherWrist", ow]);
   }
 
+  // Con la cara en la imagen, lo que toca se decide ahí: la parte dentro del contorno de la
+  // cara (o a cuánto queda de él) y la profundidad con poco peso. La cara de la pose en el
+  // espacio está estrechada y daba la sien o la mejilla más lejos de lo que estaban.
+  const imageOf = (ids: number[]) =>
+    ids.reduce((acc, i) => ({ x: acc.x + h.image[i]!.x / ids.length, y: acc.y + h.image[i]!.y / ids.length }), { x: 0, y: 0 });
+  const faceTouch = (what: NonNullable<Contact["with"]>, q: Vec): Sample["touch"] => {
+    if (!f.poseImage) return undefined;
+    const face = faceCoords(f.poseImage, f.aspect ?? 1, imageOf(partIds.find(([n]) => n === what)![1]));
+    if (!face) return undefined;
+    const at = namedFacePoint(face);
+    const ref = targets.find(([name]) => name === at) ?? targets.find(([name]) => name === "forehead")!;
+    const depth = q[2] - ref[1][2];
+    return { at, with: what, face, d: Math.hypot(outsideFace(face), FACE_DEPTH_WEIGHT * depth) };
+  };
+
   let best: Sample["touch"];
   let bestPart: Vec | null = null;
   for (const [what, q] of parts) {
+    const onFace = faceTouch(what, q);
+    if (onFace && (!best || onFace.d < best.d)) {
+      best = onFace;
+      bestPart = q;
+    }
     for (const [where, tp] of targets) {
+      if (onFace && !where.startsWith("other")) continue;
       const diff = sub(q, tp);
       // Contra la cara, la profundidad cuenta poco: con el brazo levantado la pose pone la
       // muñeca 15-30 cm por delante aunque la mano toque la frente o la barbilla (en el
@@ -278,21 +375,96 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   return best && best.d < TOUCH_FAR ? best : undefined;
 }
 
+/** Contorno de la cara en coordenadas de cara: de oreja a oreja y de la barbilla a la coronilla. */
+const FACE_OUTLINE = { h: 2.5, v0: -1.9, v1: 1.9 };
+/** Metros por unidad de coordenadas de cara, en una persona (distancia ojos→boca). */
+const FACE_UNIT_M = 0.07;
+
+/** Distancia (m) de un punto al contorno de la cara en la imagen; 0 si cae dentro. */
+function outsideFace([h, v]: FaceCoords): number {
+  const cv = (FACE_OUTLINE.v0 + FACE_OUTLINE.v1) / 2;
+  const k = Math.hypot(h / FACE_OUTLINE.h, (v - cv) / ((FACE_OUTLINE.v1 - FACE_OUTLINE.v0) / 2));
+  return Math.max(0, k - 1) * FACE_OUTLINE.h * FACE_UNIT_M;
+}
+
+/**
+ * Coordenadas de cara (ver FaceCoords) de un punto de la imagen: desde el punto entre
+ * los ojos, h hacia la derecha del signante en medias distancias entre ojos y v hacia
+ * arriba en distancias ojos→boca. En la imagen la cara se ve bien; en profundidad, no.
+ */
+export function faceCoords(img: Point3[], aspect: number, q: { x: number; y: number }): FaceCoords | null {
+  const pt = (i: number): [number, number] | null => (img[i] ? [img[i]!.x * aspect, img[i]!.y] : null);
+  const eyeL = pt(FACE.lEye);
+  const eyeR = pt(FACE.rEye);
+  const mL = pt(P.mouthL);
+  const mR = pt(P.mouthR);
+  if (!eyeL || !eyeR || !mL || !mR) return null;
+  const o = [(eyeL[0] + eyeR[0]) / 2, (eyeL[1] + eyeR[1]) / 2];
+  const halfEye = Math.hypot(eyeR[0] - eyeL[0], eyeR[1] - eyeL[1]) / 2;
+  if (halfEye < 1e-4) return null;
+  const r = [(eyeR[0] - eyeL[0]) / (2 * halfEye), (eyeR[1] - eyeL[1]) / (2 * halfEye)];
+  const mouth = [(mL[0] + mR[0]) / 2, (mL[1] + mR[1]) / 2];
+  // Arriba: perpendicular a la línea de los ojos, del lado contrario a la boca.
+  let u = [-r[1]!, r[0]!];
+  if ((o[0]! - mouth[0]!) * u[0]! + (o[1]! - mouth[1]!) * u[1]! < 0) u = [-u[0]!, -u[1]!];
+  const eyesToMouth = (o[0]! - mouth[0]!) * u[0]! + (o[1]! - mouth[1]!) * u[1]!;
+  if (eyesToMouth < 1e-4) return null;
+  const d = [q.x * aspect - o[0]!, q.y - o[1]!];
+  const two = (x: number) => Math.round(x * 100) / 100;
+  return [two((d[0]! * r[0]! + d[1]! * r[1]!) / halfEye), two((d[0]! * u[0]! + d[1]! * u[1]!) / eyesToMouth)];
+}
+
+/** Puntos de la cara de una persona en coordenadas de cara (el lado lo pone h). */
+const FACE_POINTS: [Contact["at"], number, number][] = [
+  ["chin", 0, -1.75],
+  ["mouth", 0, -1],
+  ["nose", 0, -0.55],
+  ["forehead", 0, 0.8],
+  ["top", 0, 1.7],
+  ["cheek", 1.3, -0.6],
+  ["temple", 2.1, 0.3],
+  ["ear", 2.5, -0.3],
+];
+
+/** El punto con nombre más cercano, como etiqueta legible del contacto. */
+function namedFacePoint([h, v]: FaceCoords): Contact["at"] {
+  let best = FACE_POINTS[0]!;
+  let bestD = Infinity;
+  for (const p of FACE_POINTS) {
+    const d = Math.hypot(Math.abs(h) - p[1], v - p[2]);
+    if (d < bestD) {
+      bestD = d;
+      best = p;
+    }
+  }
+  return best[0];
+}
+
 const mode = <T>(xs: T[]): T => {
   const count = new Map<T, number>();
   for (const x of xs) count.set(x, (count.get(x) ?? 0) + 1);
   return [...count.entries()].sort((a, b) => b[1] - a[1])[0]![0];
 };
 
-function touchRuns(samples: (Sample | null)[], twoHands: boolean): { t0: number; t1: number; contact: Contact }[] {
-  const out: { t0: number; t1: number; contact: Contact }[] = [];
+type TouchRun = {
+  t0: number;
+  t1: number;
+  contact: Contact;
+  /** Contacto con la cara: por dónde va la parte que toca (la mano puede deslizarse). */
+  path?: { t: number; face: FaceCoords }[];
+};
+
+function touchRuns(samples: (Sample | null)[], twoHands: boolean): TouchRun[] {
+  const out: TouchRun[] = [];
   let run: Sample[] = [];
   let gap = 0;
+  // La cara cuenta como un solo sitio (el punto se sigue por el camino); la otra mano, por partes.
+  const kind = (s: Sample) => (s.touch!.at.startsWith("other") ? s.touch!.at : "face");
   const flush = () => {
     const touching = run.filter((s) => twoHands || !s.touch!.at.startsWith("other"));
     if (touching.length >= 2) {
-      const at = mode(touching.map((s) => s.touch!.at));
-      const same = touching.filter((s) => s.touch!.at === at);
+      const where = mode(touching.map(kind));
+      const same = touching.filter((s) => kind(s) === where);
       // El momento del toque es el más cercano del tramo (la pose comprime la cara y en los
       // demás fotogramas la mano parece más lejos de lo que está).
       const d = Math.min(...same.map((s) => s.touch!.d));
@@ -302,10 +474,16 @@ function touchRuns(samples: (Sample | null)[], twoHands: boolean): { t0: number;
       const held = same[same.length - 1]!.t - same[0]!.t >= TOUCH_HOLD_MS;
       const weight = held && closeness > 0 ? Math.max(closeness, 0.9) : closeness;
       if (weight >= 0.1) {
+        const path = same.filter((s) => s.touch!.face).map((s) => ({ t: s.t, face: s.touch!.face! }));
         out.push({
           t0: touching[0]!.t,
           t1: touching[touching.length - 1]!.t,
-          contact: { at, with: mode(same.map((s) => s.touch!.with)), weight: round(weight) },
+          contact: {
+            at: where === "face" ? mode(same.map((s) => s.touch!.at)) : (where as Contact["at"]),
+            with: mode(same.map((s) => s.touch!.with)),
+            weight: round(weight),
+          },
+          ...(path.length ? { path } : {}),
         });
       }
     }
@@ -324,16 +502,68 @@ function touchRuns(samples: (Sample | null)[], twoHands: boolean): { t0: number;
   return out;
 }
 
+/** Contacto del tramo en `t`: en la cara, el punto por el que va la mano en ese momento. */
+function contactOfRun(run: TouchRun, t: number, leftHanded: boolean): Contact {
+  if (!run.path) return run.contact;
+  const near = run.path.filter((p) => Math.abs(p.t - t) <= STEP_MS);
+  const pts = near.length ? near : [run.path.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a))];
+  const h = median(pts.map((p) => p.face[0]));
+  const face: FaceCoords = [round(leftHanded ? -h : h), round(median(pts.map((p) => p.face[1])))];
+  return { ...run.contact, at: namedFacePoint(face), face };
+}
+
 type Timed<T> = { t: number; val: T };
 
-function smooth(points: Timed<number[]>[]): Timed<number[]>[] {
+/**
+ * Suavizado gaussiano en el tiempo (σ en ms): quita el temblor de MediaPipe sin los
+ * rebotes de una media móvil, que deja pasar parte de las frecuencias altas. Pesa por
+ * tiempo, así que los fotogramas que faltan no juntan puntos lejanos.
+ */
+function smooth(points: Timed<number[]>[], sigmaMs: number | ((t: number) => number)): Timed<number[]>[] {
+  const sigmaAt = typeof sigmaMs === "number" ? () => sigmaMs : sigmaMs;
+  const sigmas = points.map((p) => sigmaAt(p.t));
   return points.map((p, i) => {
-    const lo = Math.max(0, i - SMOOTH_RADIUS);
-    const hi = Math.min(points.length - 1, i + SMOOTH_RADIUS);
+    if (sigmas[i]! <= 0) return p;
     const acc = p.val.map(() => 0);
-    for (let j = lo; j <= hi; j++) points[j]!.val.forEach((x, k) => (acc[k]! += x));
-    return { t: p.t, val: acc.map((x) => x / (hi - lo + 1)) };
+    let wsum = 0;
+    for (const [j, q] of points.entries()) {
+      const dt = q.t - p.t;
+      // Con el menor de los dos σ: una pausa se suaviza con la pausa, sin que el movimiento
+      // de después se cuele en ella (la mano empezaría a moverse antes de tiempo).
+      const sigma = Math.min(sigmas[i]!, sigmas[j]!);
+      if (sigma <= 0 || Math.abs(dt) > 3 * sigma) continue;
+      const w = Math.exp((-dt * dt) / (2 * sigma * sigma));
+      wsum += w;
+      q.val.forEach((x, k) => (acc[k]! += w * x));
+    }
+    return { t: p.t, val: acc.map((x) => x / wsum) };
   });
+}
+
+/**
+ * σ según lo deprisa que va la muñeca: con la mano casi quieta el temblor es lo que más se
+ * ve y se suaviza mucho; en un movimiento rápido (saludar, golpear dos veces) poco, para
+ * no comerse el gesto. Como el filtro «One Euro», pero simétrico en el tiempo (sin retraso).
+ */
+function adaptiveSigma(
+  samples: (Sample | null)[],
+  { fast, slow, speed: v0 } = { fast: SMOOTH_FAST_MS, slow: SMOOTH_SLOW_MS, speed: SMOOTH_SPEED },
+): (t: number) => number {
+  const pts: Timed<number[]>[] = [];
+  for (const s of samples) if (s) pts.push({ t: s.t, val: s.pos });
+  const light = smooth(pts, fast);
+  const speed = light.map((p, i) => {
+    const a = light[Math.max(0, i - 1)]!;
+    const b = light[Math.min(light.length - 1, i + 1)]!;
+    return { t: p.t, v: b.t > a.t ? len(sub(b.val as Vec, a.val as Vec)) / ((b.t - a.t) / 1000) : 0 };
+  });
+  // La velocidad máxima alrededor, no la del instante: al dar la vuelta en una oscilación
+  // la mano se para un momento y un σ grande ahí se comería los extremos.
+  return (t: number) => {
+    let v = 0;
+    for (const s of speed) if (Math.abs(s.t - t) <= slow) v = Math.max(v, s.v);
+    return fast + (slow - fast) * Math.exp(-v / v0);
+  };
 }
 
 function resample(points: Timed<number[]>[], times: number[]): number[][] {
@@ -348,16 +578,28 @@ function resample(points: Timed<number[]>[], times: number[]): number[][] {
   });
 }
 
-function channel(samples: (Sample | null)[], pick: (s: Sample) => number[] | undefined): Timed<number[]>[] {
+function channel(
+  samples: (Sample | null)[],
+  pick: (s: Sample) => number[] | undefined,
+  sigmaMs: number | ((t: number) => number),
+): Timed<number[]>[] {
   const out: Timed<number[]>[] = [];
   for (const s of samples) {
     const val = s && pick(s);
     if (s && val) out.push({ t: s.t, val });
   }
-  return smooth(out);
+  return smooth(out, sigmaMs);
 }
 
-export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolean } = {}): CaptureResult {
+export function framesToClip(
+  frames: CaptureFrame[],
+  opts: {
+    leftHanded?: boolean;
+    /** Para comparar ajustes: false deja todos los keyframes; smoothing cambia el suavizado. */
+    simplify?: boolean;
+    smoothing?: number | { fast: number; slow: number; speed: number };
+  } = {},
+): CaptureResult {
   const withPose = frames.filter((f) => f.poseWorld && f.poseWorld.length > P.rWrist);
   if (withPose.length < 5) {
     return { ok: false, error: "No se detecta el cuerpo. Encuadra de cintura para arriba, de frente y con buena luz." };
@@ -390,6 +632,32 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
     }),
   );
 
+  const eyesUp = median(
+    withPose.map((f) => {
+      const p = f.poseWorld!;
+      return dot(sub(mid(p[FACE.lEye]!, p[FACE.rEye]!), mid(p[P.lShoulder]!, p[P.rShoulder]!)), U);
+    }),
+  );
+  /**
+   * Con el brazo levantado la pose en 3D baja la muñeca unos 7 cm (una distancia ojos→boca):
+   * PENSAR la tiene a la altura de los ojos en la imagen y a la de la boca en 3D. Cerca de
+   * la cara se toma la altura de la imagen, medida con la propia cara; lejos (a la altura
+   * del pecho), la de 3D, porque en la imagen no hay con qué medirla.
+   */
+  const heightNearFace = (f: CaptureFrame, wristIdx: number, up3d: number) => {
+    const img = f.poseImage?.[wristIdx];
+    const face = img && faceCoords(f.poseImage!, f.aspect ?? 1, img);
+    if (!face) return up3d;
+    const upImg = eyesUp + face[1] * (eyesUp - mouthUp);
+    const w = Math.max(0, Math.min(1, (face[1] + 3) / 1.5));
+    return w * upImg + (1 - w) * up3d;
+  };
+  // Ver Y_PER_FACE: por encima de la boca, en distancias boca→ojos.
+  const heightOf = (up: number) =>
+    up <= mouthUp
+      ? Y_CHEST + ((Y_MOUTH - Y_CHEST) * (up - chestUp)) / (mouthUp - chestUp)
+      : Y_MOUTH + (Y_PER_FACE * (up - mouthUp)) / Math.max(0.02, eyesUp - mouthUp);
+
   const sampleSide = (f: CaptureFrame, side: Side): Sample | null => {
     const p = f.poseWorld;
     if (!p || p.length <= P.rWrist) return null;
@@ -398,10 +666,10 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
     if ((wrist.visibility ?? 1) < 0.5) return null;
     const rel = sub(v(wrist), v(p[si]!));
     const outward = side === "right" ? R : scale(R, -1);
-    const up = dot(sub(v(wrist), mid(p[P.lShoulder]!, p[P.rShoulder]!)), U);
+    const up = heightNearFace(f, wi, dot(sub(v(wrist), mid(p[P.lShoulder]!, p[P.rShoulder]!)), U));
     const pos: Vec = [
       dot(rel, outward) / (1.2 * armLen),
-      0.35 + (0.35 * (up - chestUp)) / (mouthUp - chestUp),
+      heightOf(up),
       (dot(rel, F) / armLen - 0.55) / 0.9,
     ];
     const h = f.hands[side];
@@ -411,7 +679,7 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
     return {
       t: f.t,
       pos,
-      hand: { fingers, palm: toSigner(o.palm), point: toSigner(o.point), image: h.image },
+      hand: { fingers, joints: fingerPose(h.world, side).flat(), palm: toSigner(o.palm), point: toSigner(o.point), image: h.image },
       touch: detectTouch(f, side, fingers),
     };
   };
@@ -419,7 +687,15 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
   const dominant: Side = opts.leftHanded ? "left" : "right";
   const other: Side = opts.leftHanded ? "right" : "left";
   const dom = frames.map((f) => sampleSide(f, dominant));
-  const isActive = (s: Sample | null) => !!s?.hand && s.pos[1] > 0;
+  // Mano activa: se ve y está levantada, sobre el pecho o al menos ~10 cm por encima de
+  // donde descansa en esta grabación (hay signos a la altura de la cintura, como HIJO).
+  const restY = (samples: (Sample | null)[]) => {
+    const ys = samples.filter((s): s is Sample => !!s).map((s) => s.pos[1]).sort((a, b) => a - b);
+    return ys.length ? ys[Math.floor(ys.length * 0.05)]! : 0;
+  };
+  const raisedBy = (0.1 * 0.35) / (mouthUp - chestUp);
+  const activeAbove = (rest: number) => (s: Sample | null) => !!s?.hand && (s.pos[1] > 0 || s.pos[1] > rest + raisedBy);
+  const isActive = activeAbove(restY(dom));
   const first = dom.findIndex(isActive);
   if (first === -1) {
     return { ok: false, error: "No se ve la mano dominante levantada. Signa a la altura del pecho o la cara, sin tapar la cámara." };
@@ -439,10 +715,11 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
 
   const mirror = opts.leftHanded ? mirrorX : (a: Vec) => a;
   const build = (samples: (Sample | null)[]) => {
-    const pos = resample(channel(samples, (s) => s.pos), times);
-    const fingerCh = channel(samples, (s) => s.hand?.fingers);
-    const palmCh = channel(samples, (s) => s.hand?.palm);
-    const pointCh = channel(samples, (s) => s.hand?.point);
+    const sigma = typeof opts.smoothing === "number" ? opts.smoothing : adaptiveSigma(samples, opts.smoothing);
+    const pos = resample(channel(samples, (s) => s.pos, sigma), times);
+    const fingerCh = channel(samples, (s) => s.hand?.joints, sigma);
+    const palmCh = channel(samples, (s) => s.hand?.palm, sigma);
+    const pointCh = channel(samples, (s) => s.hand?.point, sigma);
     return {
       pos,
       fingers: fingerCh.length ? resample(fingerCh, times) : null,
@@ -453,8 +730,9 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
 
   const domRange = range(dom);
   const main = build(domRange);
-  const otherRange = range(frames.map((f) => sampleSide(f, other)));
-  const otherActive = otherRange.filter(isActive).length / otherRange.length;
+  const otherAll = frames.map((f) => sampleSide(f, other));
+  const otherRange = range(otherAll);
+  const otherActive = otherRange.filter(activeAbove(restY(otherAll))).length / otherRange.length;
   const second = otherActive >= 0.3 ? build(otherRange) : null;
 
   const handSpec = (d: ReturnType<typeof build>, i: number): AvatarKeyframe["hand"] => ({
@@ -466,8 +744,12 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
       ? { palmDir: d.palm[i]!.map(round) as Vec, pointDir: d.point[i]!.map(round) as Vec }
       : {}),
   });
-  const fingerSpec = (d: ReturnType<typeof build>, i: number) =>
-    (d.fingers ? d.fingers[i]! : RELAXED).map(round) as AvatarKeyframe["fingers"];
+  const fingerSpec = (d: ReturnType<typeof build>, i: number): AvatarKeyframe["fingers"] => {
+    const j = d.fingers?.[i];
+    if (!j) return [...RELAXED] as AvatarKeyframe["fingers"];
+    const two = (x: number) => Math.round(x * 100) / 100;
+    return [0, 1, 2, 3, 4].map((f) => [two(j[3 * f]!), two(j[3 * f + 1]!), two(j[3 * f + 2]!)]) as AvatarKeyframe["fingers"];
+  };
 
   // Contactos por tramos: los fotogramas seguidos en los que la mano toca (con huecos de
   // uno) son un solo contacto, con el punto y la parte más repetidos y el peso de lo más
@@ -475,8 +757,10 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
   // subía y bajaba, y el avatar se quedaba a medio camino. Un roce de un solo fotograma
   // (la mano que pasa por delante de la cara) no cuenta. La otra mano, solo si está en el clip.
   const runs = touchRuns(domRange, !!second);
-  const contactAt = (t: number): Contact | undefined =>
-    runs.find((r) => t >= r.t0 - STEP_MS / 2 && t <= r.t1 + STEP_MS / 2)?.contact;
+  const contactAt = (t: number): Contact | undefined => {
+    const run = runs.find((r) => t >= r.t0 - STEP_MS / 2 && t <= r.t1 + STEP_MS / 2);
+    return run && contactOfRun(run, t, opts.leftHanded ?? false);
+  };
 
   const keyframes: AvatarKeyframe[] = times.map((t, i) => {
     const contact = contactAt(t);
@@ -489,6 +773,7 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
   });
 
   const durationMs = Math.round(tEnd - t0);
+  const kept = opts.simplify === false ? keyframes : simplifyKeyframes(keyframes);
   const withHand = domRange.filter((s) => s?.hand).length;
 
   return {
@@ -496,7 +781,7 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
     clip: {
       handedness: second ? "two" : "one",
       duration: Math.max(200, Math.min(6000, durationMs)),
-      keyframes,
+      keyframes: kept,
     },
     templates: pickTemplates(domRange, opts.leftHanded ?? false),
     stats: {
@@ -507,6 +792,77 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
       durationMs,
     },
   };
+}
+
+/** Canales de un keyframe agrupados por tolerancia (ver SIMPLIFY_TOL). */
+function channelsOf(k: AvatarKeyframe): { pos: number[]; dir: number[]; finger: number[] } {
+  const hands = [k.hand, k.hand2].filter((h): h is AvatarKeyframe["hand"] => !!h);
+  const fingerVals = [k.fingers, k.fingers2 ?? []].flatMap((fs) =>
+    fs.flatMap((f) => (Array.isArray(f) ? f : typeof f === "number" ? [f] : [f.flex, f.abduction ?? 0])),
+  );
+  return {
+    pos: hands.flatMap((h) => [h.x, h.y, h.z]),
+    dir: hands.flatMap((h) => [...(h.palmDir ?? []), ...(h.pointDir ?? [])]),
+    finger: fingerVals,
+  };
+}
+
+const contactKey = (k: AvatarKeyframe) => {
+  const c = k.hand.contact;
+  return c ? `${c.at}/${c.with}` : "";
+};
+
+/**
+ * Quita los keyframes que se pueden reconstruir interpolando entre los que se quedan
+ * (Ramer-Douglas-Peucker en el tiempo, con una tolerancia por tipo de canal). Se quedan
+ * siempre el primero, el último y los que empiezan o acaban un contacto.
+ */
+export function simplifyKeyframes(kfs: AvatarKeyframe[]): AvatarKeyframe[] {
+  if (kfs.length <= 3) return kfs;
+  const ch = kfs.map(channelsOf);
+  const keep = new Set<number>([0, kfs.length - 1]);
+  for (let i = 1; i < kfs.length; i++) {
+    if (contactKey(kfs[i]!) !== contactKey(kfs[i - 1]!)) {
+      keep.add(i);
+      keep.add(i - 1);
+    }
+  }
+  // Un contacto que se desliza (cara) cambia de punto: se conservan sus keyframes.
+  kfs.forEach((k, i) => { if (k.hand.contact?.face) keep.add(i); });
+  const err = (i: number, a: number, b: number) => {
+    const u = (kfs[i]!.t - kfs[a]!.t) / (kfs[b]!.t - kfs[a]!.t || 1);
+    let worst = 0;
+    for (const g of ["pos", "dir", "finger"] as const) {
+      const va = ch[a]![g];
+      const vb = ch[b]![g];
+      const vi = ch[i]![g];
+      for (let c = 0; c < vi.length; c++) {
+        const lin = va[c]! + (vb[c]! - va[c]!) * u;
+        worst = Math.max(worst, Math.abs(vi[c]! - lin) / SIMPLIFY_TOL[g]);
+      }
+    }
+    return worst;
+  };
+  const split = (a: number, b: number) => {
+    if (b - a < 2) return;
+    let worst = 0;
+    let at = -1;
+    for (let i = a + 1; i < b; i++) {
+      const e = err(i, a, b);
+      if (e > worst) {
+        worst = e;
+        at = i;
+      }
+    }
+    if (worst > 1) {
+      keep.add(at);
+      split(a, at);
+      split(at, b);
+    }
+  };
+  const anchors = [...keep].sort((x, y) => x - y);
+  for (let j = 1; j < anchors.length; j++) split(anchors[j - 1]!, anchors[j]!);
+  return [...keep].sort((x, y) => x - y).map((i) => kfs[i]!);
 }
 
 /** Plantillas de reconocimiento: los fotogramas más quietos de la mano dominante. */

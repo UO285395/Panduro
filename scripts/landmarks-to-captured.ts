@@ -17,7 +17,8 @@ import { convertSample, type SwlExport } from "@/lib/avatar/importSwl";
 import { CapturedSignsSchema, type CapturedSigns } from "@/lib/curriculum/schema";
 
 const MIN_HAND_RATE = 0.6;
-const MIN_KEYFRAMES = 3;
+/** Menos no es un signo (la simplificación deja en dos keyframes un movimiento sencillo). */
+const MIN_DURATION_MS = 400;
 
 const args = process.argv.slice(2);
 const merge = args.includes("--merge");
@@ -53,9 +54,9 @@ for (const file of inputs) {
   const ref = data.doi ? (/^https?:/.test(data.doi) ? data.doi : `doi:${data.doi}`) : "";
   for (const [signId, samples] of Object.entries(data.signs)) {
     const candidates = samples
-      .map((s) => ({ s, ...convertSample(s.frames, s.fps ?? data.fps) }))
+      .map((s) => ({ s, ...convertSample(s.frames, s.fps ?? data.fps, s.aspect) }))
       .filter((c): c is typeof c & { result: { ok: true } } => c.result.ok)
-      .filter((c) => c.result.stats.handRate >= MIN_HAND_RATE && c.result.clip.keyframes.length >= MIN_KEYFRAMES)
+      .filter((c) => c.result.stats.handRate >= MIN_HAND_RATE && c.result.clip.duration >= MIN_DURATION_MS)
       .sort((a, b) => b.result.stats.handRate - a.result.stats.handRate);
     const best = candidates[0];
     if (!best) {

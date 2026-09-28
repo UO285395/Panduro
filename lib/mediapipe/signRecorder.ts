@@ -67,7 +67,13 @@ export class SignRecorder {
       .filter((s) => s.world.length === 21);
 
     return {
-      frame: { t, poseWorld, hands: assignHands(poseImage, samples) },
+      frame: {
+        t,
+        poseWorld,
+        poseImage,
+        aspect: video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : undefined,
+        hands: assignHands(poseImage, samples),
+      },
       poseImage,
       handsImage: samples.map((s) => s.image),
     };

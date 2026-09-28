@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { measureBody, surfaceFor, type Anchors, type Cloud } from "@/lib/avatar/bodyPoints";
+import {
+  faceSurface,
+  measureBody,
+  measureFace,
+  surfaceFor,
+  type Anchors,
+  type Cloud,
+} from "@/lib/avatar/bodyPoints";
 
 // Figura sintética en (r, u, f) con origen entre los ojos: cabeza elipsoidal,
 // cuello cilíndrico, torso en caja y un mechón de pelo delante de la frente.
@@ -83,5 +90,37 @@ describe("measureBody", () => {
     expect(surfaceFor(body, "temple", "left")).toBe(body.left.temple);
     expect(surfaceFor(body, "shoulderOther", "right")).toBe(body.left.shoulder);
     expect(surfaceFor(body, "chin", "left")).toBe(body.chin);
+  });
+});
+
+describe("faceSurface: el punto exacto de la cara", () => {
+  const cloud = figure();
+  const body = measureBody(cloud, anchors);
+  const grid = measureFace(cloud, body, anchors);
+
+  it("la boca de una persona cae en la boca del modelo, en la piel y mirando al frente", () => {
+    const s = faceSurface(grid, [0, -1]);
+    expect(s.p[1]).toBeCloseTo(body.mouth.p[1], 3);
+    expect(Math.abs(s.p[0])).toBeLessThan(0.005);
+    expect(s.p[2]).toBeCloseTo(body.mouth.p[2], 2);
+    expect(s.n[2]).toBeGreaterThan(0.8);
+  });
+
+  it("de abajo arriba y de un lado a otro, en orden", () => {
+    const u = [-1.75, -1, -0.5, 0, 0.8].map((v) => faceSurface(grid, [0, v]).p[1]);
+    for (let i = 1; i < u.length; i++) expect(u[i]!).toBeGreaterThan(u[i - 1]!);
+    expect(faceSurface(grid, [2.1, 0.3]).p[0]).toBeGreaterThan(0);
+    expect(faceSurface(grid, [-2.1, 0.3]).p[0]).toBeLessThan(0);
+  });
+
+  it("más allá de la sien queda en el borde de la cabeza, con la normal hacia fuera", () => {
+    const s = faceSurface(grid, [3.5, 0.3]);
+    expect(s.p[0]).toBeGreaterThan(0.05);
+    expect(s.p[0]).toBeLessThan(0.08);
+    expect(s.n[0]).toBeGreaterThan(0.5);
+  });
+
+  it("el mechón que sobresale de la frente no cuenta como piel", () => {
+    expect(faceSurface(grid, [0, 0.8]).p[2]).toBeLessThan(0.02);
   });
 });

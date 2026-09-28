@@ -36,15 +36,34 @@ describe("sampleClip", () => {
     expect(k.hand.x).toBe(2);
   });
 
-  it("interpola con Hermite: tangentes de los vecinos y cero en los extremos", () => {
-    // kf1 tiene tangente (2 - 0) / 1000 en x; kf0 y kf2, cero.
+  it("interpola con Hermite: tangentes monótonas de los vecinos y cero en los extremos", () => {
+    // x sube siempre: en kf1 la tangente es (2 - 0) / 1000; kf0 y kf2, cero.
     const a = sampleClip(clip, 250);
     expect(a.hand.x).toBeCloseTo(0.375, 4);
     expect(a.hand.y).toBeCloseTo(0.5, 4);
-    expect(a.fingers[0]).toBeCloseTo(0.46875, 4);
+    // Los dedos suben y bajan: kf1 es un máximo y su tangente es cero (Catmull-Rom daba 0.47 y 0.78).
+    expect(a.fingers[0]).toBeCloseTo(0.5, 4);
     const b = sampleClip(clip, 750);
     expect(b.hand.x).toBeCloseTo(1.625, 4);
-    expect(b.fingers[0]).toBeCloseTo(0.78125, 4);
+    expect(b.fingers[0]).toBeCloseTo(0.75, 4);
+  });
+
+  it("no se pasa de largo: entre dos keyframes no sale del rango de sus valores", () => {
+    const step: AvatarClip = {
+      handedness: "one",
+      duration: 1500,
+      keyframes: [0, 500, 1000, 1500].map((t, i) => ({
+        t,
+        hand: { x: [0, 0, 1, 1][i]!, y: 0, z: 0, rot: [0, 0, 0] as [number, number, number] },
+        fingers: [0, 0, 0, 0, 0] as AvatarClip["keyframes"][number]["fingers"],
+      })),
+    };
+    for (let t = 0; t <= 1500; t += 10) {
+      const x = sampleClip(step, t).hand.x;
+      expect(x).toBeGreaterThanOrEqual(-1e-9);
+      expect(x).toBeLessThanOrEqual(1 + 1e-9);
+      if (t <= 500) expect(Math.abs(x)).toBeLessThan(1e-9); // la pausa, quieta
+    }
   });
 
   it("mantiene la velocidad al cruzar un keyframe aunque los tramos sean desiguales", () => {

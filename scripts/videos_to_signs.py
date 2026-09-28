@@ -37,6 +37,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from swl_lse_export import POSE_POINTS, WRISTS, curriculum_ids, gloss_key  # noqa: E402
 
+FACE_POINTS = 11  # pose 0-10: nariz, ojos (interior, centro, exterior), orejas, comisuras
 VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"}
 MODELS = {
     "pose": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
@@ -60,7 +61,7 @@ def point(p, visibility: bool = False) -> list[float]:
     return out
 
 
-def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], float]:
+def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], float, float]:
     import cv2
     import mediapipe as mp
     from mediapipe.tasks.python import BaseOptions
@@ -75,6 +76,8 @@ def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], 
     )
     capture = cv2.VideoCapture(str(video))
     fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
+    width = capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 1.0
+    height = capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1.0
     if not 5 <= fps <= 120:
         fps = 25.0
     frames: list[dict] = []
@@ -93,6 +96,9 @@ def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], 
             if p.pose_world_landmarks and p.pose_landmarks:
                 entry["poseWorld"] = [point(q, visibility=True) for q in p.pose_world_landmarks[0][:POSE_POINTS]]
                 entry["wrists"] = [point(p.pose_landmarks[0][i]) for i in WRISTS]
+                # Cara en la imagen (nariz, ojos, orejas, boca): dónde toca la mano, sin la
+                # profundidad, que con el brazo levantado es poco fiable.
+                entry["face"] = [point(p.pose_landmarks[0][i]) for i in range(FACE_POINTS)]
             for img, wld in zip(h.hand_landmarks or [], h.hand_world_landmarks or []):
                 if len(img) == 21 and len(wld) == 21:
                     entry["hands"].append({"image": [point(q) for q in img], "world": [point(q) for q in wld]})
@@ -101,14 +107,15 @@ def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], 
         capture.release()
         pose.close()
         hands.close()
-    return frames, fps
+    return frames, fps, round(width / height, 4)
 
 
 def extract_task(task: tuple[Path, Path, str, str, str]) -> tuple[str, dict]:
     video, root, sign, pose_model, hand_model = task
-    frames, fps = extract(video, pose_model, hand_model)
+    frames, fps, aspect = extract(video, pose_model, hand_model)
+    # aspect (ancho/alto): las coordenadas de imagen van de 0 a 1 en los dos ejes.
     return sign, {"sample": video.relative_to(root).as_posix(), "label": video.stem, "fps": fps,
-                  "bytes": video.stat().st_size, "frames": frames}
+                  "aspect": aspect, "bytes": video.stat().st_size, "frames": frames}
 
 
 def sign_for(video: Path, root: Path, mapping: dict[str, str], wanted: set[str]) -> str | None:
@@ -171,7 +178,8 @@ def main() -> None:
             if sign in pages:
                 sample["url"] = pages[sign]
     # Ya hechos, salvo que el vídeo haya cambiado (p. ej. otra acepción con el mismo nombre).
-    done = {sample["sample"]: sample.get("bytes") for samples in out["signs"].values() for sample in samples}
+    done = {sample["sample"]: sample.get("bytes") for samples in out["signs"].values() for sample in samples
+            if "aspect" in sample}  # las de antes no tienen la cara en la imagen: se rehacen
     skipped = []
     tasks = []
     for video in videos:

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   assignHands,
+  faceCoords,
   fingerFlex,
+  fingerPose,
   framesToClip,
   handOrientation,
   mirroredHand,
@@ -9,6 +11,7 @@ import {
   type Landmark,
 } from "@/lib/avatar/capture";
 import type { Point3 } from "@/lib/mediapipe/types";
+import { sampleClip } from "@/lib/avatar/interpolate";
 
 // Ejes de cámara de MediaPipe: x a la derecha de la imagen, y hacia abajo,
 // z alejándose de la cámara. Un signante de frente y sin espejo tiene su
@@ -23,6 +26,8 @@ const signer = (r: number, u: number, f: number): Vec => add(mul(R, r), mul(U, u
 const pt = (a: Vec): Landmark => ({ x: a[0], y: a[1], z: a[2], visibility: 1 });
 const cross = (a: Vec, b: Vec): Vec => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const unit = (a: Vec): Vec => mul(a, 1 / Math.hypot(...a));
+const sub3 = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const dot3 = (a: Vec, b: Vec) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
 function makeHand(side: "left" | "right", point: Vec, palm: Vec, curled = false): Point3[] {
   const across = side === "right" ? cross(point, palm) : cross(palm, point);
@@ -180,6 +185,37 @@ describe("capture: landmarks → clip", () => {
     expect(res.templates.length).toBeGreaterThan(0);
   });
 
+  it("por encima de la boca la altura se cuenta en la cara: la muñeca a la altura de los ojos es 0.85", () => {
+    const frames: CaptureFrame[] = Array.from({ length: 20 }, (_, i) => {
+      const p = pose({ elbow: add(R_SH, signer(0.08, 0.02, 0.25)), wrist: add(R_SH, signer(0.1, 0.28, 0.31)) }, DOWN_LEFT);
+      p[2] = pt(signer(-0.03, 0.28, 0.1)); // ojos a 0.28 sobre los hombros; boca a 0.2
+      p[5] = pt(signer(0.03, 0.28, 0.1));
+      return { t: i * 33, poseWorld: p, hands: { right: { world: HOLA_HAND, image: image(HOLA_HAND) } } };
+    });
+    const res = framesToClip(frames);
+    if (!res.ok) throw new Error(res.error);
+    expect(res.clip.keyframes[0]!.hand.y).toBeCloseTo(0.85, 3);
+  });
+
+  it("cerca de la cara manda la altura de la imagen (la pose en 3D baja la muñeca levantada)", () => {
+    // En 3D la muñeca está a la altura de la boca (0.2); en la imagen, a la de los ojos.
+    const img: Point3[] = [];
+    img[2] = { x: 0.55, y: 0.3, z: 0 };
+    img[5] = { x: 0.45, y: 0.3, z: 0 };
+    img[9] = { x: 0.53, y: 0.37, z: 0 };
+    img[10] = { x: 0.47, y: 0.37, z: 0 };
+    img[16] = { x: 0.3, y: 0.3, z: 0 };
+    const frames: CaptureFrame[] = Array.from({ length: 20 }, (_, i) => {
+      const p = pose({ elbow: add(R_SH, signer(0.08, 0.0, 0.25)), wrist: add(R_SH, signer(0.1, 0.2, 0.31)) }, DOWN_LEFT);
+      p[2] = pt(signer(-0.03, 0.28, 0.1));
+      p[5] = pt(signer(0.03, 0.28, 0.1));
+      return { t: i * 33, poseWorld: p, poseImage: img, aspect: 1, hands: { right: { world: HOLA_HAND, image: image(HOLA_HAND) } } };
+    });
+    const res = framesToClip(frames);
+    if (!res.ok) throw new Error(res.error);
+    expect(res.clip.keyframes[0]!.hand.y).toBeCloseTo(0.85, 2);
+  });
+
   it("recorta el reposo antes y después del signo", () => {
     const frames = Array.from({ length: 40 }, (_, i) =>
       i >= 10 && i < 30 ? frame(i * 33, true, HOLA_HAND) : frame(i * 33, false),
@@ -318,5 +354,112 @@ describe("capture: landmarks → clip", () => {
     expect(both.right?.image[0]!.x).toBe(0.31);
     expect(both.left?.image[0]!.x).toBe(0.69);
     expect(assignHands(poseImage, [at(0.68)]).left).toBeDefined();
+  });
+});
+
+describe("capture: dónde toca en la cara, en la imagen", () => {
+  // Signante de frente, sin espejo: su ojo izquierdo (2) sale a la derecha de la imagen.
+  const img: Point3[] = [];
+  img[2] = { x: 0.55, y: 0.3, z: 0 };
+  img[5] = { x: 0.45, y: 0.3, z: 0 };
+  img[9] = { x: 0.53, y: 0.37, z: 0 };
+  img[10] = { x: 0.47, y: 0.37, z: 0 };
+
+  it("la boca es (0, −1) y la sien derecha, a la izquierda de la imagen, h positivo", () => {
+    expect(faceCoords(img, 1, { x: 0.5, y: 0.37 })).toEqual([0, -1]);
+    const [h, v] = faceCoords(img, 1, { x: 0.39, y: 0.28 })!;
+    expect(h).toBeCloseTo(2.2, 5);
+    expect(v).toBeCloseTo(0.29, 2);
+  });
+
+  it("no depende del tamaño ni del ancho del vídeo", () => {
+    const wide = img.map((p) => (p ? { ...p, x: 0.5 + (p.x - 0.5) / 2 } : p));
+    expect(faceCoords(wide, 2, { x: 0.5 + (0.39 - 0.5) / 2, y: 0.28 })).toEqual(faceCoords(img, 1, { x: 0.39, y: 0.28 }));
+  });
+});
+
+describe("capture: forma de cada dedo", () => {
+  // Mano derecha con los dedos hacia arriba y la palma al frente; cada dedo se dobla
+  // `mcp` en el nudillo y `pip` en las falanges, y se abre `az` hacia el pulgar.
+  const P: Vec = U;
+  const N: Vec = F;
+  const A: Vec = cross(P, N); // lado del índice (makeHand pone el índice en cross(point, palm))
+  const rotate = (v: Vec, toward: Vec, deg: number): Vec => {
+    const r = (deg * Math.PI) / 180;
+    return add(mul(v, Math.cos(r)), mul(toward, Math.sin(r)));
+  };
+  const shaped = (mcp: number, pip: number, az = 0) => {
+    const h = makeHand("right", P, N);
+    for (const base of [5, 9, 13, 17]) {
+      const m: Vec = [h[base]!.x, h[base]!.y, h[base]!.z];
+      // MediaPipe dobla ~14° el nudillo y ~3° la falange con la mano estirada.
+      const d1 = rotate(rotate(P, A, az), N, mcp + 14);
+      const n1 = unit(sub3(N, mul(d1, dot3(N, d1))));
+      const d2 = rotate(d1, n1, pip + 3);
+      const pts = [add(m, mul(d1, 0.04)), add(m, mul(d1, 0.04), mul(d2, 0.025)), add(m, mul(d1, 0.04), mul(d2, 0.045))];
+      pts.forEach((q, k) => (h[base + 1 + k] = { x: q[0], y: q[1], z: q[2] }));
+    }
+    return fingerPose(h, "right");
+  };
+  const deg = (r: number) => (r * 180) / Math.PI;
+
+  it("distingue la B doblada (solo el nudillo) de la garra (solo las falanges)", () => {
+    const bent = shaped(80, 0);
+    const claw = shaped(0, 90);
+    for (let i = 1; i < 5; i++) {
+      expect(deg(bent[i]![1])).toBeGreaterThan(70);
+      expect(Math.abs(deg(bent[i]![2]))).toBeLessThan(15);
+      expect(Math.abs(deg(claw[i]![1]))).toBeLessThan(15);
+      expect(deg(claw[i]![2])).toBeGreaterThan(80);
+    }
+  });
+
+  it("mide la separación de los dedos estirados", () => {
+    const together = shaped(0, 0, 0);
+    const spread = shaped(0, 0, 20);
+    for (let i = 1; i < 5; i++) expect(deg(spread[i]![0] - together[i]![0])).toBeCloseTo(20, 0);
+  });
+});
+
+describe("capture: suavizado según la velocidad", () => {
+  // 1 s quieta con temblor de ±1 cm y luego 1 s oscilando ±8 cm a 3 Hz (como ADIÓS),
+  // comparado con el suavizado fijo de antes (σ 60 ms).
+  let seed = 7;
+  const noise = () => ((seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5) * 0.02;
+  const frames: CaptureFrame[] = Array.from({ length: 50 }, (_, i) => {
+    const t = i * 40;
+    const dx = t < 1000 ? noise() : 0.08 * Math.sin(2 * Math.PI * 3 * ((t - 1000) / 1000));
+    const wrist = add(RAISED_RIGHT.wrist, signer(dx, 0, 0));
+    return { t, poseWorld: pose({ elbow: RAISED_RIGHT.elbow, wrist }, DOWN_LEFT), hands: { right: { world: HOLA_HAND, image: image(HOLA_HAND) } } };
+  });
+  const clipOf = (opts: Parameters<typeof framesToClip>[1]) => {
+    const r = framesToClip(frames, opts);
+    if (!r.ok) throw new Error(r.error);
+    return r.clip;
+  };
+  const spread = (clip: ReturnType<typeof clipOf>, from: number, to: number) => {
+    const xs: number[] = [];
+    for (let t = from; t <= to; t += 10) xs.push(sampleClip(clip, t).hand.x);
+    return Math.max(...xs) - Math.min(...xs);
+  };
+  // Sin quitar keyframes, para comparar solo el filtro.
+  const adaptive = clipOf({ simplify: false });
+  const fixed = clipOf({ smoothing: 60, simplify: false });
+
+  // Temblor: aceleración media (segundas diferencias) de la muñeca.
+  const roughness = (clip: ReturnType<typeof clipOf>, from: number, to: number) => {
+    const xs: number[] = [];
+    for (let t = from; t <= to; t += 20) xs.push(sampleClip(clip, t).hand.x);
+    let acc = 0;
+    for (let i = 1; i + 1 < xs.length; i++) acc += Math.abs(xs[i + 1]! - 2 * xs[i]! + xs[i - 1]!);
+    return acc / (xs.length - 2);
+  };
+
+  it("con la mano quieta tiembla bastante menos", () => {
+    expect(roughness(adaptive, 200, 800)).toBeLessThan(0.7 * roughness(fixed, 200, 800));
+  });
+
+  it("una oscilación rápida conserva su amplitud", () => {
+    expect(spread(adaptive, 1100, 1900)).toBeGreaterThan(0.85 * spread(fixed, 1100, 1900));
   });
 });

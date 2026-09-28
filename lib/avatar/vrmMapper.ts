@@ -2,8 +2,17 @@ import type { VRM } from "@pixiv/three-vrm";
 import { VRMHumanBoneName as B } from "@pixiv/three-vrm";
 import * as THREE from "three";
 import type { AvatarClip, AvatarKeyframe, Contact } from "@/lib/curriculum/schema";
-import { isOtherHand, measureBody, surfaceFor, type BodyMap, type Cloud } from "./bodyPoints";
-import { distributeFlex, getFingerAbduction, getFingerFlex } from "./pose";
+import {
+  faceSurface,
+  isOtherHand,
+  measureBody,
+  measureFace,
+  surfaceFor,
+  type BodyMap,
+  type Cloud,
+  type FaceGrid,
+} from "./bodyPoints";
+import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST, Y_MOUTH, Y_PER_FACE } from "./pose";
 
 /**
  * Anima un VRM a partir de los keyframes del currículo.
@@ -49,7 +58,13 @@ const FINGERS: Record<Side, [B, B, B][]> = {
 
 const THUMB_FLEX_SCALE = 0.7;
 
-type FingerRest = { bones: [B, B, B]; curlAxis: THREE.Vector3 };
+type FingerRest = {
+  bones: [B, B, B];
+  curlAxis: THREE.Vector3;
+  /** Dirección de reposo en el marco de la mano (ver FingerValue medido). */
+  restAz: number;
+  restEl: number;
+};
 type Fingers = AvatarKeyframe["fingers"];
 
 type ArmRest = {
@@ -61,6 +76,8 @@ type ArmRest = {
   handRestInv: THREE.Matrix4;
   palmRest: THREE.Vector3;
   fingers: FingerRest[];
+  /** Signo del giro alrededor de la normal de la palma que abre hacia el pulgar. */
+  azSign: number;
 };
 
 export type VrmRig = {
@@ -79,6 +96,8 @@ export type VrmRig = {
   /** Origen (entre los ojos) de las coordenadas de `body`. */
   eyes: THREE.Vector3;
   body: BodyMap;
+  /** Lo más adelantado de la cabeza por columnas: dónde cae un contacto con coordenadas de cara. */
+  face: FaceGrid;
   /** Clips con los contactos ya resueltos para este modelo. */
   resolved: WeakMap<AvatarClip, AvatarClip>;
 };
@@ -139,6 +158,10 @@ export function createVrmRig(vrm: VRM): VrmRig {
     const r2 = w.clone().sub(e).normalize();
     const r3 = tip ? tip.clone().sub(w).normalize() : r2.clone();
     const palmRest = perp(down, r3, forward);
+    // Marco de la mano en reposo: hacia el corazón, hacia el lado del índice y la palma.
+    const idx = pos(FINGERS[side][1]![0]);
+    const lit = pos(FINGERS[side][4]![0]);
+    const thumbSide = idx && lit ? perp(perp(idx.clone().sub(lit), r3, forward), palmRest, forward) : forward.clone();
 
     const fingers: FingerRest[] = FINGERS[side].map((chain) => {
       const a = pos(chain[0]);
@@ -146,7 +169,13 @@ export function createVrmRig(vrm: VRM): VrmRig {
       const dir = a && b ? b.clone().sub(a).normalize() : r3.clone();
       const curlAxis = new THREE.Vector3().crossVectors(dir, palmRest);
       if (curlAxis.lengthSq() < 1e-6) curlAxis.crossVectors(r3, palmRest);
-      return { bones: chain, curlAxis: curlAxis.normalize() };
+      const inPlane = Math.hypot(dir.dot(thumbSide), dir.dot(r3));
+      return {
+        bones: chain,
+        curlAxis: curlAxis.normalize(),
+        restAz: Math.atan2(dir.dot(thumbSide), dir.dot(r3)),
+        restEl: Math.atan2(dir.dot(palmRest), inPlane),
+      };
     });
 
     arms[side] = {
@@ -158,6 +187,7 @@ export function createVrmRig(vrm: VRM): VrmRig {
       handRestInv: basis(r3, palmRest).invert(),
       palmRest,
       fingers,
+      azSign: Math.sign(new THREE.Vector3().crossVectors(palmRest, r3).dot(thumbSide)) || 1,
     };
   }
 
@@ -178,14 +208,17 @@ export function createVrmRig(vrm: VRM): VrmRig {
     const d = p.clone().sub(origin);
     return [d.dot(right), d.y, d.dot(forward)];
   };
-  const body = measureBody(collectCloud(vrm, toModel, origin, right, forward), {
+  const cloud = collectCloud(vrm, toModel, origin, right, forward);
+  const anchors = {
     eyeSep: eyeL && eyeR ? eyeL.distanceTo(eyeR) : 0.12 * armLen,
     neckU: (pos(B.Neck) ?? head).y - origin.y,
     hipsU: (pos(B.Hips) ?? R.shoulder.clone().setY(shoulderY - armLen)).y - origin.y,
     shoulderU: shoulderY - origin.y,
     shoulder: local(R.shoulder),
     armLen,
-  });
+  };
+  const body = measureBody(cloud, anchors);
+  const face = measureFace(cloud, body, anchors);
 
   return {
     vrm,
@@ -200,6 +233,7 @@ export function createVrmRig(vrm: VRM): VrmRig {
     arms,
     eyes: origin,
     body,
+    face,
     resolved: new WeakMap(),
   };
 }
@@ -318,11 +352,26 @@ function poseArm(rig: VrmRig, side: Side, goal: ArmGoal) {
   setNorm(rig.vrm, bones.hand, q2.clone().invert().multiply(qh));
 }
 
+/** Reparto de la flexión medida entre la falange media y la distal (el pulgar, a partes iguales). */
+const MEASURED_SPLIT = { finger: [1, 0.65], thumb: [0.5, 0.5] } as const;
+
 function poseFingers(rig: VrmRig, side: Side, fingers: Fingers) {
   const arm = rig.arms[side];
   const abdSign = side === "Right" ? 1 : -1;
   arm.fingers.forEach((finger, i) => {
     const value = fingers[i]!;
+    const curlAbout = (angle: number) => new THREE.Quaternion().setFromAxisAngle(finger.curlAxis, angle);
+    if (isMeasured(value)) {
+      // Medido: el primer hueso gira hasta el azimut y la elevación grabados (en el marco de
+      // esta mano) y los otros dos doblan lo que dobló el dedo.
+      const [az, el, bend] = value;
+      const [m, d] = i === 0 ? MEASURED_SPLIT.thumb : MEASURED_SPLIT.finger;
+      const spread = new THREE.Quaternion().setFromAxisAngle(arm.palmRest, (az - finger.restAz) * arm.azSign);
+      setNorm(rig.vrm, finger.bones[0], spread.multiply(curlAbout(el - finger.restEl)));
+      setNorm(rig.vrm, finger.bones[1], curlAbout(bend * m));
+      setNorm(rig.vrm, finger.bones[2], curlAbout(bend * d));
+      return;
+    }
     const flex = distributeFlex(getFingerFlex(value));
     const scale = i === 0 ? THUMB_FLEX_SCALE : 1;
     const abd = new THREE.Quaternion().setFromAxisAngle(arm.palmRest, getFingerAbduction(value) * abdSign);
@@ -345,7 +394,7 @@ function signingGoal(rig: VrmRig, side: Side, hand: HandSpec): ArmGoal {
   const target = rig.arms[side].shoulder.clone()
     .addScaledVector(outward, hand.x * 1.2 * L)
     .addScaledVector(rig.forward, (0.55 + hand.z * 0.9) * L)
-    .setY(rig.chestY + ((hand.y - 0.35) / 0.35) * (rig.mouthY - rig.chestY));
+    .setY(heightToModel(rig, hand.y));
   const pole = outward.clone().multiplyScalar(0.25)
     .addScaledVector(rig.up, -1)
     .addScaledVector(rig.forward, -0.3);
@@ -370,9 +419,20 @@ function toSigningSpace(rig: VrmRig, side: Side, target: THREE.Vector3): Pick<Ha
   const d = target.clone().sub(rig.arms[side].shoulder);
   return {
     x: d.dot(outward) / (1.2 * L),
-    y: 0.35 + (0.35 * (target.y - rig.chestY)) / (rig.mouthY - rig.chestY),
+    y: heightFromModel(rig, target.y),
     z: (d.dot(rig.forward) / L - 0.55) / 0.9,
   };
+}
+
+/** Altura del currículo → altura en el modelo (ver Y_PER_FACE: por encima de la boca, en su cara). */
+function heightToModel(rig: VrmRig, y: number): number {
+  if (y <= Y_MOUTH) return rig.chestY + ((y - Y_CHEST) / (Y_MOUTH - Y_CHEST)) * (rig.mouthY - rig.chestY);
+  return rig.mouthY + ((y - Y_MOUTH) / Y_PER_FACE) * Math.max(1e-3, rig.eyes.y - rig.mouthY);
+}
+
+function heightFromModel(rig: VrmRig, h: number): number {
+  if (h <= rig.mouthY) return Y_CHEST + ((Y_MOUTH - Y_CHEST) * (h - rig.chestY)) / (rig.mouthY - rig.chestY);
+  return Y_MOUTH + (Y_PER_FACE * (h - rig.mouthY)) / Math.max(1e-3, rig.eyes.y - rig.mouthY);
 }
 
 // --- Contactos -------------------------------------------------------------
@@ -481,7 +541,7 @@ function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Finge
         return { p: frame.wrist.clone().addScaledVector(frame.normal, frame.thick), n: frame.normal };
     }
   }
-  const s = surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
+  const s = c.face ? faceSurface(rig.face, c.face) : surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
   const local = (v: [number, number, number]) =>
     rig.right.clone().multiplyScalar(v[0]).addScaledVector(rig.up, v[1]).addScaledVector(rig.forward, v[2]);
   return { p: rig.eyes.clone().add(local(s.p)), n: local(s.n) };

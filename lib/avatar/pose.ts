@@ -23,13 +23,34 @@ export type Pose = {
   abduction: [number, number, number, number, number];
 };
 
-/** Extrae el valor de flexión de un FingerValue (número o {flex, abduction?}). */
+/**
+ * Altura de la mano (y del currículo): del pecho (0.35) a la boca (0.70) es lineal; por
+ * encima se cuenta en distancias boca→ojos, 0.15 cada una. Así una mano junto a la frente
+ * queda junto a la frente también en un avatar de cabeza grande.
+ */
+export const Y_CHEST = 0.35;
+export const Y_MOUTH = 0.7;
+export const Y_PER_FACE = 0.15;
+
+const DEG = Math.PI / 180;
+/** Flexión máxima del nudillo y de la falange media (dedo medido, ver FingerValue). */
+export const MCP_MAX = 85 * DEG;
+export const PIP_MAX = 100 * DEG;
+/** Azimut de cada dedo estirado en una mano relajada (medianas del DILSE, desde el corazón). */
+export const REST_AZIMUTH = [32 * DEG, 7 * DEG, 0, -3 * DEG, -13 * DEG] as const;
+
+export type MeasuredFinger = [number, number, number];
+export const isMeasured = (v: FingerValue): v is MeasuredFinger => Array.isArray(v);
+
+/** Extrae el valor de flexión 0..1 de un FingerValue. */
 export function getFingerFlex(v: FingerValue): number {
+  if (isMeasured(v)) return Math.max(0, Math.min(1, (v[1] + v[2]) / (MCP_MAX + PIP_MAX)));
   return typeof v === "number" ? v : v.flex;
 }
 
-/** Extrae la abducción de un FingerValue (0 si es número simple). */
+/** Extrae la abducción de un FingerValue (0 si es número simple o medido). */
 export function getFingerAbduction(v: FingerValue): number {
+  if (isMeasured(v)) return 0;
   return typeof v === "number" ? 0 : (v.abduction ?? 0);
 }
 

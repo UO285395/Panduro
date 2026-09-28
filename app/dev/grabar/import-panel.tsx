@@ -20,7 +20,7 @@ export function ImportPanel() {
       const data = JSON.parse(await file.text()) as SwlExport;
       if (!data.signs || !data.fps) throw new Error();
       const next = Object.entries(data.signs).map(([signId, samples]) => {
-        const converted = samples.map((s) => ({ sample: s.sample, label: s.label, ...convertSample(s.frames, s.fps ?? data.fps) }));
+        const converted = samples.map((s) => ({ sample: s.sample, label: s.label, ...convertSample(s.frames, s.fps ?? data.fps, s.aspect) }));
         const firstOk = converted.findIndex((c) => c.result.ok);
         return { signId, samples: converted, chosen: Math.max(0, firstOk), include: firstOk >= 0 };
       });

@@ -5,10 +5,15 @@ import { BODY_POINTS, OTHER_HAND_POINTS } from "@/lib/avatar/bodyPoints";
 // Avatar clip (keyframes ligeros interpretados por AvatarPlayer)
 // ---------------------------------------------------------------------------
 
-// Un dedo puede ser un número simple (flexión 0..1) o un objeto con abducción.
+// Un dedo puede ser un número simple (flexión 0..1), un objeto con abducción o, en las
+// grabaciones, la medida de sus articulaciones: [azimut, elevación, flexión] en radianes.
+// Azimut: hacia el lado del pulgar en el plano de la palma, desde el dedo corazón;
+// elevación: el nudillo (o la base del pulgar) hacia la palma; flexión: la falange media
+// (la distal la sigue), o en el pulgar las dos últimas juntas. Ver lib/avatar/capture.ts.
 const FingerValueSchema = z.union([
   z.number(),
   z.object({ flex: z.number(), abduction: z.number().optional() }),
+  z.tuple([z.number(), z.number(), z.number()]),
 ]);
 export type FingerValue = z.infer<typeof FingerValueSchema>;
 
@@ -23,6 +28,9 @@ const ContactSchema = z.object({
   gap: z.number().min(0).optional(), // separación de la piel, en longitudes de brazo
   offset: z.tuple([z.number(), z.number()]).optional(), // [hacia fuera, arriba] sobre la piel
   weight: z.number().min(0).max(1).optional(), // 1 = contacto; menos, mezcla con x/y/z
+  // Punto exacto de la cara medido en una grabación (ver FaceCoords en bodyPoints): manda
+  // sobre `at`, que queda como nombre aproximado.
+  face: z.tuple([z.number(), z.number()]).optional(),
 });
 export type Contact = z.infer<typeof ContactSchema>;
 

@@ -4,6 +4,7 @@ import {
   fingerFlex,
   framesToClip,
   handOrientation,
+  mirroredHand,
   type CaptureFrame,
   type Landmark,
 } from "@/lib/avatar/capture";
@@ -88,12 +89,72 @@ const HOLA_HAND = makeHand("right", U, F);
 
 describe("capture: landmarks → clip", () => {
   it("mide flexión de dedos: mano abierta ≈ 0, puño ≈ 1", () => {
-    const open = fingerFlex(HOLA_HAND);
-    const fist = fingerFlex(makeHand("right", U, F, true));
+    const open = fingerFlex(HOLA_HAND, "right");
+    const fist = fingerFlex(makeHand("right", U, F, true), "right");
     for (let i = 1; i < 5; i++) {
       expect(open[i]).toBeLessThan(0.1);
       expect(fist[i]).toBeGreaterThan(0.9);
     }
+  });
+
+  it("el temblor de los landmarks no se mide como flexión, con cualquier mano", () => {
+    // Mano abierta con cada articulación desviada ±25° hacia la palma o el dorso,
+    // como sale en vídeo: con ángulos sin signo sumaba 75° y daba flexión 0.35.
+    const jitter = (side: "left" | "right", palm: Vec) => {
+      const h = makeHand(side, U, palm);
+      const tilt = Math.tan((25 * Math.PI) / 180) * 0.02;
+      for (const base of [5, 9, 13, 17]) {
+        [1, -1, 1].forEach((s, k) => {
+          for (let j = base + 1 + k; j <= base + 3; j++) {
+            const p = add([h[j]!.x, h[j]!.y, h[j]!.z], mul(palm, s * tilt));
+            h[j] = { x: p[0], y: p[1], z: p[2] };
+          }
+        });
+      }
+      return h;
+    };
+    for (const side of ["right", "left"] as const) {
+      const open = fingerFlex(jitter(side, F), side);
+      const fist = fingerFlex(makeHand(side, U, F, true), side);
+      for (let i = 1; i < 5; i++) {
+        expect(open[i]).toBeLessThan(0.25);
+        expect(fist[i]).toBeGreaterThan(0.9);
+      }
+    }
+  });
+
+  it("calibrada con vídeo real: 55° es un dedo estirado y 165°, uno cerrado", () => {
+    // Dedo recto que sale del nudillo girado `deg` hacia la palma (toda la flexión en él).
+    const bent = (deg: number) => {
+      const h = makeHand("right", U, F);
+      const r = (deg * Math.PI) / 180;
+      const dir = add(mul(U, Math.cos(r)), mul(F, Math.sin(r)));
+      for (const base of [5, 9, 13, 17]) {
+        const m: Vec = [h[base]!.x, h[base]!.y, h[base]!.z];
+        [0.04, 0.065, 0.085].forEach((d, k) => {
+          const p = add(m, mul(dir, d));
+          h[base + 1 + k] = { x: p[0], y: p[1], z: p[2] };
+        });
+      }
+      return fingerFlex(h, "right");
+    };
+    for (let i = 1; i < 5; i++) {
+      expect(bent(55)[i]).toBeLessThan(0.15);
+      expect(bent(110)[i]).toBeGreaterThan(0.35);
+      expect(bent(110)[i]).toBeLessThan(0.65);
+      expect(bent(165)[i]).toBeGreaterThan(0.85);
+    }
+  });
+
+  it("descarta la mano reflejada en profundidad (dedos doblados hacia el dorso)", () => {
+    const mirror = (h: Point3[]) => h.map((p) => ({ x: p.x, y: p.y, z: -p.z }));
+    const fist = makeHand("right", U, F, true);
+    expect(mirroredHand(fist, "right")).toBe(false);
+    expect(mirroredHand(mirror(fist), "right")).toBe(true);
+    // La otra mano asignada por error también sale reflejada.
+    expect(mirroredHand(makeHand("left", U, F, true), "right")).toBe(true);
+    // Con la mano plana no hay forma de saberlo: se acepta.
+    expect(mirroredHand(mirror(HOLA_HAND), "right")).toBe(false);
   });
 
   it("palma y dedos de una mano derecha con la palma hacia delante", () => {
@@ -168,9 +229,10 @@ describe("capture: landmarks → clip", () => {
     const CHIN = signer(0, 0.2 - 1.8 * 0.04, 0.1 - 1.8 * 0.02);
     const hand = makeHand("right", U, mul(F, -1));
     const indexOffset: Vec = [hand[8]!.x - hand[0]!.x, hand[8]!.y - hand[0]!.y, hand[8]!.z - hand[0]!.z];
-    const touching = (gap: number): CaptureFrame[] =>
+    // `gap`: separación en el plano de la imagen (bajo la barbilla); `depth`: por delante.
+    const touching = (gap: number, depth = 0): CaptureFrame[] =>
       Array.from({ length: 20 }, (_, i) => {
-        const wrist = add(CHIN, mul(indexOffset, -1), signer(0, 0, gap));
+        const wrist = add(CHIN, mul(indexOffset, -1), signer(0, -gap, depth));
         const p = withFace(pose({ elbow: add(R_SH, signer(0.05, -0.1, 0.2)), wrist }, DOWN_LEFT));
         return { t: i * 33, poseWorld: p, hands: { right: { world: hand, image: image(hand) } } };
       });
@@ -182,14 +244,41 @@ describe("capture: landmarks → clip", () => {
       expect(res.clip.keyframes[0]!.hand.contact).toEqual({ at: "chin", with: "index", weight: 1 });
     });
 
-    it("a medio camino, contacto parcial; lejos, ninguno", () => {
-      const mid = framesToClip(touching(0.05));
+    it("un acercamiento breve a medio camino es contacto parcial; mantenido, pleno; lejos, ninguno", () => {
+      const away = touching(0.2);
+      const halfway = touching(0.05);
+      // Tres fotogramas (menos de TOUCH_HOLD_MS) a 5 cm de la barbilla.
+      const brief = framesToClip(away.map((f, i) => (i >= 9 && i <= 11 ? halfway[i]! : f)));
+      const held = framesToClip(halfway);
       const far = framesToClip(touching(0.15));
-      if (!mid.ok || !far.ok) throw new Error("clip");
-      const w = mid.clip.keyframes[0]!.hand.contact?.weight ?? 0;
+      if (!brief.ok || !held.ok || !far.ok) throw new Error("clip");
+      const w = Math.max(...brief.clip.keyframes.map((k) => k.hand.contact?.weight ?? 0));
       expect(w).toBeGreaterThan(0.2);
-      expect(w).toBeLessThan(1);
+      expect(w).toBeLessThan(0.9);
+      expect(held.clip.keyframes[0]!.hand.contact?.weight).toBeGreaterThanOrEqual(0.9);
       expect(far.clip.keyframes[0]!.hand.contact).toBeUndefined();
+    });
+
+    it("un contacto que parpadea es un solo tramo; un roce de un fotograma no cuenta", () => {
+      const near = touching(0);
+      const away = touching(0.2);
+      // Uno de cada tres fotogramas la detección se aleja: sigue siendo el mismo contacto.
+      const flicker = framesToClip(near.map((f, i) => (i % 3 === 1 ? away[i]! : f)));
+      if (!flicker.ok) throw new Error(flicker.error);
+      for (const k of flicker.clip.keyframes) {
+        expect(k.hand.contact).toEqual({ at: "chin", with: "index", weight: 1 });
+      }
+      const brush = framesToClip(away.map((f, i) => (i === 10 ? near[i]! : f)));
+      if (!brush.ok) throw new Error(brush.error);
+      expect(brush.clip.keyframes.some((k) => k.hand.contact)).toBe(false);
+    });
+
+    it("cuenta el contacto aunque la pose ponga la mano por delante de la cara", () => {
+      // Con el brazo levantado MediaPipe adelanta la muñeca 15-30 cm aunque toque la cara.
+      const res = framesToClip(touching(0, 0.2));
+      if (!res.ok) throw new Error(res.error);
+      expect(res.clip.keyframes[0]!.hand.contact).toMatchObject({ at: "chin", with: "index" });
+      expect(res.clip.keyframes[0]!.hand.contact!.weight).toBeGreaterThan(0.5);
     });
 
     it("la mano dominante sobre la palma de la otra toca otherPalm; por detrás, otherBack", () => {

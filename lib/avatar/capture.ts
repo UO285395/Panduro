@@ -46,6 +46,12 @@ const FULL = distributeFlex(1);
 const FINGER_MAX = FULL.proximal + FULL.middle + FULL.distal;
 /** Igual que THUMB_FLEX_SCALE del mapper: el pulgar dobla menos. */
 const THUMB_MAX = 0.7 * FINGER_MAX;
+const DEG = Math.PI / 180;
+/** Flexión medida de un dedo estirado y de uno cerrado del todo (ver fingerFlex). */
+const OPEN_BEND = 50 * DEG;
+const CURLED_BEND = 170 * DEG;
+/** Suma de los cuatro dedos por debajo de la cual la mano está reflejada. */
+const MIRRORED_BEND = -120 * DEG;
 const FINGER_CHAINS = [
   [1, 2, 3, 4],
   [0, 5, 6, 7, 8],
@@ -89,32 +95,59 @@ function invSmoothstep(c: number): number {
 }
 
 /**
- * Flexión 0..1 por dedo (pulgar, índice, medio, anular, meñique). En los
- * cuatro dedos se mide solo en el plano de flexión (se descarta la componente
- * a lo largo de los nudillos) y la referencia del nudillo es el eje de la
- * palma, no la línea muñeca→nudillo, que se abre en abanico con la mano plana.
+ * Lo que dobla cada dedo (rad), del índice al meñique. Se mide solo en el plano
+ * de flexión (se descarta la componente a lo largo de los nudillos) y desde el
+ * eje de la palma, no desde la línea muñeca→nudillo, que se abre en abanico con
+ * la mano plana. Los ángulos llevan signo (hacia la palma, positivo): el
+ * temblor de los landmarks dobla unas articulaciones hacia un lado y otras
+ * hacia el otro y así se compensa, en vez de sumarse como flexión.
  */
-export function fingerFlex(world: Point3[]): number[] {
+function fingerBends(world: Point3[], side: Side): number[] {
   const at = (i: number) => v(world[i]!);
-  const knuckles = unit(sub(at(5), at(17)));
+  const o = handOrientation(world, side);
+  let knuckles = unit(sub(at(5), at(17)));
+  // Eje de flexión orientado para que doblar hacia la palma sea positivo.
+  if (dot(knuckles, cross(o.point, o.palm)) < 0) knuckles = scale(knuckles, -1);
   const inPlane = (a: Vec) => sub(a, scale(knuckles, dot(a, knuckles)));
-  const palmAxis = sub(at(9), at(0));
-  return FINGER_CHAINS.map((chain, i) => {
+  const signed = (a: Vec, b: Vec) => Math.atan2(dot(cross(a, b), knuckles), dot(a, b));
+  return FINGER_CHAINS.slice(1).map((chain) => {
     let bend = 0;
-    if (i === 0) {
-      for (let k = 0; k + 2 < chain.length; k++) {
-        bend += angle(sub(at(chain[k + 1]!), at(chain[k]!)), sub(at(chain[k + 2]!), at(chain[k + 1]!)));
-      }
-      return invSmoothstep(bend / THUMB_MAX);
-    }
-    let prev = inPlane(palmAxis);
+    let prev = inPlane(sub(at(9), at(0)));
     for (let k = 1; k + 1 < chain.length; k++) {
       const seg = inPlane(sub(at(chain[k + 1]!), at(chain[k]!)));
-      bend += angle(prev, seg);
+      bend += signed(prev, seg);
       prev = seg;
     }
-    return invSmoothstep(bend / FINGER_MAX);
+    return bend;
   });
+}
+
+/**
+ * Flexión 0..1 por dedo (pulgar, índice, medio, anular, meñique). En los vídeos
+ * del DILSE un dedo estirado mide 50-60° y uno cerrado del todo 150-170°: se
+ * reescala ese tramo para que la mano abierta quede abierta en el avatar y el
+ * puño, cerrado.
+ */
+export function fingerFlex(world: Point3[], side: Side): number[] {
+  const at = (i: number) => v(world[i]!);
+  const c = FINGER_CHAINS[0]!;
+  let thumb = 0;
+  for (let k = 0; k + 2 < c.length; k++) {
+    thumb += angle(sub(at(c[k + 1]!), at(c[k]!)), sub(at(c[k + 2]!), at(c[k + 1]!)));
+  }
+  return [
+    invSmoothstep(thumb / THUMB_MAX),
+    ...fingerBends(world, side).map((b) => invSmoothstep((b - OPEN_BEND) / (CURLED_BEND - OPEN_BEND))),
+  ];
+}
+
+/**
+ * La mano que dan los landmarks dobla los dedos hacia el dorso: MediaPipe la ha
+ * reflejado en profundidad o es la otra mano. Su palma sale al revés, así que
+ * ese fotograma no sirve.
+ */
+export function mirroredHand(world: Point3[], side: Side): boolean {
+  return fingerBends(world, side).reduce((a, b) => a + b, 0) < MIRRORED_BEND;
 }
 
 /** Dirección de los dedos y normal de la palma (lado de la palma) de una mano. */
@@ -156,6 +189,10 @@ const FACE = { nose: 0, lEye: 2, lEyeOuter: 3, rEye: 5, rEyeOuter: 6, lEar: 7, r
 /** A esta distancia o menos, contacto pleno; a partir de TOUCH_FAR, ninguno. */
 export const TOUCH_NEAR = 0.035;
 export const TOUCH_FAR = 0.07;
+/** Un contacto que dura esto o más cuenta como pleno (ver touchRuns). */
+const TOUCH_HOLD_MS = 200;
+/** Peso de la profundidad (z de la cámara) al medir si la mano toca la cara. */
+const FACE_DEPTH_WEIGHT = 0.25;
 
 /**
  * Qué toca la mano en un fotograma: la parte de la mano (yemas, índice, pulgar, palma o
@@ -194,12 +231,13 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   const corner = v(p[r ? P.mouthR : P.mouthL]!);
   const upFace = sub(eyes, mouth);
   const lerp = (a: Vec, b: Vec, u: number): Vec => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
+  // Sin el ojo: los signos tocan la sien, la frente o la mejilla junto a él, y con la
+  // profundidad poco fiable un índice en la sien salía como «ojo» (y el avatar se lo metía).
   const targets: [Contact["at"], Vec][] = [
     ["chin", sub(mouth, scale(sub(nose, mouth), 1.8))],
     ["mouth", mouth],
     ["nose", nose],
     ["forehead", [eyes[0] + upFace[0] * 0.8, eyes[1] + upFace[1] * 0.8, eyes[2] + upFace[2] * 0.8]],
-    ["eye", v(p[r ? FACE.rEye : FACE.lEye]!)],
     ["temple", [...lerp(eyeOuter, ear, 0.35)].map((x, k) => x + upFace[k]! * 0.3) as Vec],
     ["cheek", lerp(corner, ear, 0.4)],
     ["ear", ear],
@@ -221,7 +259,12 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   let bestPart: Vec | null = null;
   for (const [what, q] of parts) {
     for (const [where, tp] of targets) {
-      const d = len(sub(q, tp));
+      const diff = sub(q, tp);
+      // Contra la cara, la profundidad cuenta poco: con el brazo levantado la pose pone la
+      // muñeca 15-30 cm por delante aunque la mano toque la frente o la barbilla (en el
+      // plano de la imagen, que sí es fiable, está encima). Entre las dos manos el error es
+      // parecido en las dos muñecas y se anula.
+      const d = where.startsWith("other") ? len(diff) : Math.hypot(diff[0], diff[1], FACE_DEPTH_WEIGHT * diff[2]);
       if (!best || d < best.d) {
         best = { at: where, with: what, d };
         bestPart = q;
@@ -233,6 +276,52 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
     best = { ...best, at: "otherBack" };
   }
   return best && best.d < TOUCH_FAR ? best : undefined;
+}
+
+const mode = <T>(xs: T[]): T => {
+  const count = new Map<T, number>();
+  for (const x of xs) count.set(x, (count.get(x) ?? 0) + 1);
+  return [...count.entries()].sort((a, b) => b[1] - a[1])[0]![0];
+};
+
+function touchRuns(samples: (Sample | null)[], twoHands: boolean): { t0: number; t1: number; contact: Contact }[] {
+  const out: { t0: number; t1: number; contact: Contact }[] = [];
+  let run: Sample[] = [];
+  let gap = 0;
+  const flush = () => {
+    const touching = run.filter((s) => twoHands || !s.touch!.at.startsWith("other"));
+    if (touching.length >= 2) {
+      const at = mode(touching.map((s) => s.touch!.at));
+      const same = touching.filter((s) => s.touch!.at === at);
+      // El momento del toque es el más cercano del tramo (la pose comprime la cara y en los
+      // demás fotogramas la mano parece más lejos de lo que está).
+      const d = Math.min(...same.map((s) => s.touch!.d));
+      const closeness = Math.max(0, Math.min(1, (TOUCH_FAR - d) / (TOUCH_FAR - TOUCH_NEAR)));
+      // Quedarse junto al mismo punto un rato es tocarlo: al signar la mano no se para al
+      // lado de la cara sin tocarla, y la distancia medida engaña (la pose estrecha la cara).
+      const held = same[same.length - 1]!.t - same[0]!.t >= TOUCH_HOLD_MS;
+      const weight = held && closeness > 0 ? Math.max(closeness, 0.9) : closeness;
+      if (weight >= 0.1) {
+        out.push({
+          t0: touching[0]!.t,
+          t1: touching[touching.length - 1]!.t,
+          contact: { at, with: mode(same.map((s) => s.touch!.with)), weight: round(weight) },
+        });
+      }
+    }
+    run = [];
+    gap = 0;
+  };
+  for (const s of samples) {
+    if (s?.touch) {
+      run.push(s);
+      gap = 0;
+    } else if (run.length && ++gap > 1) {
+      flush();
+    }
+  }
+  flush();
+  return out;
 }
 
 type Timed<T> = { t: number; val: T };
@@ -316,9 +405,9 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
       (dot(rel, F) / armLen - 0.55) / 0.9,
     ];
     const h = f.hands[side];
-    if (!h) return { t: f.t, pos };
+    if (!h || mirroredHand(h.world, side)) return { t: f.t, pos };
     const o = handOrientation(h.world, side);
-    const fingers = fingerFlex(h.world);
+    const fingers = fingerFlex(h.world, side);
     return {
       t: f.t,
       pos,
@@ -380,17 +469,14 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
   const fingerSpec = (d: ReturnType<typeof build>, i: number) =>
     (d.fingers ? d.fingers[i]! : RELAXED).map(round) as AvatarKeyframe["fingers"];
 
-  // Contacto del fotograma más cercano a cada keyframe, con un peso que crece según se
-  // acerca la mano (de TOUCH_FAR a TOUCH_NEAR). Tocar la otra mano solo si está en el clip.
-  const touched = domRange.filter((s): s is Sample => !!s);
-  const contactAt = (t: number): Contact | undefined => {
-    let near: Sample | undefined;
-    for (const s of touched) if (!near || Math.abs(s.t - t) < Math.abs(near.t - t)) near = s;
-    const touch = near?.touch;
-    if (!touch || (touch.at.startsWith("other") && !second)) return undefined;
-    const weight = Math.max(0, Math.min(1, (TOUCH_FAR - touch.d) / (TOUCH_FAR - TOUCH_NEAR)));
-    return weight >= 0.1 ? { at: touch.at, with: touch.with, weight: round(weight) } : undefined;
-  };
+  // Contactos por tramos: los fotogramas seguidos en los que la mano toca (con huecos de
+  // uno) son un solo contacto, con el punto y la parte más repetidos y el peso de lo más
+  // cerca que llega. Fotograma a fotograma el punto saltaba (sien, nariz, sien…) y el peso
+  // subía y bajaba, y el avatar se quedaba a medio camino. Un roce de un solo fotograma
+  // (la mano que pasa por delante de la cara) no cuenta. La otra mano, solo si está en el clip.
+  const runs = touchRuns(domRange, !!second);
+  const contactAt = (t: number): Contact | undefined =>
+    runs.find((r) => t >= r.t0 - STEP_MS / 2 && t <= r.t1 + STEP_MS / 2)?.contact;
 
   const keyframes: AvatarKeyframe[] = times.map((t, i) => {
     const contact = contactAt(t);

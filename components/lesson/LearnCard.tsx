@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AnimationCredit } from "@/components/avatar/AnimationCredit";
 import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
 import type { AvatarClip, Sign } from "@/lib/curriculum/schema";
 
@@ -37,6 +38,7 @@ export function LearnCard({ sign, onContinue }: { sign: Sign; onContinue: () => 
           {sign.handedness === "two" && (
             <p className="text-sm text-slate-500">Se hace con las dos manos.</p>
           )}
+          <AnimationCredit credit={sign.animationCredit} />
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-500">Velocidad:</span>
             {SPEEDS.map((s) => (

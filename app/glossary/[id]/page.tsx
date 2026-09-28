@@ -44,6 +44,7 @@ export default async function SignDetailPage({ params }: Props) {
         tags: sign.tags,
         handedness: sign.handedness,
         avatarClip: sign.avatarClip ?? null,
+        animationCredit: sign.animationCredit ?? null,
       }}
       levelId={levelId}
       lessons={lessons}

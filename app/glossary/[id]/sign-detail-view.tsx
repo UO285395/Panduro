@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AnimationCredit } from "@/components/avatar/AnimationCredit";
 import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
-import type { AvatarClip } from "@/lib/curriculum/schema";
+import type { AvatarClip, Sign } from "@/lib/curriculum/schema";
 
 type LessonRef = {
   lessonId: string;
@@ -20,6 +21,7 @@ type Props = {
     tags: string[];
     handedness: "one" | "two";
     avatarClip: AvatarClip | null;
+    animationCredit: Sign["animationCredit"] | null;
   };
   levelId: string;
   lessons: LessonRef[];
@@ -73,6 +75,9 @@ export function SignDetailView({ sign, levelId, lessons }: Props) {
                 {s === 1 ? "Normal" : s === 0.5 ? "Lenta ×½" : "Muy lenta ×¼"}
               </button>
             ))}
+          </div>
+          <div className="max-w-[280px] text-center">
+            <AnimationCredit credit={sign.animationCredit} />
           </div>
           <Link href={`/dev/grabar?sign=${sign.id}`} className="text-xs text-slate-500 hover:text-brand-600 hover:underline">
             ¿Está mal? Grabar este signo

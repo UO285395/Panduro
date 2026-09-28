@@ -82,6 +82,9 @@ export const CapturedSignsSchema = z.object({
       templates: z.array(z.array(z.object({ x: z.number(), y: z.number(), z: z.number() }))).default([]),
       recordedAt: z.string(),
       source: z.string(),
+      /** Licencia del vídeo de origen cuando no es propio (p. ej. DILSE): hay que citarlo. */
+      license: z.string().optional(),
+      url: z.string().url().optional(),
     }),
   ),
 });
@@ -100,6 +103,8 @@ export const SignSchema = z.object({
   handedness: z.enum(["one", "two"]).default("one"),
   tags: z.array(z.string()).default([]),
   avatarClip: AvatarClipSchema.optional(),
+  /** De dónde sale la animación si viene de un vídeo ajeno (la rellena el loader). */
+  animationCredit: z.object({ source: z.string(), license: z.string(), url: z.string().optional() }).optional(),
 });
 export type Sign = z.infer<typeof SignSchema>;
 

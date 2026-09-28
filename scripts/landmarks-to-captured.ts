@@ -23,11 +23,21 @@ const args = process.argv.slice(2);
 const merge = args.includes("--merge");
 const outIdx = args.indexOf("--out");
 const out = outIdx >= 0 ? args[outIdx + 1]! : "signos-convertidos.json";
-const inputs = args.filter((a, i) => !a.startsWith("--") && i !== outIdx + 1);
+const inputs = args.filter((a, i) => !a.startsWith("--") && (outIdx < 0 || i !== outIdx + 1));
 if (inputs.length === 0) {
   console.error("Uso: pnpm tsx scripts/landmarks-to-captured.ts <landmarks.json[.gz]> [--merge] [--out archivo.json]");
   process.exit(1);
 }
+
+/** Dos decimales bastan para el avatar (1 % del brazo, 0.6° en una dirección) y pesan menos en la app. */
+const roundClip = (clip: CapturedSigns["signs"][string]["avatarClip"]) =>
+  JSON.parse(JSON.stringify(clip, (_k, v) => (typeof v === "number" && !Number.isInteger(v) ? Math.round(v * 100) / 100 : v))) as typeof clip;
+
+/** Un signo por línea: el archivo se puede revisar y los cambios de un signo no mueven los demás. */
+const storeJson = (store: { version: 1; signs: Record<string, unknown> }) =>
+  `{\n  "version": ${store.version},\n  "signs": {\n${Object.entries(store.signs)
+    .map(([id, e]) => `    ${JSON.stringify(id)}: ${JSON.stringify(e)}`)
+    .join(",\n")}\n  }\n}\n`;
 
 const read = (file: string): SwlExport => {
   const raw = readFileSync(file);
@@ -53,11 +63,14 @@ for (const file of inputs) {
       continue;
     }
     contacts += best.result.clip.keyframes.filter((k) => k.hand.contact).length > 0 ? 1 : 0;
+    const url = best.s.url ?? (/^https?:/.test(data.doi) ? data.doi : undefined);
     result.signs[signId] = {
       avatarClip: best.result.clip,
       templates: best.result.templates,
       recordedAt: new Date().toISOString(),
-      source: `${data.source} (${data.license}${ref ? `, ${ref}` : ""}) · muestra ${best.s.sample}${best.leftHanded ? " · signante zurdo" : ""}`,
+      source: `${data.source}${!url && ref ? ` (${ref})` : ""}${best.leftHanded ? " · signante zurdo" : ""}`,
+      license: data.license,
+      ...(url ? { url } : {}),
     };
   }
 }
@@ -68,11 +81,23 @@ console.log(`${converted} signos convertidos (${contacts} con contacto detectado
 if (rejected.length) console.log(`Sin muestra válida (${rejected.length}): ${rejected.join(", ")}`);
 
 if (merge) {
-  const target = join(process.cwd(), "content", "signs", "captured.json");
-  const store = CapturedSignsSchema.parse(JSON.parse(readFileSync(target, "utf8")));
-  Object.assign(store.signs, valid.signs);
-  store.signs = Object.fromEntries(Object.entries(store.signs).sort(([a], [b]) => a.localeCompare(b)));
-  writeFileSync(target, JSON.stringify(store, null, 2) + "\n");
+  const dir = join(process.cwd(), "content", "signs");
+  const target = join(dir, "captured.json");
+  const templatesFile = join(dir, "captured-templates.json");
+  type Store<T> = { version: 1; signs: Record<string, T> };
+  const store = JSON.parse(readFileSync(target, "utf8")) as Store<object>;
+  const templates = JSON.parse(readFileSync(templatesFile, "utf8")) as Store<unknown>;
+  for (const [id, { templates: tpl, ...entry }] of Object.entries(valid.signs)) {
+    // Las plantillas van aparte: el reconocedor no necesita los clips ni el avatar las plantillas.
+    store.signs[id] = { ...entry, avatarClip: roundClip(entry.avatarClip) };
+    if (tpl.length) templates.signs[id] = tpl;
+  }
+  const sorted = <T>(o: Record<string, T>) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
+  store.signs = sorted(store.signs);
+  templates.signs = sorted(templates.signs);
+  CapturedSignsSchema.parse(store);
+  writeFileSync(target, storeJson(store));
+  writeFileSync(templatesFile, JSON.stringify(templates) + "\n");
   console.log(`Añadidos a ${target} (${Object.keys(store.signs).length} signos grabados en total).`);
 } else {
   writeFileSync(out, JSON.stringify(valid, null, 2) + "\n");

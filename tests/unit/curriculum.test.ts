@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import captured from "@/content/signs/captured.json";
+import capturedTemplates from "@/content/signs/captured-templates.json";
 import {
+  getAllLevels,
   getLevel,
   getLesson,
   getLessonSequence,
@@ -77,5 +80,28 @@ describe("curriculum: schema + loader", () => {
     expect(level.signs.length).toBeGreaterThanOrEqual(40);
     const unitIds = level.units.map((u) => u.id);
     expect(unitIds).toEqual(["a1.u1", "a1.u2", "a1.u3", "a1.u4", "a1.u5", "a1.u6", "a1.u7", "a1.u8"]);
+  });
+
+  it("los signos animados con vídeos ajenos citan la fuente, la licencia y la entrada", () => {
+    const signs = getAllLevels().flatMap((l) => l.signs);
+    const withLicense = Object.entries(captured.signs).filter(([, e]) => "license" in e);
+    for (const [id, entry] of withLicense) {
+      const sign = signs.find((s) => s.id === id);
+      expect(sign, id).toBeDefined();
+      expect(sign!.avatarClip).toEqual(entry.avatarClip);
+      expect(sign!.animationCredit?.license, id).toBe((entry as { license: string }).license);
+      if ((entry as { source: string }).source.startsWith("DILSE")) {
+        expect(sign!.animationCredit?.url, id).toMatch(/^https:\/\/fundacioncnse-dilse\.org\//);
+      }
+    }
+  });
+
+  it("las plantillas de reconocimiento de los signos grabados van aparte de sus clips", () => {
+    for (const [id, entry] of Object.entries(captured.signs)) {
+      expect("templates" in entry && (entry as { templates: unknown[] }).templates.length, id).toBeFalsy();
+    }
+    for (const id of Object.keys(capturedTemplates.signs)) {
+      expect(captured.signs, id).toHaveProperty(id);
+    }
   });
 });

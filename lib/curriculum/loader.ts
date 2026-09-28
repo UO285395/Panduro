@@ -34,6 +34,7 @@ function loadAll(): Level[] {
       if (rec) {
         sign.avatarClip = rec.avatarClip;
         sign.handedness = rec.avatarClip.handedness;
+        if (rec.license) sign.animationCredit = { source: rec.source, license: rec.license, url: rec.url };
       }
     }
     levels.push(parsed);

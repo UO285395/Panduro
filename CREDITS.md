@@ -4,7 +4,14 @@ Panduro combina código propio con recursos abiertos de la comunidad LSE. Este a
 
 ## Recursos lingüísticos (contenido)
 
-- **DILSE** — Diccionario de la Lengua de Signos Española (Fundación CNSE). <https://fundacioncnse-dilse.org>. Consultar términos de uso; atribución obligatoria.
+- **DILSE** — Diccionario de la Lengua de Signos Española, © Fundación CNSE. <https://fundacioncnse-dilse.org>. Licencia **CC BY-NC-SA 3.0**.
+  Las animaciones del avatar de los signos marcados con esta fuente en `content/signs/captured.json`
+  (y sus plantillas de reconocimiento en `captured-templates.json`) se han obtenido de los vídeos del
+  DILSE: posición, forma y orientación de las manos medidas con MediaPipe en cada fotograma
+  (`scripts/dilse_download.py`, `scripts/videos_to_signs.py`, `scripts/landmarks-to-captured.ts`).
+  Son una obra derivada y se distribuyen con la misma licencia CC BY-NC-SA 3.0, sin uso comercial. La
+  app cita la fuente y enlaza la entrada del diccionario junto a cada animación. Los vídeos no se
+  incluyen en el repositorio.
 - **Spreadthesign** — diccionario internacional gratuito de lenguas de signos. <https://www.spreadthesign.com>. Uso educativo.
 - **ARASAAC** — Portal Aragonés de la Comunicación Aumentativa y Alternativa. Pictogramas y recursos LSE bajo **CC BY-NC-SA 4.0**. <https://arasaac.org>.
 

@@ -9,8 +9,11 @@ export type SwlFrame = {
   wrists: [Triple, Triple] | null;
   hands: { image: Triple[]; world: Triple[] }[];
 };
-/** `fps` por muestra cuando los vídeos no comparten frecuencia (scripts/videos_to_signs.py). */
-export type SwlSample = { sample: string; label: string; frames: SwlFrame[]; fps?: number };
+/**
+ * `fps` por muestra cuando los vídeos no comparten frecuencia y `url` con la página del
+ * signo en su diccionario (scripts/videos_to_signs.py).
+ */
+export type SwlSample = { sample: string; label: string; frames: SwlFrame[]; fps?: number; url?: string };
 export type SwlExport = {
   source: string;
   license: string;

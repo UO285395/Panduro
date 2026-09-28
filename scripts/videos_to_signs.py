@@ -18,7 +18,9 @@ Qué signo es cada vídeo:
     .venv/bin/python scripts/videos_to_signs.py --videos RUTA --out signos.json \\
         --source "DILSE · Fundación CNSE" --license "CC BY-NC-SA 3.0" --url https://fundacioncnse-dilse.org
 
-Los modelos de MediaPipe se descargan la primera vez (los mismos que usa la app).
+Los modelos de MediaPipe se descargan la primera vez (los mismos que usa la app). Con
+--jobs se procesan varios vídeos a la vez, y si --out ya existe solo se procesan los
+vídeos que faltan (se puede cortar y seguir, o repetir mientras se descargan más).
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ import argparse
 import csv
 import json
 import sys
+from multiprocessing import Pool
 import urllib.request
 from pathlib import Path
 
@@ -101,11 +104,20 @@ def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], 
     return frames, fps
 
 
+def extract_task(task: tuple[Path, Path, str, str, str]) -> tuple[str, dict]:
+    video, root, sign, pose_model, hand_model = task
+    frames, fps = extract(video, pose_model, hand_model)
+    return sign, {"sample": video.relative_to(root).as_posix(), "label": video.stem, "fps": fps,
+                  "bytes": video.stat().st_size, "frames": frames}
+
+
 def sign_for(video: Path, root: Path, mapping: dict[str, str], wanted: set[str]) -> str | None:
     rel = video.relative_to(root).as_posix()
     if rel in mapping or video.name in mapping:
         return mapping.get(rel) or mapping[video.name]
     for name in (video.stem, video.parent.name):
+        if name in wanted:  # ya es el id («NUM_1.mov», como los deja dilse_download.py)
+            return name
         key = gloss_key(name)
         if key in wanted:
             return key
@@ -122,6 +134,9 @@ def main() -> None:
     parser.add_argument("--url", default="", help="de dónde salen los vídeos (se guarda en la atribución)")
     parser.add_argument("--all", action="store_true", help="incluir también vídeos que no son del currículo")
     parser.add_argument("--models", type=Path, default=ROOT / ".cache" / "mediapipe")
+    parser.add_argument("--jobs", type=int, default=1, help="vídeos en paralelo")
+    parser.add_argument("--manifest", type=Path,
+                        help="manifest.csv de dilse_download.py (por defecto, el de la carpeta de encima de --videos)")
     args = parser.parse_args()
 
     mapping: dict[str, str] = {}
@@ -131,6 +146,13 @@ def main() -> None:
                 if len(row) >= 2 and row[0].strip():
                     mapping[row[0].strip()] = row[1].strip()
 
+    # Página de cada signo en su diccionario, para citarla junto a la animación.
+    pages: dict[str, str] = {}
+    manifest = args.manifest or args.videos.parent / "manifest.csv"
+    if manifest.exists():
+        with open(manifest, encoding="utf-8") as handle:
+            pages = {r["signId"]: r["page_url"] for r in csv.DictReader(handle) if r.get("page_url")}
+
     wanted = curriculum_ids()
     videos = sorted(p for p in args.videos.rglob("*") if p.suffix.lower() in VIDEO_EXTENSIONS)
     if not videos:
@@ -139,7 +161,19 @@ def main() -> None:
     hand_model = model_path("hand", args.models)
 
     out: dict = {"source": args.source, "license": args.license, "doi": args.url, "fps": 25.0, "signs": {}}
+    if args.out.exists():
+        out["signs"] = json.loads(args.out.read_text(encoding="utf-8")).get("signs", {})
+    # Fuera las muestras cuyo vídeo ya no está (p. ej. un signo que se descartó).
+    out["signs"] = {sign: kept for sign, samples in out["signs"].items()
+                    if (kept := [x for x in samples if (args.videos / x["sample"]).exists()])}
+    for sign, samples in out["signs"].items():
+        for sample in samples:
+            if sign in pages:
+                sample["url"] = pages[sign]
+    # Ya hechos, salvo que el vídeo haya cambiado (p. ej. otra acepción con el mismo nombre).
+    done = {sample["sample"]: sample.get("bytes") for samples in out["signs"].values() for sample in samples}
     skipped = []
+    tasks = []
     for video in videos:
         sign = sign_for(video, args.videos, mapping, wanted)
         if sign is None and args.all:
@@ -147,14 +181,29 @@ def main() -> None:
         if sign is None:
             skipped.append(video.name)
             continue
-        frames, fps = extract(video, pose_model, hand_model)
-        with_hands = sum(1 for f in frames if f["hands"])
-        out["signs"].setdefault(sign, []).append(
-            {"sample": video.relative_to(args.videos).as_posix(), "label": video.stem, "fps": fps, "frames": frames}
-        )
-        print(f"{sign:20} {video.name}: {len(frames)} fotogramas a {fps:.0f} fps, manos en {with_hands}")
+        rel = video.relative_to(args.videos).as_posix()
+        if rel not in done or done[rel] not in (None, video.stat().st_size):
+            tasks.append((video, args.videos, sign, pose_model, hand_model))
+    if len(tasks) < len(videos) - len(skipped):
+        print(f"Ya en {args.out}: {len(videos) - len(skipped) - len(tasks)} vídeos; faltan {len(tasks)}.")
 
-    args.out.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
+    def save() -> None:
+        args.out.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
+
+    with Pool(max(1, args.jobs)) as pool:
+        for i, (sign, sample) in enumerate(pool.imap_unordered(extract_task, tasks), 1):
+            if sign in pages:
+                sample["url"] = pages[sign]
+            samples = out["signs"].setdefault(sign, [])
+            samples[:] = [s for s in samples if s["sample"] != sample["sample"]] + [sample]
+            frames = sample["frames"]
+            with_hands = sum(1 for f in frames if f["hands"])
+            print(f"[{i}/{len(tasks)}] {sign:20} {Path(sample['sample']).name}: {len(frames)} fotogramas a "
+                  f"{sample['fps']:.0f} fps, manos en {with_hands}", flush=True)
+            if i % 10 == 0:
+                save()
+
+    save()
     print(f"\n{sum(len(v) for v in out['signs'].values())} vídeos de {len(out['signs'])} signos → {args.out}")
     if skipped:
         print(f"Sin signo del currículo ({len(skipped)}): {', '.join(skipped[:15])}{'…' if len(skipped) > 15 else ''}")

@@ -122,6 +122,12 @@ Los signos se representan con un avatar 3D construido sobre **Three.js**. Cada `
 2. **VRM externo** cuando pongas un `.vrm` compatible en `public/avatars/panduro.vrm` (queda como TODO integrar el mapa de bones VRM ↔ pose interna; el binario está gitignored).
 3. **Fallback SVG animado** si Three.js no arranca (WebGL desactivado o navegador antiguo).
 
+La mayoría de los signos del curso se animan a partir de los vídeos del **DILSE** (Diccionario
+de la LSE de la Fundación CNSE, CC BY-NC-SA 3.0): se miden con MediaPipe la posición, la forma y
+la orientación de las manos y los contactos, y el avatar los reproduce
+(`content/signs/captured.json`). Cada animación cita su fuente y enlaza la entrada del
+diccionario. El proceso completo está en [`docs/datasets.md`](./docs/datasets.md).
+
 ## Corpus semilla del clasificador
 
 El clasificador k-NN reconoce desde el minuto uno con **plantillas sintéticas plausibles** para las **12 letras más distintivas** (A, B, C, F, I, L, O, P, U, V, W, Y) y **6 signos léxicos** (HOLA, ADIOS, GRACIAS, SI, NO, BIEN), tres muestras por cada uno. Las plantillas viven en `content/signs/fingerspelling.json` y `content/signs/lexicon.json`, marcadas con `templateSource: "synthetic"`.
@@ -179,3 +185,4 @@ Ver [`CONTRIBUTING.md`](./CONTRIBUTING.md) — incluye el flujo para asesores so
 
 Código: MIT (ver [`LICENSE`](./LICENSE)).
 Contenido de signos y traducciones: sujeto a licencias de terceros (DILSE, ARASAAC, Spreadthesign). Ver [`CREDITS.md`](./CREDITS.md).
+Las animaciones obtenidas de los vídeos del DILSE son obra derivada y se distribuyen con su misma licencia, CC BY-NC-SA 3.0 (sin uso comercial).

@@ -1,7 +1,6 @@
-import capturedData from "@/content/signs/captured.json";
+import capturedTemplates from "@/content/signs/captured-templates.json";
 import fingerspellingData from "@/content/signs/fingerspelling.json";
 import lexiconData from "@/content/signs/lexicon.json";
-import { CapturedSignsSchema } from "@/lib/curriculum/schema";
 import type { Template } from "./knn";
 import type { NormalizedLandmark } from "@/lib/mediapipe/types";
 import { extractFeatures } from "./features";
@@ -56,9 +55,10 @@ export function loadGlobalTemplates(): Template[] {
       out.push({ label: letter, features: extractFeatures(normalizeLandmarks(landmarks)) });
     }
   }
-  const captured = CapturedSignsSchema.parse(capturedData).signs;
+  // Plantillas de los signos grabados (aparte de sus clips, que solo necesita el avatar).
+  const captured = (capturedTemplates as { signs: Record<string, NormalizedLandmark[][]> }).signs;
   for (const [signId, entry] of Object.entries(lexicon.signs)) {
-    const recorded = captured[signId]?.templates ?? [];
+    const recorded = captured[signId] ?? [];
     for (const landmarks of recorded.length ? recorded : entry.templates) {
       out.push({ label: signId, features: extractFeatures(normalizeLandmarks(landmarks)) });
     }

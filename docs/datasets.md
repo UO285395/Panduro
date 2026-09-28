@@ -20,6 +20,28 @@ Desde el entorno de desarrollo en la nube solo se llega a GitHub, npm y PyPI: Ze
 diccionarios y los repositorios científicos están bloqueados por la política de red. Los
 datos se descargan en local, o se añaden sus dominios a la red permitida del entorno.
 
+## DILSE de principio a fin
+
+```bash
+python3 scripts/dilse_download.py                       # data/dilse/videos/<ID>.mov + manifest.csv
+.venv/bin/python scripts/videos_to_signs.py --videos data/dilse/videos --out data/dilse/landmarks.json --jobs 3 \
+    --source "DILSE · Fundación CNSE" --license "CC BY-NC-SA 3.0" --url https://fundacioncnse-dilse.org
+pnpm tsx scripts/landmarks-to-captured.ts data/dilse/landmarks.json --merge
+```
+
+- `dilse_download.py` busca cada signo del currículo en el diccionario (también femeninos,
+  plurales y expresiones que son sublemas de otra entrada, como «buenos días» en «día») y
+  anota en `manifest.csv` la entrada, la acepción elegida y si había varias (`ambiguo`). La
+  acepción se elige por el nombre del vídeo (`rosa-color`, `metro-tren`) y la definición frente a
+  las etiquetas y la descripción del signo; las que no quedan claras se fijan a mano en `CHOSEN`
+  (también `None` si ninguna es la del curso) y se rehacen con `--only ID…`. Lo que no encuentra
+  no lo adivina: esos signos siguen con su animación generada.
+- Va a una petición por segundo como mucho. Si se corta, se vuelve a lanzar y sigue.
+- `videos_to_signs.py` también sigue donde lo dejó si `--out` ya existe (vuelve a procesar un
+  vídeo si ha cambiado y quita los que ya no están), y guarda en cada muestra el enlace a su
+  entrada del diccionario (lo lee de `manifest.csv`), que la app muestra junto a la animación.
+- `data/` no se sube al repositorio: solo las animaciones resultantes.
+
 ## De vídeos a animaciones
 
 ```bash

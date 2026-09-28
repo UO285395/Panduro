@@ -42,6 +42,46 @@ misma tarea en una sesión nueva.
   no se pueden conocer los patrones de URL de búsqueda, ficha y vídeo, y no se ha querido
   inventarlos.
 
+## Segundo intento — 2026-09-28 14:06 UTC
+
+Tras el cambio de la red del entorno a *Custom* con `fundacioncnse-dilse.org` permitido,
+se relanzó la tarea. El acceso **sigue bloqueado** en esta sesión:
+
+```
+$ curl -sS -o /dev/null -w "%{http_code}" https://fundacioncnse-dilse.org/
+curl: (56) CONNECT tunnel failed, response 403
+000
+```
+
+Comprobaciones adicionales (14:06:50 UTC):
+
+| URL | Resultado |
+|---|---|
+| `https://fundacioncnse-dilse.org/` | `000` — CONNECT 403 |
+| `https://www.fundacioncnse-dilse.org/` | `000` — CONNECT 403 |
+| `http://fundacioncnse-dilse.org/` | `403` |
+| `https://www.cnse.es/` | `000` — CONNECT 403 |
+| `https://example.com/` | `000` — CONNECT 403 |
+
+`$HTTPS_PROXY/__agentproxy/status` → `recentRelayFailures`:
+`"kind": "connect_rejected", "detail": "gateway answered 403 to CONNECT (policy denial or upstream failure)", "host": "fundacioncnse-dilse.org:443"`
+(y lo mismo para `www.fundacioncnse-dilse.org:443`, `www.cnse.es:443` y `example.com:443`).
+
+Como hasta `example.com` se rechaza, lo más probable es que **esta sesión se creara con la
+política de red anterior** (el cambio de *Network access* se aplica a las sesiones nuevas),
+o que la lista *Custom* no se haya guardado. Qué comprobar antes del próximo intento:
+
+1. En *Edit* del entorno → *Network access* = *Custom*, que la lista contenga
+   `fundacioncnse-dilse.org` **y** `www.fundacioncnse-dilse.org` (o `*.fundacioncnse-dilse.org`),
+   y guardar.
+2. Lanzar la tarea en una **sesión nueva** (no reanudar esta).
+3. Si los vídeos se sirvieran desde otro dominio/CDN, el script lo anotará aquí; habrá que
+   añadirlo también a la lista.
+
+Resultado de este intento: buscados 0 · encontrados 0 · descargados 0 · con manos detectadas 0.
+No se han creado `dilse/manifest.csv`, `scripts/dilse_download.py` ni landmarks, por la misma
+razón que antes (no se pueden conocer los patrones de URL reales sin acceso a la web).
+
 ## Atribución y licencia
 
 Los vídeos de referencia proceden del **Diccionario de la Lengua de Signos Española (DILSE),

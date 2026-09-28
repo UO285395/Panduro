@@ -31,10 +31,14 @@ python -m venv .venv
 
 - Cada vídeo se asigna a un signo del curso por su nombre o el de su carpeta
   (`hola.mp4`, `HOLA/1.mp4`, `Buenos días.mp4`), o con `--map archivo,signo` en un CSV.
-- En `/dev/grabar` → «Importar landmarks», carga el JSON, revisa cada signo en el avatar
-  (varias muestras por signo: elige la mejor), y descarga.
-- `node scripts/add-captured.mjs archivo-descargado.json` lo añade al curso. La fuente y la
-  licencia quedan en cada signo; añádelas a `CREDITS.md`.
+- Para muchos signos de golpe: `pnpm tsx scripts/landmarks-to-captured.ts dilse.json --merge`
+  convierte cada signo con la mejor de sus muestras (descarta las que apenas detectan la mano)
+  y lo añade a `content/signs/captured.json`. Sin `--merge` escribe un archivo para revisarlo.
+- Para revisar uno a uno: `/dev/grabar` → «Importar landmarks», elige la mejor muestra mirando
+  el avatar, descarga y `node scripts/add-captured.mjs archivo-descargado.json`.
+- En los dos casos se detectan los contactos (yemas en la barbilla, índice en la sien, mano
+  sobre la palma de la otra…) y el avatar los reproduce sobre su propia cara y manos.
+- La fuente y la licencia quedan en cada signo; añádelas a `CREDITS.md`.
 
 Con licencias NC (DILSE, LSE-Health) Panduro puede usarlos porque no es comercial; con SA
 (DILSE) las animaciones derivadas se comparten con la misma licencia.

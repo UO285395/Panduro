@@ -152,6 +152,74 @@ describe("capture: landmarks → clip", () => {
     expect(k.hand.palmDir![2]).toBeGreaterThan(0.95);
   });
 
+  describe("contactos detectados en la grabación", () => {
+    // Cara del signante: nariz algo por encima y delante de la boca, ojos, orejas.
+    const withFace = (p: Landmark[]) => {
+      p[0] = pt(signer(0, 0.24, 0.12));
+      p[2] = pt(signer(-0.03, 0.28, 0.1));
+      p[3] = pt(signer(-0.05, 0.28, 0.09));
+      p[5] = pt(signer(0.03, 0.28, 0.1));
+      p[6] = pt(signer(0.05, 0.28, 0.09));
+      p[7] = pt(signer(-0.08, 0.26, 0.02));
+      p[8] = pt(signer(0.08, 0.26, 0.02));
+      return p;
+    };
+    // Barbilla = boca − 1,8·(nariz − boca), como en detectTouch.
+    const CHIN = signer(0, 0.2 - 1.8 * 0.04, 0.1 - 1.8 * 0.02);
+    const hand = makeHand("right", U, mul(F, -1));
+    const indexOffset: Vec = [hand[8]!.x - hand[0]!.x, hand[8]!.y - hand[0]!.y, hand[8]!.z - hand[0]!.z];
+    const touching = (gap: number): CaptureFrame[] =>
+      Array.from({ length: 20 }, (_, i) => {
+        const wrist = add(CHIN, mul(indexOffset, -1), signer(0, 0, gap));
+        const p = withFace(pose({ elbow: add(R_SH, signer(0.05, -0.1, 0.2)), wrist }, DOWN_LEFT));
+        return { t: i * 33, poseWorld: p, hands: { right: { world: hand, image: image(hand) } } };
+      });
+
+    it("el índice en la barbilla se anota como contacto pleno", () => {
+      const res = framesToClip(touching(0));
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(res.clip.keyframes[0]!.hand.contact).toEqual({ at: "chin", with: "index", weight: 1 });
+    });
+
+    it("a medio camino, contacto parcial; lejos, ninguno", () => {
+      const mid = framesToClip(touching(0.05));
+      const far = framesToClip(touching(0.15));
+      if (!mid.ok || !far.ok) throw new Error("clip");
+      const w = mid.clip.keyframes[0]!.hand.contact?.weight ?? 0;
+      expect(w).toBeGreaterThan(0.2);
+      expect(w).toBeLessThan(1);
+      expect(far.clip.keyframes[0]!.hand.contact).toBeUndefined();
+    });
+
+    it("la mano dominante sobre la palma de la otra toca otherPalm; por detrás, otherBack", () => {
+      // Mano pasiva con la palma hacia arriba delante del pecho.
+      const baseWrist = add(L_SH, signer(0.1, -0.1, 0.3));
+      const base = makeHand("left", unit(add(F, mul(R, 0.5))), U);
+      const baseCenter = (() => {
+        const ids = [0, 5, 17];
+        const m = ids.reduce<Vec>((a, i) => add(a, [base[i]!.x - base[0]!.x, base[i]!.y - base[0]!.y, base[i]!.z - base[0]!.z]), [0, 0, 0]);
+        return add(baseWrist, mul(m, 1 / 3));
+      })();
+      const run = (above: number) => {
+        const frames: CaptureFrame[] = Array.from({ length: 20 }, (_, i) => {
+          const wrist = add(baseCenter, mul(indexOffset, -1), signer(0, above, 0));
+          const p = pose({ elbow: add(R_SH, signer(0.05, -0.2, 0.2)), wrist }, { elbow: add(L_SH, signer(-0.05, -0.25, 0.15)), wrist: baseWrist });
+          return {
+            t: i * 33,
+            poseWorld: p,
+            hands: { right: { world: hand, image: image(hand) }, left: { world: base, image: image(base) } },
+          };
+        });
+        const res = framesToClip(frames);
+        if (!res.ok) throw new Error(res.error);
+        return res.clip.keyframes[0]!.hand.contact;
+      };
+      expect(run(0.01)?.at).toBe("otherPalm");
+      expect(run(-0.01)?.at).toBe("otherBack");
+    });
+  });
+
   it("asigna cada mano al lado anatómico por cercanía a las muñecas de la pose", () => {
     const poseImage: Point3[] = Array.from({ length: 33 }, () => ({ x: 0, y: 0, z: 0 }));
     poseImage[15] = { x: 0.7, y: 0.5, z: 0 };

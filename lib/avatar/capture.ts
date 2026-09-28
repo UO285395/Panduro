@@ -1,4 +1,4 @@
-import type { AvatarClip, AvatarKeyframe } from "@/lib/curriculum/schema";
+import type { AvatarClip, AvatarKeyframe, Contact } from "@/lib/curriculum/schema";
 import type { Point3 } from "@/lib/mediapipe/types";
 import { distributeFlex } from "./pose";
 
@@ -147,7 +147,93 @@ type Sample = {
   t: number;
   pos: Vec;
   hand?: { fingers: number[]; palm: Vec; point: Vec; image: Point3[] };
+  /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
+  touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number };
 };
+
+// Pose de MediaPipe: nariz, ojos, comisuras de los ojos, orejas y boca (lado anatómico).
+const FACE = { nose: 0, lEye: 2, lEyeOuter: 3, rEye: 5, rEyeOuter: 6, lEar: 7, rEar: 8 };
+/** A esta distancia o menos, contacto pleno; a partir de TOUCH_FAR, ninguno. */
+export const TOUCH_NEAR = 0.035;
+export const TOUCH_FAR = 0.07;
+
+/**
+ * Qué toca la mano en un fotograma: la parte de la mano (yemas, índice, pulgar, palma o
+ * puño) más cercana a un punto de la cara del mismo lado o del centro, o a la otra mano.
+ * Así una grabación en la que el signante se toca la barbilla hace que el avatar se la
+ * toque también, aunque su cara tenga otras proporciones (el mapper lleva la parte de la
+ * mano al punto medido en la malla del modelo).
+ */
+function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["touch"] {
+  const p = f.poseWorld;
+  const h = f.hands[side];
+  if (!p || p.length <= P.rWrist || !h) return undefined;
+  const wrist = v(p[side === "right" ? P.rWrist : P.lWrist]!);
+  const at = (hand: HandSample, w: Vec, i: number): Vec => {
+    const o = v(hand.world[0]!);
+    const q = v(hand.world[i]!);
+    return [w[0] + q[0] - o[0], w[1] + q[1] - o[1], w[2] + q[2] - o[2]];
+  };
+  const meanOf = (ps: Vec[]): Vec => scale(ps.reduce((a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], [0, 0, 0]), 1 / ps.length);
+  const extended = [1, 2, 3, 4].filter((i) => (fingers[i] ?? 1) < 0.5);
+  const tipIndex = [4, 8, 12, 16, 20];
+  const parts: [NonNullable<Contact["with"]>, Vec][] = [
+    ["index", at(h, wrist, 8)],
+    ["thumb", at(h, wrist, 4)],
+    ["palm", meanOf([0, 5, 17].map((i) => at(h, wrist, i)))],
+    ["knuckles", meanOf([6, 10].map((i) => at(h, wrist, i)))],
+  ];
+  if (extended.length > 1) parts.unshift(["tips", meanOf(extended.map((i) => at(h, wrist, tipIndex[i]!)))]);
+
+  const r = side === "right";
+  const nose = v(p[FACE.nose]!);
+  const mouth = mid(p[P.mouthL]!, p[P.mouthR]!);
+  const eyes = mid(p[FACE.lEye]!, p[FACE.rEye]!);
+  const eyeOuter = v(p[r ? FACE.rEyeOuter : FACE.lEyeOuter]!);
+  const ear = v(p[r ? FACE.rEar : FACE.lEar]!);
+  const corner = v(p[r ? P.mouthR : P.mouthL]!);
+  const upFace = sub(eyes, mouth);
+  const lerp = (a: Vec, b: Vec, u: number): Vec => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
+  const targets: [Contact["at"], Vec][] = [
+    ["chin", sub(mouth, scale(sub(nose, mouth), 1.8))],
+    ["mouth", mouth],
+    ["nose", nose],
+    ["forehead", [eyes[0] + upFace[0] * 0.8, eyes[1] + upFace[1] * 0.8, eyes[2] + upFace[2] * 0.8]],
+    ["eye", v(p[r ? FACE.rEye : FACE.lEye]!)],
+    ["temple", [...lerp(eyeOuter, ear, 0.35)].map((x, k) => x + upFace[k]! * 0.3) as Vec],
+    ["cheek", lerp(corner, ear, 0.4)],
+    ["ear", ear],
+  ];
+
+  // La otra mano, si se ve: palma (o dorso, según el lado de la palma en que quede), yemas o muñeca.
+  const otherSide: Side = r ? "left" : "right";
+  const oh = f.hands[otherSide];
+  let otherPalm: Vec | null = null;
+  let otherNormal: Vec | null = null;
+  if (oh) {
+    const ow = v(p[r ? P.lWrist : P.rWrist]!);
+    otherPalm = meanOf([0, 5, 17].map((i) => at(oh, ow, i)));
+    otherNormal = handOrientation(oh.world, otherSide).palm;
+    targets.push(["otherPalm", otherPalm], ["otherTips", meanOf([8, 12].map((i) => at(oh, ow, i)))], ["otherWrist", ow]);
+  }
+
+  let best: Sample["touch"];
+  let bestPart: Vec | null = null;
+  for (const [what, q] of parts) {
+    for (const [where, tp] of targets) {
+      const d = len(sub(q, tp));
+      if (!best || d < best.d) {
+        best = { at: where, with: what, d };
+        bestPart = q;
+      }
+    }
+  }
+  // La palma de la otra mano mira hacia un lado: si la parte queda detrás, toca el dorso.
+  if (best?.at === "otherPalm" && otherPalm && otherNormal && bestPart && dot(sub(bestPart, otherPalm), otherNormal) < 0) {
+    best = { ...best, at: "otherBack" };
+  }
+  return best && best.d < TOUCH_FAR ? best : undefined;
+}
 
 type Timed<T> = { t: number; val: T };
 
@@ -232,10 +318,12 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
     const h = f.hands[side];
     if (!h) return { t: f.t, pos };
     const o = handOrientation(h.world, side);
+    const fingers = fingerFlex(h.world);
     return {
       t: f.t,
       pos,
-      hand: { fingers: fingerFlex(h.world), palm: toSigner(o.palm), point: toSigner(o.point), image: h.image },
+      hand: { fingers, palm: toSigner(o.palm), point: toSigner(o.point), image: h.image },
+      touch: detectTouch(f, side, fingers),
     };
   };
 
@@ -292,12 +380,27 @@ export function framesToClip(frames: CaptureFrame[], opts: { leftHanded?: boolea
   const fingerSpec = (d: ReturnType<typeof build>, i: number) =>
     (d.fingers ? d.fingers[i]! : RELAXED).map(round) as AvatarKeyframe["fingers"];
 
-  const keyframes: AvatarKeyframe[] = times.map((t, i) => ({
-    t: Math.round(t - t0),
-    hand: handSpec(main, i),
-    fingers: fingerSpec(main, i),
-    ...(second ? { hand2: handSpec(second, i), fingers2: fingerSpec(second, i) } : {}),
-  }));
+  // Contacto del fotograma más cercano a cada keyframe, con un peso que crece según se
+  // acerca la mano (de TOUCH_FAR a TOUCH_NEAR). Tocar la otra mano solo si está en el clip.
+  const touched = domRange.filter((s): s is Sample => !!s);
+  const contactAt = (t: number): Contact | undefined => {
+    let near: Sample | undefined;
+    for (const s of touched) if (!near || Math.abs(s.t - t) < Math.abs(near.t - t)) near = s;
+    const touch = near?.touch;
+    if (!touch || (touch.at.startsWith("other") && !second)) return undefined;
+    const weight = Math.max(0, Math.min(1, (TOUCH_FAR - touch.d) / (TOUCH_FAR - TOUCH_NEAR)));
+    return weight >= 0.1 ? { at: touch.at, with: touch.with, weight: round(weight) } : undefined;
+  };
+
+  const keyframes: AvatarKeyframe[] = times.map((t, i) => {
+    const contact = contactAt(t);
+    return {
+      t: Math.round(t - t0),
+      hand: { ...handSpec(main, i), ...(contact ? { contact } : {}) },
+      fingers: fingerSpec(main, i),
+      ...(second ? { hand2: handSpec(second, i), fingers2: fingerSpec(second, i) } : {}),
+    };
+  });
 
   const durationMs = Math.round(tEnd - t0);
   const withHand = domRange.filter((s) => s?.hand).length;

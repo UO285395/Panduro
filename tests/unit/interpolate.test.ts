@@ -152,6 +152,23 @@ describe("cabeza, cara y codo", () => {
     expect(sampleClip(clip, 500).thumbTouch).toBeUndefined();
   });
 
+  it("interpola la yema del pulgar; donde falta, la del keyframe más cercano", () => {
+    const tip: AvatarClip = {
+      ...face,
+      keyframes: [
+        { ...face.keyframes[0]!, thumbTip: [0.8, 0.5, 0] },
+        { ...face.keyframes[1]!, thumbTip: [0.4, -0.3, 0.4] },
+      ],
+    };
+    const k = sampleClip(tip, 500).thumbTip!;
+    expect(k[0]).toBeCloseTo(0.6, 5);
+    expect(k[1]).toBeCloseTo(0.1, 5);
+    expect(k[2]).toBeCloseTo(0.2, 5);
+    const partial: AvatarClip = { ...face, keyframes: [{ ...face.keyframes[0]!, thumbTip: [0.8, 0.5, 0] }, face.keyframes[1]!] };
+    expect(sampleClip(partial, 500).thumbTip).toEqual([0.8, 0.5, 0]);
+    expect(sampleClip(clip, 500).thumbTip).toBeUndefined();
+  });
+
   it("un clip sin cabeza no se inventa una", () => {
     expect(sampleClip(clip, 500).head).toBeUndefined();
     expect(sampleClip(clip, 500).expr).toBeUndefined();

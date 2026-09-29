@@ -82,6 +82,10 @@ const AvatarKeyframeSchema = z.object({
   // Cuánto toca la yema del pulgar la de cada dedo (0..1, del índice al meñique), medido
   // en grabaciones: el avatar cierra la pinza aunque su mano tenga otras proporciones.
   thumbTouch: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
+  // Dónde tiene la yema del pulgar (grabaciones): respecto a su base, en el marco de la mano
+  // (hacia los dedos, hacia el índice, hacia la palma) y en largos de pulgar. La flexión
+  // medida del pulgar no ve un pulgar doblado sobre la palma; el avatar lo lleva hasta ahí.
+  thumbTip: z.tuple([z.number(), z.number(), z.number()]).optional(),
   hand2: HandSchema.optional(),
   fingers2: z.tuple([
     FingerValueSchema,
@@ -91,6 +95,7 @@ const AvatarKeyframeSchema = z.object({
     FingerValueSchema,
   ]).optional(),
   thumbTouch2: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
+  thumbTip2: z.tuple([z.number(), z.number(), z.number()]).optional(),
 });
 export type AvatarKeyframe = z.infer<typeof AvatarKeyframeSchema>;
 

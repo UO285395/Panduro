@@ -192,8 +192,6 @@ const MCP_OPEN = 14 * DEG;
 const MCP_CLOSED = 67 * DEG;
 const PIP_OPEN = 3 * DEG;
 const PIP_CLOSED = 80 * DEG;
-/** El eje muñeca→nudillo del corazón se desvía unos 8° del propio dedo corazón. */
-const AZ_SHIFT = 8 * DEG;
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 const perpUnit = (a: Vec, axis: Vec): Vec => unit(sub(a, scale(axis, dot(a, axis))));
 
@@ -215,7 +213,9 @@ export function fingerPose(world: Point3[], side: Side): MeasuredFinger[] {
     const s1 = unit(sub(at(c[1]!), at(c[0]!)));
     const s2 = unit(sub(at(c[2]!), at(c[1]!)));
     const s3 = unit(sub(at(c[3]!), at(c[2]!)));
-    const az = Math.atan2(dot(s1, A), dot(s1, P)) + AZ_SHIFT;
+    // Sin corregir: medido contra el vídeo, girar 8° todos los dedos los dejaba 8-10° hacia el
+    // índice de más en el avatar (su eje muñeca→nudillo es el mismo).
+    const az = Math.atan2(dot(s1, A), dot(s1, P));
     const el = Math.atan2(dot(s1, N), Math.hypot(dot(s1, A), dot(s1, P)));
     // Flexión en el plano del dedo, con signo (hacia la palma, positiva).
     const k = unit(cross(s1, perpUnit(N, s1)));
@@ -253,6 +253,23 @@ export function thumbTouch(world: Point3[]): number[] {
     const r = len(sub(at(4), at(tip))) / palm;
     return clamp((PINCH_FAR - r) / (PINCH_FAR - PINCH_NEAR), 0, 1);
   });
+}
+
+/**
+ * Dónde está la yema del pulgar respecto a su base, en el marco de la mano (hacia el nudillo
+ * del corazón, hacia el lado del índice y hacia la palma) y en largos de pulgar: la dirección
+ * en la que apunta y cuánto se dobla (1, estirado). La flexión del pulgar de `fingerPose` se
+ * mide hacia la palma y no ve un pulgar doblado sobre ella (el 4, el 9); con esto el avatar
+ * lo lleva a su sitio aunque su pulgar sea más largo y salga más de fuera.
+ */
+export function thumbTip(world: Point3[], side: Side): Vec {
+  const at = (i: number) => v(world[i]!);
+  const P = unit(sub(at(9), at(0)));
+  const N = perpUnit(handOrientation(world, side).palm, P);
+  const A = perpUnit(perpUnit(sub(at(5), at(17)), P), N);
+  const thumb = len(sub(at(2), at(1))) + len(sub(at(3), at(2))) + len(sub(at(4), at(3)));
+  const d = sub(at(4), at(1));
+  return [dot(d, P) / thumb, dot(d, A) / thumb, dot(d, N) / thumb];
 }
 
 /**
@@ -294,7 +311,7 @@ type Sample = {
   t: number;
   pos: Vec;
   /** fingers: flexión 0..1; joints: fingerPose aplanado (5 × 3). */
-  hand?: { fingers: number[]; joints: number[]; touch: number[]; palm: Vec; point: Vec; image: Point3[] };
+  hand?: { fingers: number[]; joints: number[]; touch: number[]; tip: Vec; palm: Vec; point: Vec; image: Point3[] };
   /** Hacia dónde sale el codo de la línea hombro→muñeca (sin él, el brazo está casi recto). */
   elbow?: Vec;
   /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
@@ -926,6 +943,7 @@ export function framesToClip(
         fingers,
         joints: fingerPose(h.world, side).flat(),
         touch: thumbTouch(h.world),
+        tip: thumbTip(h.world, side),
         palm: toSigner(o.palm),
         point: toSigner(o.point),
         image: h.image,
@@ -988,6 +1006,7 @@ export function framesToClip(
     const pos = resample(channel(samples, (s) => s.pos, sigma), times);
     const fingerCh = channel(samples, (s) => s.hand?.joints, fingerSigma);
     const touchCh = channel(samples, (s) => s.hand?.touch, fingerSigma);
+    const tipCh = channel(samples, (s) => s.hand?.tip, fingerSigma);
     const palmCh = channel(samples, (s) => s.hand?.palm, dirSigma);
     const pointCh = channel(samples, (s) => s.hand?.point, dirSigma);
     const elbowCh = channel(samples, (s) => s.elbow, sigma);
@@ -996,6 +1015,7 @@ export function framesToClip(
       fingers: fingerCh.length ? resample(fingerCh, times) : null,
       // Solo si en algún momento el pulgar toca de verdad una yema.
       touch: touchCh.length && touchCh.some((p) => Math.max(...p.val) > 0.5) ? resample(touchCh, times) : null,
+      tip: tipCh.length ? resample(tipCh, times) : null,
       palm: palmCh.length ? resample(palmCh, times).map((a) => mirror(unit(a as Vec))) : null,
       point: pointCh.length ? resample(pointCh, times).map((a) => mirror(unit(a as Vec))) : null,
       // Solo si el brazo está doblado en buena parte del signo; si no, el polo por defecto.
@@ -1051,8 +1071,10 @@ export function framesToClip(
       hand: { ...handSpec(main, i), ...(contact ? { contact } : {}) },
       fingers: fingerSpec(main, i),
       ...(main.touch ? { thumbTouch: main.touch[i]!.map(round2) as ThumbTouch } : {}),
+      ...(main.tip ? { thumbTip: main.tip[i]!.map(round2) as Vec } : {}),
       ...(second ? { hand2: handSpec(second, i), fingers2: fingerSpec(second, i) } : {}),
       ...(second?.touch ? { thumbTouch2: second.touch[i]!.map(round2) as ThumbTouch } : {}),
+      ...(second?.tip ? { thumbTip2: second.tip[i]!.map(round2) as Vec } : {}),
     };
   });
 
@@ -1083,7 +1105,7 @@ function channelsOf(k: AvatarKeyframe): Record<keyof typeof SIMPLIFY_TOL, number
   const hands = [k.hand, k.hand2].filter((h): h is AvatarKeyframe["hand"] => !!h);
   const fingerVals = [k.fingers, k.fingers2 ?? []].flatMap((fs) =>
     fs.flatMap((f) => (Array.isArray(f) ? f : typeof f === "number" ? [f] : [f.flex, f.abduction ?? 0])),
-  ).concat(k.thumbTouch ?? [], k.thumbTouch2 ?? []);
+  ).concat(k.thumbTouch ?? [], k.thumbTouch2 ?? [], k.thumbTip ?? [], k.thumbTip2 ?? []);
   return {
     pos: hands.flatMap((h) => [h.x, h.y, h.z]),
     dir: hands.flatMap((h) => [...(h.palmDir ?? []), ...(h.pointDir ?? [])]),

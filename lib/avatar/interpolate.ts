@@ -49,6 +49,9 @@ type Prepared = {
   /** Pinza del pulgar (4 pesos) de cada mano; donde un keyframe no la tiene, 0. */
   touch: boolean;
   touch2: boolean;
+  /** Yema del pulgar de cada mano; donde un keyframe no la tiene, la del más cercano. */
+  tip: boolean;
+  tip2: boolean;
   /** Expresiones que aparecen en el clip; donde un keyframe no la tiene, vale 0. */
   expr: (keyof Expressions)[];
 };
@@ -113,6 +116,8 @@ function prepare(clip: AvatarClip): Prepared {
   const head = kfs.some((k) => k.head);
   const touch = kfs.some((k) => k.thumbTouch);
   const touch2 = kfs.some((k) => k.thumbTouch2);
+  const tip = kfs.some((k) => k.thumbTip);
+  const tip2 = kfs.some((k) => k.thumbTip2);
   const NO_TOUCH = [0, 0, 0, 0];
   const expr = EXPRESSIONS.filter((e) => kfs.some((k) => k.expr?.[e] !== undefined));
   const values = kfs.map((kf, i) => [
@@ -123,6 +128,8 @@ function prepare(clip: AvatarClip): Prepared {
     ...(head ? nearest(kfs, i, (k) => k.head)! : []),
     ...(touch ? (kf.thumbTouch ?? NO_TOUCH) : []),
     ...(touch2 ? (kf.thumbTouch2 ?? NO_TOUCH) : []),
+    ...(tip ? nearest(kfs, i, (k) => k.thumbTip)! : []),
+    ...(tip2 ? nearest(kfs, i, (k) => k.thumbTip2)! : []),
     ...expr.map((e) => kf.expr?.[e] ?? 0),
   ]);
   const times = kfs.map((k) => k.t);
@@ -160,6 +167,8 @@ function prepare(clip: AvatarClip): Prepared {
     head,
     touch,
     touch2,
+    tip,
+    tip2,
     expr,
   };
   cache.set(clip, prepared);
@@ -222,6 +231,14 @@ function toKeyframe(p: Prepared, c: number[], t: number): AvatarKeyframe {
   if (p.touch2) {
     kf.thumbTouch2 = weights(at);
     at += 4;
+  }
+  if (p.tip) {
+    kf.thumbTip = [c[at]!, c[at + 1]!, c[at + 2]!];
+    at += 3;
+  }
+  if (p.tip2) {
+    kf.thumbTip2 = [c[at]!, c[at + 1]!, c[at + 2]!];
+    at += 3;
   }
   if (p.expr.length) {
     const expr: Expressions = {};

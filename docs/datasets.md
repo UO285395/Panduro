@@ -80,13 +80,23 @@ python -m venv .venv
   quedar fuera (el contacto se mantiene) y, si no basta, se aparta de la cabeza lo justo;
   también de camino entre keyframes. La cabeza se mide en la malla del modelo, triángulo a
   triángulo (con solo los vértices, en las mejillas quedaban huecos y un contacto acababa
-  dentro), sin contar los mechones sueltos.
+  dentro), sin contar los mechones sueltos. Lo que se mete una mano es lo mínimo para salir
+  (por delante, de lado o por arriba o abajo), y se aparta contando con lo que llega el
+  brazo. Tanto aquí como entre las manos, tras suavizar se vuelve a mirar cada instante y
+  lo que siga metido se saca.
 - Cada dedo se guarda como `[azimut, elevación, flexión]`: nudillo y falanges por separado
   (B doblada frente a garra), separación de los dedos y posición del pulgar. MediaPipe dobla
   de más los dedos estirados; la calibración sale de los propios vídeos del DILSE.
 - Las pinzas (la O, la F, el «pico», el pulgar sobre una yema) se guardan como cuánto toca
   el pulgar cada yema, y el avatar junta las puntas en su propia mano aunque sus dedos
   tengan otras proporciones: el pulgar va hacia las yemas y los dedos se doblan hacia él.
+- El pulgar guarda además dónde tiene la yema (`thumbTip`: respecto a su base, en el marco
+  de la mano y en largos de pulgar). Su flexión se mide hacia la palma y no veía un pulgar
+  doblado sobre ella (el 4, el 9, el 1 con los dedos recogidos): quedaba estirado hacia
+  fuera. El avatar dobla su pulgar lo mismo y lo apunta igual, aunque sea más largo y salga
+  más de fuera que el de una persona. Medido contra los vídeos, el error de dirección del
+  pulgar baja de 19° a 0° (mediana) y de 38° a 14° (percentil 90); y quitar el giro fijo de
+  8° que se daba a todos los dedos baja 2-3° el del resto.
 - En la cara, el punto de contacto se lleva a la cabeza del modelo anclado en lo que tienen
   las dos caras (el contorno del ojo, medido en las mallas de ojos del modelo, el borde de
   la cara, la boca y la barbilla): lo que en la persona queda junto al ojo cae junto al ojo

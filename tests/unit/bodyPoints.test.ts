@@ -217,6 +217,15 @@ describe("la cabeza vista de frente: triángulos, fondo y lo alto", () => {
     expect(headDepth(grid, [0.15, 0.05, -0.08], 0.005)).toBe(0);
   });
 
+  it("en el borde de la cabeza sale antes de lado que por delante", () => {
+    const grid = measureFace(figure(), body, anchors);
+    // Junto al lateral de la cabeza, a la altura del centro y por detrás de la cara.
+    const side: [number, number, number] = [0.072, 0.02, -0.08];
+    const front = frontAt(0.072, 0.02);
+    expect(front + 0.003 - side[2]).toBeGreaterThan(0.02);
+    expect(headDepth(grid, side, 0.003)).toBeLessThan(0.012);
+  });
+
   it("el centro de la cabeza está entre la cara y la nuca", () => {
     const [r, u, f] = headCenter(measureFace(figure(), body, anchors));
     expect(r).toBe(0);

@@ -8,6 +8,7 @@ import {
   framesToClip,
   handOrientation,
   mirroredHand,
+  thumbTip,
   thumbTouch,
   type CaptureFrame,
   type Landmark,
@@ -560,5 +561,34 @@ describe("capture: pinza del pulgar", () => {
     const fist = makeHand("right", U, F, true);
     const t = thumbTouch(fist.map((p, i) => (i === 4 ? { ...fist[12]! } : p)));
     expect(t).toEqual([0, 0, 0, 0]);
+  });
+});
+
+describe("capture: yema del pulgar", () => {
+  const palm = mul(F, -1);
+  const across = cross(U, palm);
+  const at = (x: number, y: number, z: number): Point3 => {
+    const a = add(mul(U, x), mul(across, y), mul(palm, z));
+    return { x: a[0], y: a[1], z: a[2] };
+  };
+
+  it("estirado: apunta hacia los dedos y hacia fuera, a un largo de pulgar de su base", () => {
+    const tip = thumbTip(makeHand("right", U, palm), "right");
+    expect(Math.hypot(...tip)).toBeGreaterThan(0.95);
+    expect(tip[0]).toBeGreaterThan(0.5);
+    expect(tip[1]).toBeGreaterThan(0.3);
+  });
+
+  it("doblado sobre la palma (el 4): más cerca de su base, hacia el meñique y por delante de la palma", () => {
+    const hand = makeHand("right", U, palm);
+    hand[3] = at(0.05, 0, 0.025);
+    hand[4] = at(0.055, -0.02, 0.02);
+    const tip = thumbTip(hand, "right");
+    expect(Math.hypot(...tip)).toBeLessThan(0.8);
+    expect(tip[1]).toBeLessThan(0);
+    expect(tip[2]).toBeGreaterThan(0);
+    // No depende de lo grande que se vea la mano.
+    const big = thumbTip(hand.map((p) => ({ x: 2 * p.x, y: 2 * p.y, z: 2 * p.z })), "right");
+    big.forEach((x, k) => expect(x).toBeCloseTo(tip[k]!, 6));
   });
 });

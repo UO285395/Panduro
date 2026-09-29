@@ -406,19 +406,39 @@ function frontAt(g: FaceGrid, col: number, row: number, hairOnly = false): numbe
 }
 
 /**
- * Cuánto se mete en la cabeza una bola de radio `radius` centrada en (r, u, f): lo que le
- * falta para salir por delante de la columna que la contiene (de la cara al cogote). Por
- * detrás de la cabeza no cuenta: una mano no se saca de la cara atravesándola. Los mechones
- * sueltos tampoco: que un dedo pase entre ellos no se nota, y en un modelo con el pelo de
- * punta harían la cabeza el doble de ancha.
+ * Cuánto se mete en la cabeza una bola de radio `radius` centrada en (r, u, f): lo menos que
+ * hay que moverla para que salga por delante de su columna (de la cara al cogote) o, de lado
+ * o hacia arriba o abajo, a una columna por delante de cuya piel quede. Por detrás de la
+ * cabeza no cuenta: una mano no se saca de la cara atravesándola. Los mechones sueltos
+ * tampoco: que un dedo pase entre ellos no se nota, y en un modelo con el pelo de punta
+ * harían la cabeza el doble de ancha. Mirar solo por delante daba en el borde de la cabeza
+ * (la sien, vista de frente) una bola metida hasta el fondo aunque le faltara un pelo para
+ * salir de lado.
  */
 export function headDepth(g: FaceGrid, [r, u, f]: V3, radius: number): number {
   const col = Math.floor((r - g.r0) / g.step);
   const row = Math.floor((u - g.u0) / g.step);
   const front = frontAt(g, col, row);
   if (!Number.isFinite(front) || f < Math.min(g.back[row * g.nr + col]!, front) - radius) return 0;
-  return Math.max(0, front + radius - f);
+  let depth = front + radius - f;
+  if (depth <= 0) return 0;
+  const clearAt = (c: number, w: number) => f - radius >= frontAt(g, c, w);
+  for (let k = 1; k <= HEAD_EXIT_CELLS && (k - 1) * g.step + radius < depth; k++) {
+    // Hasta el borde de la celda de al lado y un radio más.
+    const toward = (k - 1) * g.step + radius;
+    const exits = [
+      clearAt(col + k, row) && g.r0 + (col + 1) * g.step - r,
+      clearAt(col - k, row) && r - (g.r0 + col * g.step),
+      clearAt(col, row + k) && g.u0 + (row + 1) * g.step - u,
+      clearAt(col, row - k) && u - (g.u0 + row * g.step),
+    ];
+    for (const e of exits) if (e !== false) depth = Math.min(depth, toward + e);
+  }
+  return Math.max(0, depth);
 }
+
+/** Cuántas celdas se mira de lado buscando por dónde sale antes una bola metida en la cabeza. */
+const HEAD_EXIT_CELLS = 6;
 
 /** Centro de la cabeza (r, u, f): a media altura entre la barbilla y lo alto, y a medio camino de la cara a la nuca. */
 export function headCenter(g: FaceGrid): V3 {

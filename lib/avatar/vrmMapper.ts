@@ -34,6 +34,7 @@ import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST,
 type Side = "Right" | "Left";
 type HandSpec = AvatarKeyframe["hand"];
 type Vec3 = [number, number, number];
+type ThumbTouch = NonNullable<AvatarKeyframe["thumbTouch"]>;
 
 const ARM = {
   Right: { upper: B.RightUpperArm, lower: B.RightLowerArm, hand: B.RightHand },
@@ -62,6 +63,9 @@ const THUMB_FLEX_SCALE = 0.7;
 type FingerRest = {
   bones: [B, B, B];
   curlAxis: THREE.Vector3;
+  /** Última falange en reposo (espacio del modelo) y lo que mide hasta la punta. */
+  tipDir: THREE.Vector3;
+  tipLen: number;
   /** Dirección de reposo en el marco de la mano (ver FingerValue medido). */
   restAz: number;
   restEl: number;
@@ -178,9 +182,13 @@ export function createVrmRig(vrm: VRM): VrmRig {
       const curlAxis = new THREE.Vector3().crossVectors(dir, palmRest);
       if (curlAxis.lengthSq() < 1e-6) curlAxis.crossVectors(r3, palmRest);
       const inPlane = Math.hypot(dir.dot(thumbSide), dir.dot(r3));
+      const c = pos(chain[2]);
+      const last = b && c ? c.clone().sub(b) : dir.clone().multiplyScalar(0.02 * (e.distanceTo(s) + w.distanceTo(e)));
       return {
         bones: chain,
         curlAxis: curlAxis.normalize(),
+        tipDir: last.clone().normalize(),
+        tipLen: 0.85 * last.length(),
         restAz: Math.atan2(dir.dot(thumbSide), dir.dot(r3)),
         restEl: Math.atan2(dir.dot(palmRest), inPlane),
       };
@@ -302,6 +310,8 @@ function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
 }
 
 const HAIR = /hair|kami|bang|ahoge|髪/i;
+/** Mallas de los ojos (globo, iris, pestañas), no de las cejas. */
+const EYE = /eye|iris|pupil|lash|目/i;
 
 /** Vértices de las mallas en reposo, en coordenadas del signante (r, u, f). */
 function collectCloud(
@@ -316,6 +326,7 @@ function collectCloud(
   const u: number[] = [];
   const f: number[] = [];
   const hair: number[] = [];
+  const eye: number[] = [];
   const v = new THREE.Vector3();
   vrm.scene.traverse((obj) => {
     const mesh = obj as THREE.SkinnedMesh;
@@ -324,6 +335,7 @@ function collectCloud(
     if (!position) return;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     const isHair = HAIR.test(mesh.name) || materials.some((m) => HAIR.test(m.name));
+    const isEye = EYE.test(mesh.name) && !/brow/i.test(mesh.name);
     const toLocal = mesh.matrixWorld.clone().premultiply(toModel);
     for (let i = 0; i < position.count; i++) {
       v.fromBufferAttribute(position, i);
@@ -333,6 +345,7 @@ function collectCloud(
       u.push(v.y);
       f.push(v.dot(forward));
       hair.push(isHair ? 1 : 0);
+      eye.push(isEye ? 1 : 0);
     }
   });
   return {
@@ -340,6 +353,7 @@ function collectCloud(
     u: Float32Array.from(u),
     f: Float32Array.from(f),
     hair: Uint8Array.from(hair),
+    eye: Uint8Array.from(eye),
   };
 }
 
@@ -415,10 +429,89 @@ function poseArm(rig: VrmRig, side: Side, goal: ArmGoal) {
   setNorm(rig.vrm, bones.hand, q2.clone().invert().multiply(qh));
 }
 
+/** Punta del dedo `i` (0, el pulgar) en el mundo, con la última falange tal como esté posada. */
+function fingerTipWorld(rig: VrmRig, side: Side, i: number): THREE.Vector3 {
+  const f = rig.arms[side].fingers[i]!;
+  const distal = rig.vrm.humanoid.getNormalizedBoneNode(f.bones[2]);
+  if (!distal) return rig.vrm.humanoid.getNormalizedBoneNode(ARM[side].hand)!.getWorldPosition(new THREE.Vector3());
+  const q = distal.getWorldQuaternion(new THREE.Quaternion());
+  return distal.getWorldPosition(new THREE.Vector3()).addScaledVector(f.tipDir.clone().applyQuaternion(q), f.tipLen);
+}
+
+/** Entre las dos puntas que se tocan queda el grosor de los dedos (en palmas del modelo). */
+const PINCH_GAP = 0.18;
+
+/**
+ * Un paso de CCD: gira el hueso `n` sobre su articulación para acercar `tip()` a `want`. Con
+ * `hinge` (eje en el espacio del modelo) solo gira en esa bisagra, como un dedo.
+ */
+function ccdStep(n: THREE.Object3D, tip: () => THREE.Vector3, want: THREE.Vector3, hinge?: THREE.Vector3) {
+  const pivot = n.getWorldPosition(new THREE.Vector3());
+  const parentQ = n.parent!.getWorldQuaternion(new THREE.Quaternion());
+  const cur = tip().sub(pivot);
+  const dst = want.clone().sub(pivot);
+  let delta: THREE.Quaternion;
+  if (hinge) {
+    const axis = hinge.clone().applyQuaternion(parentQ).normalize();
+    cur.projectOnPlane(axis);
+    dst.projectOnPlane(axis);
+    if (cur.lengthSq() < 1e-12 || dst.lengthSq() < 1e-12) return;
+    delta = new THREE.Quaternion().setFromAxisAngle(axis, Math.atan2(cur.clone().cross(dst).dot(axis), cur.dot(dst)));
+  } else {
+    if (cur.lengthSq() < 1e-12 || dst.lengthSq() < 1e-12) return;
+    delta = new THREE.Quaternion().setFromUnitVectors(cur.normalize(), dst.normalize());
+  }
+  n.quaternion.premultiply(parentQ.clone().invert().multiply(delta).multiply(parentQ));
+  n.updateWorldMatrix(false, true);
+}
+
+/**
+ * Pinza: con los dedos ya posados, junta la punta del pulgar con las yemas que toca. Los
+ * ángulos medidos dejan las puntas separadas o cruzadas en una mano de otras proporciones
+ * (este modelo tiene los dedos largos para su pulgar): el pulgar va hacia las yemas (IK por
+ * CCD sobre sus tres huesos) y cada dedo tocado se dobla en sus bisagras hacia el pulgar,
+ * por turnos, hasta que se encuentran. Con un peso parcial solo recorren esa parte.
+ */
+function closePinch(rig: VrmRig, side: Side, touch: ThumbTouch | undefined) {
+  const strength = touch ? Math.max(...touch) : 0;
+  const fingers = rig.arms[side].fingers;
+  const node = (b: B) => rig.vrm.humanoid.getNormalizedBoneNode(b);
+  if (!touch || strength < 0.02 || !fingers.every((f) => f.bones.every((b) => node(b)))) return;
+  const hand = node(ARM[side].hand)!;
+  hand.updateWorldMatrix(true, true);
+  const palmLen = node(fingers[2]!.bones[0])!.getWorldPosition(new THREE.Vector3())
+    .distanceTo(hand.getWorldPosition(new THREE.Vector3()));
+  const tip = (i: number) => () => fingerTipWorld(rig, side, i);
+  const touched = [1, 2, 3, 4].filter((i) => touch[i - 1]! > 0.02);
+  const total = touched.reduce((a, i) => a + touch[i - 1]!, 0);
+  const centroid = () =>
+    touched.reduce((acc, i) => acc.addScaledVector(fingerTipWorld(rig, side, i), touch[i - 1]! / total), new THREE.Vector3());
+  // Hasta dónde se cierra: el grosor de los dedos entre las puntas, o solo parte del camino.
+  const aim = (from: THREE.Vector3, to: THREE.Vector3, w: number) => {
+    const d = from.distanceTo(to);
+    const end = Math.max(PINCH_GAP * palmLen, d - (d - PINCH_GAP * palmLen) * w);
+    return to.clone().add(from.clone().sub(to).setLength(Math.min(d, end)));
+  };
+  for (let round = 0; round < 4; round++) {
+    const thumbWant = aim(fingerTipWorld(rig, side, 0), centroid(), strength);
+    for (let it = 0; it < 4; it++) {
+      for (const b of [...fingers[0]!.bones].reverse()) ccdStep(node(b)!, tip(0), thumbWant);
+    }
+    for (const i of touched) {
+      const f = fingers[i]!;
+      const want = aim(fingerTipWorld(rig, side, i), fingerTipWorld(rig, side, 0), touch[i - 1]!);
+      for (let it = 0; it < 3; it++) {
+        for (const b of [...f.bones].reverse()) ccdStep(node(b)!, tip(i), want, f.curlAxis);
+      }
+    }
+    if (fingerTipWorld(rig, side, 0).distanceTo(centroid()) < (PINCH_GAP + 0.03) * palmLen) break;
+  }
+}
+
 /** Reparto de la flexión medida entre la falange media y la distal (el pulgar, a partes iguales). */
 const MEASURED_SPLIT = { finger: [1, 0.65], thumb: [0.5, 0.5] } as const;
 
-function poseFingers(rig: VrmRig, side: Side, fingers: Fingers) {
+function poseFingers(rig: VrmRig, side: Side, fingers: Fingers, touch?: ThumbTouch) {
   const arm = rig.arms[side];
   const abdSign = side === "Right" ? 1 : -1;
   arm.fingers.forEach((finger, i) => {
@@ -443,6 +536,7 @@ function poseFingers(rig: VrmRig, side: Side, fingers: Fingers) {
     setNorm(rig.vrm, finger.bones[1], curl(flex.middle));
     setNorm(rig.vrm, finger.bones[2], curl(flex.distal));
   });
+  closePinch(rig, side, touch);
 }
 
 /**
@@ -593,12 +687,7 @@ function handPart(
 ): THREE.Vector3 {
   const arm = rig.arms[side];
   const wrist = bonePos(rig, toModel, ARM[side].hand)!;
-  const tip = (i: number) => {
-    const [, b, c] = arm.fingers[i]!.bones;
-    const pb = bonePos(rig, toModel, b);
-    const pc = bonePos(rig, toModel, c);
-    return pb && pc ? pc.clone().addScaledVector(pc.clone().sub(pb), 0.85) : wrist.clone();
-  };
+  const tip = (i: number) => fingerTipWorld(rig, side, i).applyMatrix4(toModel);
   const mean = (ps: THREE.Vector3[]) =>
     ps.reduce((acc, p) => acc.add(p), new THREE.Vector3()).multiplyScalar(1 / ps.length);
   const palmCenter = () => {
@@ -701,13 +790,14 @@ function reachContact(
   c: Contact,
   otherFingers: Fingers,
   head?: Vec3,
+  touch?: ThumbTouch,
 ): THREE.Vector3 {
   const want = contactPoint(rig, side, c, otherFingers, head);
   const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
   root.updateWorldMatrix(true, false);
   const toModel = root.matrixWorld.clone().invert();
   const target = want.clone();
-  poseFingers(rig, side, fingers);
+  poseFingers(rig, side, fingers, touch);
   for (let k = 0; k < 8; k++) {
     poseArm(rig, side, { ...goal, target });
     root.updateWorldMatrix(false, true);
@@ -731,6 +821,7 @@ function resolveHand(
   /** Dedos de la otra mano si está signando (y ya posada); null si está en reposo. */
   otherFingers: Fingers | null,
   head?: Vec3,
+  touch?: ThumbTouch,
 ): HandSpec {
   const { contact, ...rest } = hand;
   const L = rig.armLen;
@@ -744,8 +835,8 @@ function resolveHand(
   const oriented = { ...rest, ...contactOrientation(rig, side, contact, hand, other, head) };
   const goal = signingGoal(rig, side, oriented);
   const free = goal.target.clone();
-  const touch = reachContact(rig, side, goal, fingers, contact, other, head);
-  return { ...oriented, ...toSigningSpace(rig, side, free.lerp(touch, contact.weight ?? 1)) };
+  const reached = reachContact(rig, side, goal, fingers, contact, other, head, touch);
+  return { ...oriented, ...toSigningSpace(rig, side, free.lerp(reached, contact.weight ?? 1)) };
 }
 
 /**
@@ -810,12 +901,14 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
     keyframes: clip.keyframes.map((kf) => {
       // La mano pasiva primero: la dominante puede tocarla, y para eso tiene que estar posada.
       const fingers2 = kf.fingers2 ?? kf.fingers;
-      const hand2 = kf.hand2 && resolveHand(rig, "Left", kf.hand2, fingers2, null, kf.head);
+      const touch2 = kf.fingers2 ? kf.thumbTouch2 : kf.thumbTouch;
+      const hand2 = kf.hand2 && resolveHand(rig, "Left", kf.hand2, fingers2, null, kf.head, touch2);
       if (hand2) {
         poseArm(rig, "Left", signingGoal(rig, "Left", hand2));
-        poseFingers(rig, "Left", fingers2);
+        poseFingers(rig, "Left", fingers2, touch2);
       }
-      return { ...kf, hand: resolveHand(rig, "Right", kf.hand, kf.fingers, hand2 ? fingers2 : null, kf.head), hand2 };
+      const hand = resolveHand(rig, "Right", kf.hand, kf.fingers, hand2 ? fingers2 : null, kf.head, kf.thumbTouch);
+      return { ...kf, hand, hand2 };
     }),
   };
   rig.resolved.set(clip, resolved);
@@ -849,10 +942,10 @@ export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number) {
   poseHead(rig, kf.head);
   setExpressions(rig, kf.expr, tMs);
   poseArm(rig, "Right", signingGoal(rig, "Right", kf.hand));
-  poseFingers(rig, "Right", kf.fingers);
+  poseFingers(rig, "Right", kf.fingers, kf.thumbTouch);
   if (kf.hand2) {
     poseArm(rig, "Left", signingGoal(rig, "Left", kf.hand2));
-    poseFingers(rig, "Left", kf.fingers2 ?? kf.fingers);
+    poseFingers(rig, "Left", kf.fingers2 ?? kf.fingers, kf.fingers2 ? kf.thumbTouch2 : kf.thumbTouch);
   } else {
     poseArm(rig, "Left", idleGoal(rig, "Left", tMs));
     poseFingers(rig, "Left", RELAXED);

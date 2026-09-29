@@ -41,6 +41,8 @@ export type Cloud = {
   f: Float32Array;
   /** 1 si el vértice es pelo: no cuenta para la piel de la cara. */
   hair: Uint8Array;
+  /** 1 si es de los ojos (globo, iris, pestañas): da el contorno de los ojos del modelo. */
+  eye?: Uint8Array;
 };
 
 /** Referencias del esqueleto en (r, u, f), ya relativas a los ojos. */
@@ -215,7 +217,12 @@ export function surfaceFor(map: BodyMap, name: BodyPointName, side: "right" | "l
  */
 export type FaceCoords = [number, number];
 
-const HUMAN = { chinV: -1.75, topV: 1.7, edgeH: 2.3 };
+/**
+ * Referencias de una cara de persona en coordenadas de cara: barbilla, nacimiento del pelo,
+ * borde de la cara a la altura de los ojos y contorno del ojo (unos 30 × 10 mm con 63 mm
+ * entre pupilas y 70 mm de los ojos a la boca).
+ */
+const HUMAN = { chinV: -1.75, topV: 1.7, edgeH: 2.3, eyeInH: 0.52, eyeOutH: 1.48, eyeTopV: 0.12, eyeBottomV: -0.12 };
 
 /** Profundidad (f) de lo más adelantado de la cabeza en una rejilla de columnas (r, u). */
 export type FaceGrid = {
@@ -225,6 +232,8 @@ export type FaceGrid = {
   halfWidth: number;
   chinU: number;
   topU: number;
+  /** Contorno del ojo derecho del modelo: lado de la nariz y de fuera (r), y arriba y abajo (u). */
+  eye: { inR: number; outR: number; top: number; bottom: number };
   r0: number;
   u0: number;
   step: number;
@@ -285,20 +294,63 @@ export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
       }
     }
   }
-  return { halfEye, eyesToMouth, halfWidth, chinU, topU, r0, u0, step, nr, nu, skin, hair };
+  return { halfEye, eyesToMouth, halfWidth, chinU, topU, eye: eyeBox(c, halfEye, eyesToMouth, halfWidth), r0, u0, step, nr, nu, skin, hair };
 }
 
-/** De coordenadas de cara de una persona a (r, u) en este modelo, por tramos. */
+/**
+ * Contorno de los ojos del modelo a partir de sus mallas de ojos. En un modelo anime los
+ * ojos son enormes (en este, del 30 % al 270 % de la media distancia entre ojos y hasta el
+ * 60 % del camino a la boca): sin tenerlo en cuenta, un contacto junto al ojo de una persona
+ * caía dentro del ojo del modelo. Sin mallas de ojos, las proporciones de una persona.
+ */
+function eyeBox(c: Cloud, halfEye: number, eyesToMouth: number, halfWidth: number): FaceGrid["eye"] {
+  const human = {
+    inR: HUMAN.eyeInH * halfEye,
+    outR: HUMAN.eyeOutH * halfEye,
+    top: HUMAN.eyeTopV * eyesToMouth,
+    bottom: HUMAN.eyeBottomV * eyesToMouth,
+  };
+  if (!c.eye) return human;
+  const rs: number[] = [];
+  const us: number[] = [];
+  for (let i = 0; i < c.r.length; i++) {
+    if (!c.eye[i] || Math.abs(c.u[i]!) > 2 * eyesToMouth || Math.abs(c.r[i]!) > halfWidth) continue;
+    rs.push(Math.abs(c.r[i]!));
+    us.push(c.u[i]!);
+  }
+  if (rs.length < 20) return human;
+  const q = (xs: number[], p: number) => [...xs].sort((a, b) => a - b)[Math.floor(p * (xs.length - 1))]!;
+  const box = { inR: q(rs, 0.02), outR: q(rs, 0.98), top: q(us, 0.98), bottom: q(us, 0.02) };
+  // Los huesos de los ojos no siempre están en el centro del ojo que se ve (en este modelo,
+  // más hacia dentro): basta con que el contorno sea coherente con la cara.
+  const sane = box.inR < box.outR && box.outR < halfWidth && box.bottom < box.top && box.bottom > -eyesToMouth && box.top < 2 * eyesToMouth;
+  return sane ? box : human;
+}
+
+/** Interpolación lineal por tramos entre anclas (xs creciente); fuera, sigue el tramo del extremo. */
+function piecewise(x: number, xs: number[], ys: number[]): number {
+  let k = 0;
+  while (k < xs.length - 2 && x > xs[k + 1]!) k++;
+  return ys[k]! + ((x - xs[k]!) / (xs[k + 1]! - xs[k]!)) * (ys[k + 1]! - ys[k]!);
+}
+
+/**
+ * De coordenadas de cara de una persona a (r, u) en este modelo, por tramos anclados en lo
+ * que tienen las dos caras: el centro, el contorno del ojo, el borde de la cara, la boca, la
+ * barbilla y el nacimiento del pelo. Lo que en la persona queda por fuera, por debajo o por
+ * encima del ojo cae igual respecto al ojo del modelo, aunque sea mucho más grande.
+ */
 export function faceToModel(g: FaceGrid, [h, v]: FaceCoords): [number, number] {
-  const ah = Math.abs(h);
-  const r = Math.sign(h) * (ah <= 1
-    ? ah * g.halfEye
-    : g.halfEye + ((ah - 1) / (HUMAN.edgeH - 1)) * (g.halfWidth - g.halfEye));
-  const u = v >= 0
-    ? (v / HUMAN.topV) * 0.8 * g.topU
-    : v >= -1
-      ? v * g.eyesToMouth
-      : -g.eyesToMouth + ((v + 1) / (HUMAN.chinV + 1)) * (g.chinU + g.eyesToMouth);
+  const r = Math.sign(h) * piecewise(
+    Math.abs(h),
+    [0, HUMAN.eyeInH, HUMAN.eyeOutH, HUMAN.edgeH],
+    [0, g.eye.inR, g.eye.outR, g.halfWidth],
+  );
+  const u = piecewise(
+    v,
+    [HUMAN.chinV, -1, HUMAN.eyeBottomV, HUMAN.eyeTopV, HUMAN.topV],
+    [g.chinU, -g.eyesToMouth, g.eye.bottom, g.eye.top, 0.8 * g.topU],
+  );
   return [r, u];
 }
 

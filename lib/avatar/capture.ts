@@ -57,16 +57,28 @@ export type CaptureResult =
   | { ok: false; error: string };
 
 type Vec = [number, number, number];
+type ThumbTouch = NonNullable<AvatarKeyframe["thumbTouch"]>;
 
 const P = { mouthL: 9, mouthR: 10, lShoulder: 11, rShoulder: 12, lElbow: 13, rElbow: 14, lWrist: 15, rWrist: 16 };
 const STEP_MS = 100;
-/** σ del suavizado de las trayectorias: con la mano rápida y quieta, y la velocidad (u/s) entre medias. */
-// Ajustado con los 305 vídeos del DILSE: frente a un σ fijo de 60 ms, el temblor con la
-// mano casi quieta baja un 28 % y los signos que oscilan (ADIÓS, AMIGO, NOMBRE…) conservan
-// todos sus giros; más fuerte, las oscilaciones pequeñas y rápidas se perdían.
-const SMOOTH_FAST_MS = 40;
-const SMOOTH_SLOW_MS = 170;
-const SMOOTH_SPEED = 1.0;
+/**
+ * σ del suavizado (ms) de cada grupo de canales según lo deprisa que se mueve él mismo:
+ * `fast` en pleno movimiento, `slow` quieto y `speed` la velocidad entre medias. La muñeca
+ * en unidades del espacio de signado por segundo; la orientación y los dedos, en rad/s.
+ * Ajustado con los 305 vídeos del DILSE. Muñeca: frente a un σ fijo de 60 ms, el temblor
+ * con la mano casi quieta baja un 28 % y los signos que oscilan (ADIÓS, AMIGO, NOMBRE…)
+ * conservan todos sus giros. Dedos: antes seguían a la muñeca, y con ella quieta un golpe
+ * de dedos (COLOQUIAL) se quedaba en 56° de sus 95° y el aleteo de DÓNDE en 41° de 72°;
+ * con su propia velocidad llegan a 96° y 65°, y el temblor de los dedos baja un 8 %.
+ */
+type SmoothParams = { fast: number; slow: number; speed: number };
+const SMOOTH: Record<"pos" | "dir" | "finger", SmoothParams> = {
+  pos: { fast: 40, slow: 170, speed: 1.0 },
+  dir: { fast: 40, slow: 170, speed: 3 },
+  finger: { fast: 40, slow: 170, speed: 2.5 },
+};
+/** Canales de flexión (nudillo y falange de los cuatro dedos) en fingerPose aplanado. */
+const FLEX_CHANNELS = [4, 5, 7, 8, 10, 11, 13, 14];
 /**
  * Error admitido al quitar un keyframe que se puede sacar interpolando sus vecinos:
  * posición en unidades del espacio de signado (~1.5 % del brazo), direcciones de la mano
@@ -220,6 +232,29 @@ export function fingerPose(world: Point3[], side: Side): MeasuredFinger[] {
   });
 }
 
+/** Pinza: a esta distancia (en palmas: muñeca→nudillo del corazón) o menos, las yemas se tocan; a PINCH_FAR, nada. */
+const PINCH_NEAR = 0.28;
+const PINCH_FAR = 0.42;
+/** Una yema a menos de esto del centro de la palma está metida en el puño: el pulgar encima no es una pinza. */
+const PINCH_OUT = 0.6;
+
+/**
+ * Cuánto toca la yema del pulgar la de cada dedo (0..1, del índice al meñique): la pinza
+ * de DAR, la O de JOVEN, la F de TEATRO, el «pico» de PREGUNTAR o BUENAS TARDES. Los
+ * ángulos medidos no bastan: en otra mano, con otras proporciones, las puntas no se
+ * encuentran, y el avatar cierra la pinza con estos pesos.
+ */
+export function thumbTouch(world: Point3[]): number[] {
+  const at = (i: number) => v(world[i]!);
+  const palm = len(sub(at(9), at(0)));
+  const center = scale([0, 5, 17].reduce<Vec>((acc, i) => [acc[0] + at(i)[0], acc[1] + at(i)[1], acc[2] + at(i)[2]], [0, 0, 0]), 1 / 3);
+  return [8, 12, 16, 20].map((tip) => {
+    if (len(sub(at(tip), center)) < PINCH_OUT * palm) return 0;
+    const r = len(sub(at(4), at(tip))) / palm;
+    return clamp((PINCH_FAR - r) / (PINCH_FAR - PINCH_NEAR), 0, 1);
+  });
+}
+
 /**
  * La mano que dan los landmarks dobla los dedos hacia el dorso: MediaPipe la ha
  * reflejado en profundidad o es la otra mano. Su palma sale al revés, así que
@@ -259,7 +294,7 @@ type Sample = {
   t: number;
   pos: Vec;
   /** fingers: flexión 0..1; joints: fingerPose aplanado (5 × 3). */
-  hand?: { fingers: number[]; joints: number[]; palm: Vec; point: Vec; image: Point3[] };
+  hand?: { fingers: number[]; joints: number[]; touch: number[]; palm: Vec; point: Vec; image: Point3[] };
   /** Hacia dónde sale el codo de la línea hombro→muñeca (sin él, el brazo está casi recto). */
   elbow?: Vec;
   /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
@@ -570,21 +605,21 @@ function smooth(points: Timed<number[]>[], sigmaMs: number | ((t: number) => num
 }
 
 /**
- * σ según lo deprisa que va la muñeca: con la mano casi quieta el temblor es lo que más se
- * ve y se suaviza mucho; en un movimiento rápido (saludar, golpear dos veces) poco, para
- * no comerse el gesto. Como el filtro «One Euro», pero simétrico en el tiempo (sin retraso).
+ * σ según lo deprisa que se mueve el canal: quieto, el temblor es lo que más se ve y se
+ * suaviza mucho; en un movimiento rápido (saludar, golpear dos veces, abrir los dedos) poco,
+ * para no comerse el gesto. Como el filtro «One Euro», pero simétrico en el tiempo (sin
+ * retraso). `dist` mide cuánto cambia el canal entre dos instantes.
  */
 function adaptiveSigma(
-  samples: (Sample | null)[],
-  { fast, slow, speed: v0 } = { fast: SMOOTH_FAST_MS, slow: SMOOTH_SLOW_MS, speed: SMOOTH_SPEED },
+  pts: Timed<number[]>[],
+  { fast, slow, speed: v0 }: SmoothParams,
+  dist: (a: number[], b: number[]) => number = (a, b) => len(sub(a as Vec, b as Vec)),
 ): (t: number) => number {
-  const pts: Timed<number[]>[] = [];
-  for (const s of samples) if (s) pts.push({ t: s.t, val: s.pos });
   const light = smooth(pts, fast);
   const speed = light.map((p, i) => {
     const a = light[Math.max(0, i - 1)]!;
     const b = light[Math.min(light.length - 1, i + 1)]!;
-    return { t: p.t, v: b.t > a.t ? len(sub(b.val as Vec, a.val as Vec)) / ((b.t - a.t) / 1000) : 0 };
+    return { t: p.t, v: b.t > a.t ? dist(b.val, a.val) / ((b.t - a.t) / 1000) : 0 };
   });
   // La velocidad máxima alrededor, no la del instante: al dar la vuelta en una oscilación
   // la mano se para un momento y un σ grande ahí se comería los extremos.
@@ -724,7 +759,7 @@ export function framesToClip(
     leftHanded?: boolean;
     /** Para comparar ajustes: false deja todos los keyframes; smoothing cambia el suavizado. */
     simplify?: boolean;
-    smoothing?: number | { fast: number; slow: number; speed: number };
+    smoothing?: number | Partial<typeof SMOOTH>;
   } = {},
 ): CaptureResult {
   const withPose = frames.filter((f) => f.poseWorld && f.poseWorld.length > P.rWrist);
@@ -821,7 +856,14 @@ export function framesToClip(
       t: f.t,
       pos,
       elbow,
-      hand: { fingers, joints: fingerPose(h.world, side).flat(), palm: toSigner(o.palm), point: toSigner(o.point), image: h.image },
+      hand: {
+        fingers,
+        joints: fingerPose(h.world, side).flat(),
+        touch: thumbTouch(h.world),
+        palm: toSigner(o.palm),
+        point: toSigner(o.point),
+        image: h.image,
+      },
       touch: detectTouch(f, side, fingers),
     };
   };
@@ -857,15 +899,37 @@ export function framesToClip(
 
   const mirror = opts.leftHanded ? mirrorX : (a: Vec) => a;
   const build = (samples: (Sample | null)[]) => {
-    const sigma = typeof opts.smoothing === "number" ? opts.smoothing : adaptiveSigma(samples, opts.smoothing);
+    const params = { ...SMOOTH, ...(typeof opts.smoothing === "object" ? opts.smoothing : {}) };
+    const points = (pick: (s: Sample) => number[] | undefined) => {
+      const out: Timed<number[]>[] = [];
+      for (const s of samples) {
+        const val = s && pick(s);
+        if (s && val) out.push({ t: s.t, val });
+      }
+      return out;
+    };
+    const sigmaFor = (
+      group: keyof typeof SMOOTH,
+      pick: (s: Sample) => number[] | undefined,
+      dist?: (a: number[], b: number[]) => number,
+    ) => (typeof opts.smoothing === "number" ? opts.smoothing : adaptiveSigma(points(pick), params[group], dist));
+    const sigma = sigmaFor("pos", (s) => s.pos);
+    // Dedos: la flexión media de los cuatro (un movimiento de verdad mueve varios a la vez;
+    // el ruido de la detección, uno suelto).
+    const fingerSigma = sigmaFor("finger", (s) => s.hand?.joints, (a, b) =>
+      FLEX_CHANNELS.reduce((acc, k) => acc + Math.abs(a[k]! - b[k]!), 0) / FLEX_CHANNELS.length);
+    const dirSigma = sigmaFor("dir", (s) => s.hand && [...s.hand.palm, ...s.hand.point]);
     const pos = resample(channel(samples, (s) => s.pos, sigma), times);
-    const fingerCh = channel(samples, (s) => s.hand?.joints, sigma);
-    const palmCh = channel(samples, (s) => s.hand?.palm, sigma);
-    const pointCh = channel(samples, (s) => s.hand?.point, sigma);
+    const fingerCh = channel(samples, (s) => s.hand?.joints, fingerSigma);
+    const touchCh = channel(samples, (s) => s.hand?.touch, fingerSigma);
+    const palmCh = channel(samples, (s) => s.hand?.palm, dirSigma);
+    const pointCh = channel(samples, (s) => s.hand?.point, dirSigma);
     const elbowCh = channel(samples, (s) => s.elbow, sigma);
     return {
       pos,
       fingers: fingerCh.length ? resample(fingerCh, times) : null,
+      // Solo si en algún momento el pulgar toca de verdad una yema.
+      touch: touchCh.length && touchCh.some((p) => Math.max(...p.val) > 0.5) ? resample(touchCh, times) : null,
       palm: palmCh.length ? resample(palmCh, times).map((a) => mirror(unit(a as Vec))) : null,
       point: pointCh.length ? resample(pointCh, times).map((a) => mirror(unit(a as Vec))) : null,
       // Solo si el brazo está doblado en buena parte del signo; si no, el polo por defecto.
@@ -920,7 +984,9 @@ export function framesToClip(
       ...(face?.expr[i] ? { expr: face.expr[i]! } : {}),
       hand: { ...handSpec(main, i), ...(contact ? { contact } : {}) },
       fingers: fingerSpec(main, i),
+      ...(main.touch ? { thumbTouch: main.touch[i]!.map(round2) as ThumbTouch } : {}),
       ...(second ? { hand2: handSpec(second, i), fingers2: fingerSpec(second, i) } : {}),
+      ...(second?.touch ? { thumbTouch2: second.touch[i]!.map(round2) as ThumbTouch } : {}),
     };
   });
 
@@ -951,7 +1017,7 @@ function channelsOf(k: AvatarKeyframe): Record<keyof typeof SIMPLIFY_TOL, number
   const hands = [k.hand, k.hand2].filter((h): h is AvatarKeyframe["hand"] => !!h);
   const fingerVals = [k.fingers, k.fingers2 ?? []].flatMap((fs) =>
     fs.flatMap((f) => (Array.isArray(f) ? f : typeof f === "number" ? [f] : [f.flex, f.abduction ?? 0])),
-  );
+  ).concat(k.thumbTouch ?? [], k.thumbTouch2 ?? []);
   return {
     pos: hands.flatMap((h) => [h.x, h.y, h.z]),
     dir: hands.flatMap((h) => [...(h.palmDir ?? []), ...(h.pointDir ?? [])]),

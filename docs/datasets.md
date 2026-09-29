@@ -66,6 +66,13 @@ python -m venv .venv
 - Cada dedo se guarda como `[azimut, elevación, flexión]`: nudillo y falanges por separado
   (B doblada frente a garra), separación de los dedos y posición del pulgar. MediaPipe dobla
   de más los dedos estirados; la calibración sale de los propios vídeos del DILSE.
+- Las pinzas (la O, la F, el «pico», el pulgar sobre una yema) se guardan como cuánto toca
+  el pulgar cada yema, y el avatar junta las puntas en su propia mano aunque sus dedos
+  tengan otras proporciones: el pulgar va hacia las yemas y los dedos se doblan hacia él.
+- En la cara, el punto de contacto se lleva a la cabeza del modelo anclado en lo que tienen
+  las dos caras (el contorno del ojo, medido en las mallas de ojos del modelo, el borde de
+  la cara, la boca y la barbilla): lo que en la persona queda junto al ojo cae junto al ojo
+  del modelo aunque este sea enorme, como en los modelos anime.
 - De la cara se sacan el giro de la cabeza y sus gestos (MediaPipe FaceLandmarker): cabeceo,
   giro e inclinación respecto a como el signante la tiene en reposo, y boca (la palabra que
   vocaliza), sonrisa, ceño y cejas levantadas respecto a su cara neutra, sin el temblor de la
@@ -78,7 +85,9 @@ python -m venv .venv
   (cada muestra guarda su `format`).
 - Las trayectorias se suavizan más con la mano casi quieta (donde se nota el temblor) que en
   los movimientos rápidos (para no perder un saludo o un golpe doble), y se quitan los
-  keyframes que se pueden sacar interpolando.
+  keyframes que se pueden sacar interpolando. La posición, la orientación de la mano y los
+  dedos se suavizan cada uno según su propia velocidad: un golpe de dedos o un aleteo con
+  la muñeca quieta se conserva.
 - La fuente y la licencia quedan en cada signo; añádelas a `CREDITS.md`.
 
 Con licencias NC (DILSE, LSE-Health) Panduro puede usarlos porque no es comercial; con SA

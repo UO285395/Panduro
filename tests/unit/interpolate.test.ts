@@ -143,6 +143,15 @@ describe("cabeza, cara y codo", () => {
     expect(e[0]).toBeCloseTo(Math.SQRT1_2, 5);
   });
 
+  it("interpola la pinza del pulgar, y donde falta vale 0", () => {
+    const pinch: AvatarClip = {
+      ...face,
+      keyframes: [{ ...face.keyframes[0]!, thumbTouch: [1, 0.5, 0, 0] }, face.keyframes[1]!],
+    };
+    expect(sampleClip(pinch, 500).thumbTouch).toEqual([0.5, 0.25, 0, 0]);
+    expect(sampleClip(clip, 500).thumbTouch).toBeUndefined();
+  });
+
   it("un clip sin cabeza no se inventa una", () => {
     expect(sampleClip(clip, 500).head).toBeUndefined();
     expect(sampleClip(clip, 500).expr).toBeUndefined();

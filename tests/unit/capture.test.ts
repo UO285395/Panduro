@@ -8,6 +8,7 @@ import {
   framesToClip,
   handOrientation,
   mirroredHand,
+  thumbTouch,
   type CaptureFrame,
   type Landmark,
 } from "@/lib/avatar/capture";
@@ -460,6 +461,22 @@ describe("capture: suavizado según la velocidad", () => {
     expect(roughness(adaptive, 200, 800)).toBeLessThan(0.7 * roughness(fixed, 200, 800));
   });
 
+  it("un golpe de dedos con la muñeca quieta no se aplana (los dedos se suavizan por su cuenta)", () => {
+    const open = HOLA_HAND;
+    const curled = makeHand("right", U, F, true);
+    const flick: CaptureFrame[] = Array.from({ length: 40 }, (_, i) => {
+      const hand = i >= 18 && i < 22 ? curled : open; // cerrar y abrir en 160 ms
+      return { t: i * 40, poseWorld: pose(RAISED_RIGHT, DOWN_LEFT), hands: { right: { world: hand, image: image(hand) } } };
+    });
+    const r = framesToClip(flick);
+    if (!r.ok) throw new Error(r.error);
+    // Nudillo del índice: estirado ≈ 0, cerrado ≈ 1,66 rad en esta mano sintética.
+    const mcps: number[] = [];
+    for (let t = 0; t <= r.clip.duration; t += 10) mcps.push((sampleClip(r.clip, t).fingers[1] as number[])[1]!);
+    const shut = fingerPose(curled, "right")[1]![1];
+    expect(Math.max(...mcps)).toBeGreaterThan(0.8 * shut);
+  });
+
   it("una oscilación rápida conserva su amplitud", () => {
     expect(spread(adaptive, 1100, 1900)).toBeGreaterThan(0.85 * spread(fixed, 1100, 1900));
   });
@@ -511,5 +528,28 @@ describe("capture: cabeza, cara y codo", () => {
   it("sin cara ni giro no guarda nada de la cabeza", () => {
     const plain = framesToClip(frames.map(({ headR: _h, faceBlend: _f, ...f }) => f));
     expect(plain.ok && plain.clip.keyframes.some((k) => k.head || k.expr)).toBe(false);
+  });
+});
+
+describe("capture: pinza del pulgar", () => {
+  // Mano derecha con la palma hacia delante y los dedos hacia arriba (ver makeHand).
+  const base = makeHand("right", U, F);
+  const withThumbAt = (tip: Vec) => base.map((p, i) => (i === 4 ? { x: tip[0], y: tip[1], z: tip[2] } : p));
+  const at = (p: Point3): Vec => [p.x, p.y, p.z];
+
+  it("la yema del pulgar sobre la del índice es una pinza con el índice", () => {
+    const t = thumbTouch(withThumbAt(add(at(base[8]!), mul(F, 0.015))));
+    expect(t[0]).toBe(1);
+    expect(t.slice(1).every((w) => w < 1)).toBe(true);
+  });
+
+  it("con el pulgar lejos no hay pinza", () => {
+    expect(thumbTouch(base)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("el pulgar sobre los dedos de un puño no cuenta (las yemas están en la palma)", () => {
+    const fist = makeHand("right", U, F, true);
+    const t = thumbTouch(fist.map((p, i) => (i === 4 ? { ...fist[12]! } : p)));
+    expect(t).toEqual([0, 0, 0, 0]);
   });
 });

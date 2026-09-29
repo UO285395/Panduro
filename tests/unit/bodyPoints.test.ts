@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   faceSurface,
+  faceToModel,
   measureBody,
   measureFace,
   surfaceFor,
@@ -122,5 +123,51 @@ describe("faceSurface: el punto exacto de la cara", () => {
 
   it("el mechón que sobresale de la frente no cuenta como piel", () => {
     expect(faceSurface(grid, [0, 0.8]).p[2]).toBeLessThan(0.02);
+  });
+});
+
+describe("faceToModel: anclado en el contorno del ojo", () => {
+  // Ojos enormes de modelo anime: de r 0,03 a 0,07 a cada lado y de u −0,03 a +0,04
+  // (con los ojos a 0,06 de distancia y la boca a 0,05 por debajo).
+  const withEyes = (): Cloud => {
+    const c = figure();
+    const r = [...c.r], u = [...c.u], f = [...c.f], hair = [...c.hair];
+    const eye = new Array(r.length).fill(0);
+    for (const side of [1, -1]) {
+      for (let a = 0; a <= 10; a++) {
+        for (let b = 0; b <= 10; b++) {
+          r.push(side * (0.03 + 0.004 * a));
+          u.push(-0.03 + 0.007 * b);
+          f.push(0.005);
+          hair.push(0);
+          eye.push(1);
+        }
+      }
+    }
+    return { r: Float32Array.from(r), u: Float32Array.from(u), f: Float32Array.from(f), hair: Uint8Array.from(hair), eye: Uint8Array.from(eye) };
+  };
+  const cloud = withEyes();
+  const grid = measureFace(cloud, measureBody(cloud, anchors), anchors);
+
+  it("mide el contorno de los ojos del modelo", () => {
+    expect(grid.eye.inR).toBeCloseTo(0.03, 2);
+    expect(grid.eye.outR).toBeCloseTo(0.07, 2);
+    expect(grid.eye.bottom).toBeCloseTo(-0.03, 2);
+  });
+
+  it("junto al ojo de una persona queda junto al ojo del modelo, no dentro", () => {
+    // Sien (por fuera del ojo) y mejilla (debajo del ojo) de una persona.
+    const [rTemple] = faceToModel(grid, [2, 0]);
+    const [, uCheek] = faceToModel(grid, [1, -0.5]);
+    expect(rTemple).toBeGreaterThan(grid.eye.outR);
+    expect(uCheek).toBeLessThan(grid.eye.bottom);
+  });
+
+  it("dentro del ojo de una persona, dentro del ojo del modelo", () => {
+    const [r, u] = faceToModel(grid, [1, 0]);
+    expect(r).toBeGreaterThan(grid.eye.inR);
+    expect(r).toBeLessThan(grid.eye.outR);
+    expect(u).toBeGreaterThan(grid.eye.bottom);
+    expect(u).toBeLessThan(grid.eye.top);
   });
 });

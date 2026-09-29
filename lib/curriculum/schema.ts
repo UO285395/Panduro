@@ -31,6 +31,10 @@ const ContactSchema = z.object({
   // Punto exacto de la cara medido en una grabación (ver FaceCoords en bodyPoints): manda
   // sobre `at`, que queda como nombre aproximado.
   face: z.tuple([z.number(), z.number()]).optional(),
+  // Punto exacto de la otra mano medido en una grabación: articulación de MediaPipe (0-20,
+  // 21 el centro de la palma) y desplazamiento desde ella en el marco de esa mano, en palmas
+  // (hacia los dedos, hacia el índice, hacia la palma). Manda sobre `at`.
+  hand: z.tuple([z.number().int().min(0).max(21), z.number(), z.number(), z.number()]).optional(),
 });
 export type Contact = z.infer<typeof ContactSchema>;
 

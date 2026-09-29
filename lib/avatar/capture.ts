@@ -298,8 +298,23 @@ type Sample = {
   /** Hacia dónde sale el codo de la línea hombro→muñeca (sin él, el brazo está casi recto). */
   elbow?: Vec;
   /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
-  touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number; face?: FaceCoords };
+  touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number; face?: FaceCoords; hand?: HandAnchor };
 };
+
+/**
+ * Punto de la otra mano: articulación de MediaPipe (0-20, o 21 para el centro de la palma)
+ * y desplazamiento desde ella en el marco de esa mano, en palmas (muñeca→nudillo del
+ * corazón): hacia los dedos, hacia el índice y hacia la palma.
+ */
+type HandAnchor = [number, number, number, number];
+/** Articulaciones de la palma (muñeca, base del pulgar, nudillos y centro): palma o dorso. */
+const PALM_JOINTS = new Set([0, 1, 5, 9, 13, 17, 21]);
+/** Peso de la profundidad entre las dos manos al elegir en qué articulación tocan. */
+const OTHER_DEPTH_WEIGHT = 0.4;
+/** Un contacto con la otra mano más flojo que esto es que pasaba cerca. */
+const OTHER_MIN_WEIGHT = 0.3;
+/** A cuánto de la articulación queda la parte que la toca (en palmas): los dos grosores. */
+const OTHER_REACH = 0.3;
 
 // Pose de MediaPipe: nariz, ojos, comisuras de los ojos, orejas y boca (lado anatómico).
 const FACE = { nose: 0, lEye: 2, lEyeOuter: 3, rEye: 5, rEyeOuter: 6, lEar: 7, rEar: 8 };
@@ -373,17 +388,58 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
     ["ear", ear],
   ];
 
-  // La otra mano, si se ve: palma (o dorso, según el lado de la palma en que quede), yemas o muñeca.
+  // La otra mano, si se ve: sus 21 articulaciones y el centro de la palma, con su marco
+  // (hacia los dedos, hacia el índice y hacia la palma) para situar el punto exacto.
   const otherSide: Side = r ? "left" : "right";
   const oh = f.hands[otherSide];
-  let otherPalm: Vec | null = null;
-  let otherNormal: Vec | null = null;
+  let other: { joints: Vec[]; image: Vec[]; P: Vec; A: Vec; N: Vec; len: number; scale: number } | null = null;
+  const aspect = f.aspect ?? 1;
+  const img = (q: Point3): Vec => [q.x * aspect, q.y, 0];
   if (oh) {
     const ow = v(p[r ? P.lWrist : P.rWrist]!);
-    otherPalm = meanOf([0, 5, 17].map((i) => at(oh, ow, i)));
-    otherNormal = handOrientation(oh.world, otherSide).palm;
-    targets.push(["otherPalm", otherPalm], ["otherTips", meanOf([8, 12].map((i) => at(oh, ow, i)))], ["otherWrist", ow]);
+    const joints = oh.world.map((_, i) => at(oh, ow, i));
+    const image = oh.image.map(img);
+    joints.push(meanOf([0, 5, 9, 13, 17].map((i) => joints[i]!)));
+    image.push(meanOf([0, 5, 9, 13, 17].map((i) => image[i]!)));
+    const Pv = unit(sub(joints[9]!, joints[0]!));
+    const N = perpUnit(handOrientation(oh.world, otherSide).palm, Pv);
+    const A = perpUnit(perpUnit(sub(joints[5]!, joints[17]!), Pv), N);
+    const palm = Math.max(1e-3, len(sub(v(oh.world[9]!), v(oh.world[0]!))));
+    // Metros por unidad de imagen, con la palma de esa mano (lo que mide en la imagen frente
+    // a lo que mide en 3D; con la palma de canto a la cámara, con la mano entera).
+    const spanImg = Math.max(len(sub(image[9]!, image[0]!)), 0.5 * len(sub(image[12]!, image[0]!)), 1e-4);
+    other = { joints, image, P: Pv, A, N, len: palm, scale: palm / spanImg };
   }
+  /**
+   * Si la parte toca la otra mano (distancia en 3D a su articulación más cercana: el error
+   * de profundidad es parecido en las dos muñecas y se compensa) y, si la toca, en qué
+   * articulación y hacia dónde queda de ella, en el marco de esa mano. Esto último se mide en
+   * la imagen, que es fiable; de la profundidad, que entre las dos manos puede ir 5 cm
+   * desviada, solo cuenta el lado (por delante o por detrás de la otra mano) y con poco peso.
+   */
+  const onOtherHand = (what: NonNullable<Contact["with"]>, q: Vec): { at: Contact["at"]; d: number; hand: HandAnchor } | null => {
+    if (!other) return null;
+    const o = other;
+    const ids = partIds.find(([n]) => n === what)![1];
+    const qi = meanOf(ids.map((i) => img(h.image[i]!)));
+    const dist = (k: number) => {
+      const xy = scale(sub(qi, o.image[k]!), o.scale);
+      const z = q[2] - o.joints[k]![2];
+      return { xy, z, d: Math.hypot(len(xy), OTHER_DEPTH_WEIGHT * z) };
+    };
+    let k = 0;
+    for (let i = 1; i < o.joints.length; i++) if (dist(i).d < dist(k).d) k = i;
+    const { xy, z } = dist(k);
+    const d = Math.min(...o.joints.map((j) => len(sub(q, j))));
+    // Tocándose, la parte está a un radio de la articulación: lo que no está en el plano de
+    // la imagen está delante o detrás.
+    const reach = OTHER_REACH * o.len;
+    const off: Vec = [xy[0], xy[1], Math.sign(z) * Math.sqrt(Math.max(0, reach * reach - dot(xy, xy)))];
+    const c = (axis: Vec) => round2(dot(off, axis) / o.len);
+    const hand: HandAnchor = [k, c(o.P), c(o.A), c(o.N)];
+    const at: Contact["at"] = k === 0 ? "otherWrist" : PALM_JOINTS.has(k) ? (hand[3] < 0 ? "otherBack" : "otherPalm") : "otherTips";
+    return { at, d, hand };
+  };
 
   // Con la cara en la imagen, lo que toca se decide ahí: la parte dentro del contorno de la
   // cara (o a cuánto queda de él) y la profundidad con poco peso. La cara de la pose en el
@@ -411,30 +467,22 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   };
 
   let best: Sample["touch"];
-  let bestPart: Vec | null = null;
   for (const [what, q] of parts) {
     const onFace = faceTouch(what, q);
-    if (onFace && (!best || onFace.d < best.d)) {
-      best = onFace;
-      bestPart = q;
-    }
+    if (onFace && (!best || onFace.d < best.d)) best = onFace;
     for (const [where, tp] of targets) {
-      if (onFace !== undefined && !where.startsWith("other")) continue;
-      const diff = sub(q, tp);
+      if (onFace !== undefined) continue;
       // Contra la cara, la profundidad cuenta poco: con el brazo levantado la pose pone la
       // muñeca 15-30 cm por delante aunque la mano toque la frente o la barbilla (en el
-      // plano de la imagen, que sí es fiable, está encima). Entre las dos manos el error es
-      // parecido en las dos muñecas y se anula.
-      const d = where.startsWith("other") ? len(diff) : Math.hypot(diff[0], diff[1], FACE_DEPTH_WEIGHT * diff[2]);
-      if (!best || d < best.d) {
-        best = { at: where, with: what, d };
-        bestPart = q;
-      }
+      // plano de la imagen, que sí es fiable, está encima).
+      const diff = sub(q, tp);
+      const d = Math.hypot(diff[0], diff[1], FACE_DEPTH_WEIGHT * diff[2]);
+      if (!best || d < best.d) best = { at: where, with: what, d };
     }
-  }
-  // La palma de la otra mano mira hacia un lado: si la parte queda detrás, toca el dorso.
-  if (best?.at === "otherPalm" && otherPalm && otherNormal && bestPart && dot(sub(bestPart, otherPalm), otherNormal) < 0) {
-    best = { ...best, at: "otherBack" };
+    // La otra mano: entre las dos manos el error de profundidad es parecido en las dos
+    // muñecas y se anula.
+    const onHand = onOtherHand(what, q);
+    if (onHand && (!best || onHand.d < best.d)) best = { at: onHand.at, with: what, d: onHand.d, hand: onHand.hand };
   }
   return best && best.d < TOUCH_FAR ? best : undefined;
 }
@@ -516,14 +564,16 @@ type TouchRun = {
   contact: Contact;
   /** Contacto con la cara: por dónde va la parte que toca (la mano puede deslizarse). */
   path?: { t: number; face: FaceCoords }[];
+  /** Contacto con la otra mano: el punto exacto en cada momento. */
+  handPath?: { t: number; hand: HandAnchor; at: Contact["at"] }[];
 };
 
 function touchRuns(samples: (Sample | null)[], twoHands: boolean): TouchRun[] {
   const out: TouchRun[] = [];
   let run: Sample[] = [];
   let gap = 0;
-  // La cara cuenta como un solo sitio (el punto se sigue por el camino); la otra mano, por partes.
-  const kind = (s: Sample) => (s.touch!.at.startsWith("other") ? s.touch!.at : "face");
+  // La cara y la otra mano cuentan cada una como un solo sitio: el punto se sigue por el camino.
+  const kind = (s: Sample) => (s.touch!.at.startsWith("other") ? "other" : "face");
   const flush = () => {
     const touching = run.filter((s) => twoHands || !s.touch!.at.startsWith("other"));
     if (touching.length >= 2) {
@@ -533,21 +583,27 @@ function touchRuns(samples: (Sample | null)[], twoHands: boolean): TouchRun[] {
       // demás fotogramas la mano parece más lejos de lo que está).
       const d = Math.min(...same.map((s) => s.touch!.d));
       const closeness = Math.max(0, Math.min(1, (TOUCH_FAR - d) / (TOUCH_FAR - TOUCH_NEAR)));
-      // Quedarse junto al mismo punto un rato es tocarlo: al signar la mano no se para al
-      // lado de la cara sin tocarla, y la distancia medida engaña (la pose estrecha la cara).
-      const held = same[same.length - 1]!.t - same[0]!.t >= TOUCH_HOLD_MS;
+      // Quedarse junto al mismo punto de la cara un rato es tocarlo: al signar la mano no se
+      // para al lado de la cara sin tocarla, y la distancia medida engaña (la pose estrecha la
+      // cara). Las dos manos, en cambio, se quedan cerca sin tocarse en muchos signos
+      // simétricos (VOLVER, NOTICIAS): ahí solo cuenta lo cerca que llegan.
+      const held = where === "face" && same[same.length - 1]!.t - same[0]!.t >= TOUCH_HOLD_MS;
       const weight = held && closeness > 0 ? Math.max(closeness, 0.9) : closeness;
-      if (weight >= 0.1) {
+      if (weight >= (where === "face" ? 0.1 : OTHER_MIN_WEIGHT)) {
         const path = same.filter((s) => s.touch!.face).map((s) => ({ t: s.t, face: s.touch!.face! }));
+        const handPath = same
+          .filter((s) => s.touch!.hand)
+          .map((s) => ({ t: s.t, hand: s.touch!.hand!, at: s.touch!.at }));
         out.push({
           t0: touching[0]!.t,
           t1: touching[touching.length - 1]!.t,
           contact: {
-            at: where === "face" ? mode(same.map((s) => s.touch!.at)) : (where as Contact["at"]),
+            at: mode(same.map((s) => s.touch!.at)),
             with: mode(same.map((s) => s.touch!.with)),
             weight: round(weight),
           },
           ...(path.length ? { path } : {}),
+          ...(handPath.length ? { handPath } : {}),
         });
       }
     }
@@ -566,8 +622,18 @@ function touchRuns(samples: (Sample | null)[], twoHands: boolean): TouchRun[] {
   return out;
 }
 
-/** Contacto del tramo en `t`: en la cara, el punto por el que va la mano en ese momento. */
+/** Contacto del tramo en `t`: en la cara o en la otra mano, el punto por el que va en ese momento. */
 function contactOfRun(run: TouchRun, t: number, leftHanded: boolean): Contact {
+  if (run.handPath) {
+    // La articulación más repetida cerca de `t` y la mediana de sus desplazamientos. Son
+    // coordenadas anatómicas de la otra mano: valen igual en espejo (zurdos).
+    const near = run.handPath.filter((p) => Math.abs(p.t - t) <= STEP_MS);
+    const pts = near.length ? near : [run.handPath.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a))];
+    const k = mode(pts.map((p) => p.hand[0]));
+    const same = pts.filter((p) => p.hand[0] === k);
+    const hand = [k, ...[1, 2, 3].map((i) => round(median(same.map((p) => p.hand[i]!))))] as HandAnchor;
+    return { ...run.contact, at: mode(same.map((p) => p.at)), hand };
+  }
   if (!run.path) return run.contact;
   const near = run.path.filter((p) => Math.abs(p.t - t) <= STEP_MS);
   const pts = near.length ? near : [run.path.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a))];
@@ -1049,7 +1115,7 @@ export function simplifyKeyframes(kfs: AvatarKeyframe[]): AvatarKeyframe[] {
     }
   }
   // Un contacto que se desliza (cara) cambia de punto: se conservan sus keyframes.
-  kfs.forEach((k, i) => { if (k.hand.contact?.face) keep.add(i); });
+  kfs.forEach((k, i) => { if (k.hand.contact?.face || k.hand.contact?.hand) keep.add(i); });
   const err = (i: number, a: number, b: number) => {
     const u = (kfs[i]!.t - kfs[a]!.t) / (kfs[b]!.t - kfs[a]!.t || 1);
     let worst = 0;

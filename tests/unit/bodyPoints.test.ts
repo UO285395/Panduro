@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   faceSurface,
   faceToModel,
+  headCenter,
+  headDepth,
   measureBody,
   measureFace,
   surfaceFor,
@@ -169,5 +171,67 @@ describe("faceToModel: anclado en el contorno del ojo", () => {
     expect(r).toBeLessThan(grid.eye.outR);
     expect(u).toBeGreaterThan(grid.eye.bottom);
     expect(u).toBeLessThan(grid.eye.top);
+  });
+});
+
+describe("la cabeza vista de frente: triángulos, fondo y lo alto", () => {
+  const body = measureBody(figure(), anchors);
+  // La cabeza de la figura: elipsoide centrado en (0; 0,02; −0,08) de semiejes 0,075, 0,11 y 0,09.
+  const frontAt = (r: number, u: number) => -0.08 + 0.09 * Math.sqrt(1 - (r / 0.075) ** 2 - ((u - 0.02) / 0.11) ** 2);
+  // Con un agujero en la frente: en esas celdas solo caen vértices de la nuca, como en una
+  // malla con triángulos más grandes que una celda.
+  const holed = (withTriangles: boolean): Cloud => {
+    const c = figure();
+    const keep = [...c.r.keys()].filter((i) => !(c.f[i]! > -0.08 && Math.abs(c.r[i]!) < 0.05 && Math.abs(c.u[i]! - 0.02) < 0.05 && !c.hair[i]));
+    const r = keep.map((i) => c.r[i]!);
+    const u = keep.map((i) => c.u[i]!);
+    const f = keep.map((i) => c.f[i]!);
+    const hair = keep.map((i) => c.hair[i]!);
+    const tri: number[] = [];
+    if (withTriangles) {
+      const base = r.length;
+      for (const [x, y] of [[-0.05, -0.03], [0.05, -0.03], [0.05, 0.07], [-0.05, 0.07]] as const) {
+        r.push(x);
+        u.push(y);
+        f.push(frontAt(x, y));
+        hair.push(0);
+      }
+      tri.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    }
+    return { r: Float32Array.from(r), u: Float32Array.from(u), f: Float32Array.from(f), hair: Uint8Array.from(hair), tri: Uint32Array.from(tri) };
+  };
+
+  it("los triángulos tapan los agujeros entre vértices: sin ellos, la frente quedaba en la nuca", () => {
+    const behindFront: [number, number, number] = [0, 0.02, -0.05];
+    expect(headDepth(measureFace(holed(false), body, anchors), behindFront, 0.005)).toBe(0);
+    expect(headDepth(measureFace(holed(true), body, anchors), behindFront, 0.005)).toBeGreaterThan(0.02);
+  });
+
+  it("cuánto se mete una bola: lo que le falta para salir por delante", () => {
+    const grid = measureFace(figure(), body, anchors);
+    const front = frontAt(0.02, 0.05);
+    expect(headDepth(grid, [0.02, 0.05, front + 0.02], 0.005)).toBe(0);
+    expect(headDepth(grid, [0.02, 0.05, front - 0.01], 0.005)).toBeCloseTo(0.015, 2);
+    // Por detrás de la cabeza o fuera de su contorno, nada.
+    expect(headDepth(grid, [0.02, 0.05, -0.2], 0.005)).toBe(0);
+    expect(headDepth(grid, [0.15, 0.05, -0.08], 0.005)).toBe(0);
+  });
+
+  it("el centro de la cabeza está entre la cara y la nuca", () => {
+    const [r, u, f] = headCenter(measureFace(figure(), body, anchors));
+    expect(r).toBe(0);
+    expect(u).toBeGreaterThan(-0.1);
+    expect(u).toBeLessThan(0.13);
+    expect(f).toBeCloseTo(-0.08, 1);
+  });
+
+  it("en lo alto de una cabeza cubierta de pelo la superficie es el pelo, sin normales rotas", () => {
+    const c = figure();
+    const scalp = Uint8Array.from(c.hair, (h, i) => (c.u[i]! > 0.06 && c.f[i]! > -0.2 && Math.abs(c.r[i]!) < 0.08 ? 1 : h));
+    const grid = measureFace({ ...c, hair: scalp }, body, anchors);
+    const s = faceSurface(grid, [0, 2]);
+    expect(s.p.every(Number.isFinite)).toBe(true);
+    expect(s.n.every(Number.isFinite)).toBe(true);
+    expect(s.p[2]).toBeGreaterThan(-0.08);
   });
 });

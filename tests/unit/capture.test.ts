@@ -83,6 +83,9 @@ function pose(right: { elbow: Vec; wrist: Vec }, left: { elbow: Vec; wrist: Vec 
 const dist = (a: Vec, b: Vec) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const ARM = (dist(R_SH, RAISED_RIGHT.elbow) + dist(RAISED_RIGHT.elbow, RAISED_RIGHT.wrist) + 0.55) / 2;
 const image = (h: Point3[]) => h.map((p) => ({ x: 0.3 + p.x, y: 0.5 + p.y, z: p.z }));
+/** La mano en la imagen donde está de verdad (cámara ortográfica): para ver una mano junto a la otra. */
+const imageAt = (h: Point3[], wrist: Vec) =>
+  h.map((p) => ({ x: 0.5 + wrist[0] + p.x - h[0]!.x, y: 0.5 + wrist[1] + p.y - h[0]!.y, z: p.z }));
 
 function frame(t: number, raised: boolean, hand?: Point3[]): CaptureFrame {
   return {
@@ -335,15 +338,21 @@ describe("capture: landmarks → clip", () => {
           return {
             t: i * 33,
             poseWorld: p,
-            hands: { right: { world: hand, image: image(hand) }, left: { world: base, image: image(base) } },
+            hands: { right: { world: hand, image: imageAt(hand, wrist) }, left: { world: base, image: imageAt(base, baseWrist) } },
           };
         });
         const res = framesToClip(frames);
         if (!res.ok) throw new Error(res.error);
         return res.clip.keyframes[0]!.hand.contact;
       };
-      expect(run(0.01)?.at).toBe("otherPalm");
-      expect(run(-0.01)?.at).toBe("otherBack");
+      const palm = run(0.01);
+      const back = run(-0.01);
+      expect(palm?.at).toBe("otherPalm");
+      expect(back?.at).toBe("otherBack");
+      // El punto exacto: una articulación de la palma y, desde ella, hacia la palma o el dorso.
+      for (const c of [palm, back]) expect([0, 1, 5, 9, 13, 17, 21]).toContain(c!.hand![0]);
+      expect(palm!.hand![3]).toBeGreaterThan(0);
+      expect(back!.hand![3]).toBeLessThan(0);
     });
   });
 

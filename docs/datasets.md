@@ -63,6 +63,24 @@ python -m venv .venv
   cara se guarda el punto exacto (`face`: dónde queda la parte que toca respecto a ojos y
   boca en la imagen, que se sigue si la mano se desliza) y el avatar lo busca en su propia
   cabeza, así que toca la mejilla contraria o el lado de la frente aunque su cara sea otra.
+  Entre las dos manos también se guarda el punto exacto (`hand`): la articulación de la otra
+  mano junto a la que toca (numeración de MediaPipe, 21 el centro de la palma) y hacia dónde
+  queda, en el marco de esa mano (hacia los dedos, hacia el índice, hacia la palma). El
+  avatar pone la parte que toca sobre la superficie de su propia mano en ese punto: las
+  yemas de CASA juntas en el vértice, el puño de ESPERAR sobre el otro, los dedos de MÉDICO
+  en el dorso de la muñeca.
+- Las manos no se atraviesan: el avatar mira su propia mano como cápsulas (palma y falanges,
+  con el grosor medido en su malla) y, si en un instante del signo una se mete en la otra
+  (la profundidad de la cámara no es fiable: en los números cruzados en X o con un puño
+  sobre los dedos de la otra salían metidas), las aparta lo justo. La dirección se elige a lo
+  largo de todo el signo para no cambiar de lado de golpe y el resultado se suaviza.
+- Tampoco se meten en la cabeza, que en un modelo anime es casi el doble de grande que la de
+  una persona en proporción al brazo: con los nudillos en la mejilla o el pulgar en la
+  frente, el resto de la mano quedaba dentro. La mano gira sobre el punto de contacto hasta
+  quedar fuera (el contacto se mantiene) y, si no basta, se aparta de la cabeza lo justo;
+  también de camino entre keyframes. La cabeza se mide en la malla del modelo, triángulo a
+  triángulo (con solo los vértices, en las mejillas quedaban huecos y un contacto acababa
+  dentro), sin contar los mechones sueltos.
 - Cada dedo se guarda como `[azimut, elevación, flexión]`: nudillo y falanges por separado
   (B doblada frente a garra), separación de los dedos y posición del pulgar. MediaPipe dobla
   de más los dedos estirados; la calibración sale de los propios vídeos del DILSE.

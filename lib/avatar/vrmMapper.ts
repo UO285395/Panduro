@@ -4,6 +4,8 @@ import * as THREE from "three";
 import { EXPRESSIONS, type AvatarClip, type AvatarKeyframe, type Contact, type Expressions } from "@/lib/curriculum/schema";
 import {
   faceSurface,
+  headCenter,
+  headDepth,
   isOtherHand,
   measureBody,
   measureFace,
@@ -12,6 +14,7 @@ import {
   type Cloud,
   type FaceGrid,
 } from "./bodyPoints";
+import { sampleClip } from "./interpolate";
 import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST, Y_MOUTH, Y_PER_FACE } from "./pose";
 
 /**
@@ -106,6 +109,10 @@ export type VrmRig = {
   /** Articulaciones del cuello y de la cabeza en reposo: el giro de la cabeza se reparte entre las dos. */
   neck: THREE.Vector3;
   head: THREE.Vector3;
+  /** Radio de un dedo y media palma de grosor, medidos en la malla, en palmas (muñeca→nudillo del corazón). */
+  handShape: { finger: number; palm: number };
+  /** Lo más lejos de la muñeca que llega la mano (la punta de un dedo estirado), en el modelo. */
+  handReach: number;
   /** Expresión del modelo (y peso máximo) para cada gesto de la cara que puede hacer. */
   expressions: Partial<Record<keyof Expressions, [string, number]>>;
   /** Todas las expresiones que toca el mapper, parpadeo incluido. */
@@ -209,6 +216,10 @@ export function createVrmRig(vrm: VRM): VrmRig {
 
   const R = arms.Right;
   const armLen = R.upperLen + R.lowerLen;
+  const wristR = must(ARM.Right.hand);
+  const handReach = Math.max(
+    ...R.fingers.map((f) => pos(f.bones[2])?.addScaledVector(f.tipDir, f.tipLen).distanceTo(wristR) ?? 0),
+  );
   const shoulderY = R.shoulder.y;
   const head = pos(B.Head) ?? R.shoulder.clone().setY(shoulderY + 0.5 * armLen);
   const eyeL = pos(B.LeftEye);
@@ -252,6 +263,8 @@ export function createVrmRig(vrm: VRM): VrmRig {
     face,
     neck: pos(B.Neck) ?? head.clone(),
     head,
+    handShape: measureHandShape(vrm),
+    handReach,
     ...faceExpressions(vrm),
     resolved: new WeakMap(),
   };
@@ -309,6 +322,80 @@ function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
   return { expressions, exprNames };
 }
 
+/**
+ * Grosor de los dedos y de la palma de este modelo, midiendo en su malla la distancia de los
+ * vértices a su hueso (la mediana): las dos manos se tocan y se apartan por su superficie.
+ */
+function measureHandShape(vrm: VRM): VrmRig["handShape"] {
+  const fallback = { finger: FINGER_RADIUS, palm: PALM_HALF_THICKNESS };
+  const raw = (b: B) => vrm.humanoid.getRawBoneNode(b);
+  const hand = raw(B.RightHand);
+  const knuckle = raw(B.RightMiddleProximal);
+  if (!hand || !knuckle) return fallback;
+  vrm.scene.updateMatrixWorld(true);
+  const at = (n: THREE.Object3D) => n.getWorldPosition(new THREE.Vector3());
+  const palmLen = at(knuckle).distanceTo(at(hand));
+  const segments: [THREE.Object3D, THREE.Object3D][] = (
+    [
+      [B.RightIndexIntermediate, B.RightIndexDistal],
+      [B.RightMiddleIntermediate, B.RightMiddleDistal],
+      [B.RightRingIntermediate, B.RightRingDistal],
+      [B.RightLittleIntermediate, B.RightLittleDistal],
+    ] as [B, B][]
+  ).flatMap(([a, b]) => {
+    const na = raw(a);
+    const nb = raw(b);
+    return na && nb ? [[na, nb] as [THREE.Object3D, THREE.Object3D]] : [];
+  });
+  const fingerD: number[] = [];
+  const palmD: number[] = [];
+  const index = raw(B.RightIndexProximal);
+  const little = raw(B.RightLittleProximal);
+  const palmN = index && little
+    ? at(index).sub(at(hand)).cross(at(little).sub(at(hand))).normalize()
+    : null;
+  const v = new THREE.Vector3();
+  vrm.scene.traverse((o) => {
+    const mesh = o as THREE.SkinnedMesh;
+    if (!mesh.isSkinnedMesh) return;
+    const pos = mesh.geometry.getAttribute("position");
+    const si = mesh.geometry.getAttribute("skinIndex");
+    const sw = mesh.geometry.getAttribute("skinWeight");
+    if (!pos || !si || !sw) return;
+    const bones = mesh.skeleton.bones;
+    for (let i = 0; i < pos.count; i++) {
+      let main = -1;
+      let w = 0;
+      for (let k = 0; k < 4; k++) {
+        if (sw.getComponent(i, k) > w) {
+          w = sw.getComponent(i, k);
+          main = si.getComponent(i, k);
+        }
+      }
+      const bone = bones[main];
+      if (!bone) continue;
+      const seg = segments.find(([a]) => a === bone);
+      if (!seg && !(bone === hand && palmN)) continue;
+      v.fromBufferAttribute(pos, i);
+      mesh.applyBoneTransform(i, v);
+      v.applyMatrix4(mesh.matrixWorld);
+      if (seg) {
+        const a = at(seg[0]);
+        const ab = at(seg[1]).sub(a);
+        const t = THREE.MathUtils.clamp(v.clone().sub(a).dot(ab) / Math.max(1e-12, ab.lengthSq()), 0, 1);
+        fingerD.push(v.distanceTo(a.addScaledVector(ab, t)));
+      } else {
+        palmD.push(Math.abs(v.clone().sub(at(hand)).dot(palmN!)));
+      }
+    }
+  });
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[xs.length >> 1]!;
+  return {
+    finger: fingerD.length > 20 && palmLen > 0 ? median(fingerD) / palmLen : fallback.finger,
+    palm: palmD.length > 10 && palmLen > 0 ? median(palmD) / palmLen : fallback.palm,
+  };
+}
+
 const HAIR = /hair|kami|bang|ahoge|髪/i;
 /** Mallas de los ojos (globo, iris, pestañas), no de las cejas. */
 const EYE = /eye|iris|pupil|lash|目/i;
@@ -327,6 +414,7 @@ function collectCloud(
   const f: number[] = [];
   const hair: number[] = [];
   const eye: number[] = [];
+  const tri: number[] = [];
   const v = new THREE.Vector3();
   vrm.scene.traverse((obj) => {
     const mesh = obj as THREE.SkinnedMesh;
@@ -337,6 +425,12 @@ function collectCloud(
     const isHair = HAIR.test(mesh.name) || materials.some((m) => HAIR.test(m.name));
     const isEye = EYE.test(mesh.name) && !/brow/i.test(mesh.name);
     const toLocal = mesh.matrixWorld.clone().premultiply(toModel);
+    const base = r.length;
+    const index = mesh.geometry.getIndex();
+    const corners = index ? index.count : position.count;
+    for (let k = 0; k + 2 < corners; k += 3) {
+      for (let c = 0; c < 3; c++) tri.push(base + (index ? index.getX(k + c) : k + c));
+    }
     for (let i = 0; i < position.count; i++) {
       v.fromBufferAttribute(position, i);
       mesh.applyBoneTransform(i, v);
@@ -354,6 +448,7 @@ function collectCloud(
     f: Float32Array.from(f),
     hair: Uint8Array.from(hair),
     eye: Uint8Array.from(eye),
+    tri: Uint32Array.from(tri),
   };
 }
 
@@ -436,6 +531,63 @@ function fingerTipWorld(rig: VrmRig, side: Side, i: number): THREE.Vector3 {
   if (!distal) return rig.vrm.humanoid.getNormalizedBoneNode(ARM[side].hand)!.getWorldPosition(new THREE.Vector3());
   const q = distal.getWorldQuaternion(new THREE.Quaternion());
   return distal.getWorldPosition(new THREE.Vector3()).addScaledVector(f.tipDir.clone().applyQuaternion(q), f.tipLen);
+}
+
+/** Articulaciones de la palma en la numeración de MediaPipe (muñeca, base del pulgar, nudillos, centro). */
+const PALM_JOINTS = new Set([0, 1, 5, 9, 13, 17, 21]);
+/** Media palma de grosor y radio de un dedo, en palmas (muñeca→nudillo del corazón), si no se pueden medir en la malla. */
+const PALM_HALF_THICKNESS = 0.2;
+const FINGER_RADIUS = 0.1;
+
+/**
+ * Articulación `k` de MediaPipe en la mano del modelo, en el mundo: 0 la muñeca, 1-4 el
+ * pulgar (base, nudillo, falange y punta), 5-20 los otros dedos de cuatro en cuatro, y 21 el
+ * centro de la palma.
+ */
+function handJointWorld(rig: VrmRig, side: Side, k: number): THREE.Vector3 {
+  const h = rig.vrm.humanoid;
+  const wrist = h.getNormalizedBoneNode(ARM[side].hand)!.getWorldPosition(new THREE.Vector3());
+  if (k === 0) return wrist;
+  if (k === 21) {
+    return [0, 5, 9, 13, 17]
+      .reduce((acc, j) => acc.add(handJointWorld(rig, side, j)), new THREE.Vector3())
+      .multiplyScalar(1 / 5);
+  }
+  const finger = Math.floor((k - 1) / 4);
+  const joint = (k - 1) % 4;
+  if (joint === 3) return fingerTipWorld(rig, side, finger);
+  return h.getNormalizedBoneNode(rig.arms[side].fingers[finger]!.bones[joint])?.getWorldPosition(new THREE.Vector3()) ?? wrist;
+}
+
+/**
+ * Las 21 articulaciones de MediaPipe (ver `handJointWorld`) de una vez, en el mundo: se
+ * actualiza la mano una sola vez y se leen sus matrices.
+ */
+function handJointsWorld(rig: VrmRig, side: Side): THREE.Vector3[] {
+  const h = rig.vrm.humanoid;
+  const hand = h.getNormalizedBoneNode(ARM[side].hand)!;
+  hand.updateWorldMatrix(true, true);
+  const at = (n: THREE.Object3D) => new THREE.Vector3().setFromMatrixPosition(n.matrixWorld);
+  const wrist = at(hand);
+  const out = [wrist];
+  for (const f of rig.arms[side].fingers) {
+    const nodes = f.bones.map((b) => h.getNormalizedBoneNode(b));
+    for (const n of nodes) out.push(n ? at(n) : wrist.clone());
+    const distal = nodes[2];
+    out.push(distal ? at(distal).addScaledVector(f.tipDir.clone().transformDirection(distal.matrixWorld), f.tipLen) : wrist.clone());
+  }
+  return out;
+}
+
+/** Marco de la mano posada, en el modelo: hacia los dedos, hacia el índice y hacia la palma. */
+function handFrame(rig: VrmRig, side: Side, toModel: THREE.Matrix4) {
+  const joint = (k: number) => handJointWorld(rig, side, k).applyMatrix4(toModel);
+  const wrist = joint(0);
+  const knuckle = joint(9);
+  const P = knuckle.clone().sub(wrist).normalize();
+  const N = perp(palmFrame(rig, side, toModel).normal, P, rig.forward);
+  const A = perp(perp(joint(5).sub(joint(17)), P, rig.right), N, rig.right);
+  return { P, A, N, len: Math.max(1e-6, knuckle.distanceTo(wrist)), joint };
 }
 
 /** Entre las dos puntas que se tocan queda el grosor de los dedos (en palmas del modelo). */
@@ -737,6 +889,17 @@ function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Finge
     const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
     root.updateWorldMatrix(true, true);
     const toModel = root.matrixWorld.clone().invert();
+    // Punto exacto (grabaciones): la misma articulación en la mano del modelo y, desde ella,
+    // la dirección en la que estaba la parte que toca; a esa distancia, su superficie.
+    if (c.hand) {
+      const [k, dp, da, dn] = c.hand;
+      const f = handFrame(rig, other, toModel);
+      const dir = f.P.clone().multiplyScalar(dp).addScaledVector(f.A, da).addScaledVector(f.N, dn);
+      if (dir.lengthSq() < 1e-8) dir.copy(f.N);
+      dir.normalize();
+      const radius = (PALM_JOINTS.has(k) ? rig.handShape.palm : rig.handShape.finger) * f.len;
+      return { p: f.joint(k).addScaledVector(dir, radius), n: dir };
+    }
     const frame = palmFrame(rig, other, toModel);
     switch (c.at) {
       case "otherPalm":
@@ -802,7 +965,9 @@ function reachContact(
     poseArm(rig, side, { ...goal, target });
     root.updateWorldMatrix(false, true);
     const err = want.clone().sub(handPart(rig, side, c.with ?? "tips", fingers, toModel));
-    target.add(err);
+    // Sin pasar de lo que llega el brazo: si el punto queda lejos, el objetivo se iría
+    // alejando en cada vuelta y arrastraría el brazo hacia cualquier parte.
+    target.copy(reachable(rig, side, target.add(err)));
     if (err.length() < 1e-3 * rig.armLen) break;
   }
   return target;
@@ -833,6 +998,20 @@ function resolveHand(
   }
   const other = otherFingers ?? RELAXED;
   const oriented = { ...rest, ...contactOrientation(rig, side, contact, hand, other, head) };
+  return placeTouching(rig, side, oriented, contact, fingers, other, head, touch);
+}
+
+/** La mano con esa orientación, llevada hasta el contacto (en la proporción de su peso). */
+function placeTouching(
+  rig: VrmRig,
+  side: Side,
+  oriented: HandSpec,
+  contact: Contact,
+  fingers: Fingers,
+  other: Fingers,
+  head?: Vec3,
+  touch?: ThumbTouch,
+): HandSpec {
   const goal = signingGoal(rig, side, oriented);
   const free = goal.target.clone();
   const reached = reachContact(rig, side, goal, fingers, contact, other, head, touch);
@@ -902,17 +1081,512 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
       // La mano pasiva primero: la dominante puede tocarla, y para eso tiene que estar posada.
       const fingers2 = kf.fingers2 ?? kf.fingers;
       const touch2 = kf.fingers2 ? kf.thumbTouch2 : kf.thumbTouch;
-      const hand2 = kf.hand2 && resolveHand(rig, "Left", kf.hand2, fingers2, null, kf.head, touch2);
+      const hand2 =
+        kf.hand2 &&
+        outOfHead(rig, "Left", resolveHand(rig, "Left", kf.hand2, fingers2, null, kf.head, touch2), kf.hand2.contact, fingers2, touch2, kf.head, null);
       if (hand2) {
         poseArm(rig, "Left", signingGoal(rig, "Left", hand2));
         poseFingers(rig, "Left", fingers2, touch2);
       }
-      const hand = resolveHand(rig, "Right", kf.hand, kf.fingers, hand2 ? fingers2 : null, kf.head, kf.thumbTouch);
+      const resolved = resolveHand(rig, "Right", kf.hand, kf.fingers, hand2 ? fingers2 : null, kf.head, kf.thumbTouch);
+      const hand = outOfHead(rig, "Right", resolved, kf.hand.contact, kf.fingers, kf.thumbTouch, kf.head, hand2 ? fingers2 : null);
       return { ...kf, hand, hand2 };
     }),
   };
-  rig.resolved.set(clip, resolved);
-  return resolved;
+  const clear = keepOutOfHead(rig, keepHandsApart(rig, resolved));
+  rig.resolved.set(clip, clear);
+  return clear;
+}
+
+// --- Las dos manos sin atravesarse ---------------------------------------------
+
+type Capsule = { a: THREE.Vector3; b: THREE.Vector3; r: number; mid: THREE.Vector3; reach: number };
+
+const capsule = (a: THREE.Vector3, b: THREE.Vector3, r: number): Capsule => ({
+  a,
+  b,
+  r,
+  mid: a.clone().add(b).multiplyScalar(0.5),
+  reach: a.distanceTo(b) / 2 + r,
+});
+
+/**
+ * La mano posada como cápsulas, en el mundo: la palma (de la muñeca a cada nudillo, con su
+ * grosor) y cada falange (con el de un dedo; la última acaba en la yema, no un radio más
+ * allá, que es donde se apoya al tocar). Basta para saber si una mano se mete en la otra.
+ */
+function handCapsules(rig: VrmRig, side: Side): { caps: Capsule[]; center: THREE.Vector3; reach: number } {
+  const j = handJointsWorld(rig, side);
+  const len = j[9]!.distanceTo(j[0]!);
+  const palm = rig.handShape.palm * len;
+  const r = rig.handShape.finger * len;
+  const caps = [5, 9, 13, 17].map((mcp) => capsule(j[0]!, j[mcp]!, palm));
+  for (let finger = 0; finger < 5; finger++) {
+    const base = 1 + 4 * finger;
+    for (let s = 0; s < 3; s++) {
+      const a = j[base + s]!;
+      const b = j[base + s + 1]!;
+      const l = a.distanceTo(b);
+      caps.push(capsule(a, s < 2 || l < 1e-9 ? b : a.clone().lerp(b, Math.max(0, l - r) / l), r));
+    }
+  }
+  const center = [0, 5, 9, 13, 17].reduce((acc, k) => acc.add(j[k]!), new THREE.Vector3()).multiplyScalar(1 / 5);
+  const reach = Math.max(...caps.map((c) => c.mid.distanceTo(center) + c.reach));
+  return { caps, center, reach };
+}
+
+const D1 = new THREE.Vector3();
+const D2 = new THREE.Vector3();
+const R = new THREE.Vector3();
+
+/**
+ * Distancia entre dos segmentos, el primero desplazado `shift` (Ericson, «Real-Time
+ * Collision Detection»). Sin crear vectores: se llama miles de veces al resolver un clip.
+ */
+export function segmentDistance(p1: THREE.Vector3, q1: THREE.Vector3, p2: THREE.Vector3, q2: THREE.Vector3, shift?: THREE.Vector3): number {
+  D1.subVectors(q1, p1);
+  D2.subVectors(q2, p2);
+  R.subVectors(p1, p2);
+  if (shift) R.add(shift);
+  const a = D1.dot(D1);
+  const e = D2.dot(D2);
+  const f = D2.dot(R);
+  let s = 0;
+  let t = 0;
+  if (a < 1e-12 && e < 1e-12) return R.length();
+  if (a < 1e-12) {
+    t = THREE.MathUtils.clamp(f / e, 0, 1);
+  } else {
+    const c = D1.dot(R);
+    if (e < 1e-12) {
+      s = THREE.MathUtils.clamp(-c / a, 0, 1);
+    } else {
+      const b = D1.dot(D2);
+      const denom = a * e - b * b;
+      s = denom > 1e-12 ? THREE.MathUtils.clamp((b * f - c * e) / denom, 0, 1) : 0;
+      t = (b * s + f) / e;
+      if (t < 0) {
+        t = 0;
+        s = THREE.MathUtils.clamp(-c / a, 0, 1);
+      } else if (t > 1) {
+        t = 1;
+        s = THREE.MathUtils.clamp((b - c) / a, 0, 1);
+      }
+    }
+  }
+  // (p1 + shift + s·d1) − (p2 + t·d2)
+  return R.addScaledVector(D1, s).addScaledVector(D2, -t).length();
+}
+
+/**
+ * Las dos manos como cápsulas y cuánto se mete la derecha, desplazada `shift`, en la
+ * izquierda. Con `enough`, para en cuanto se meten más que eso (basta con saber que sí).
+ */
+function handsProbe(rig: VrmRig) {
+  const right = handCapsules(rig, "Right");
+  const left = handCapsules(rig, "Left");
+  const mid = new THREE.Vector3();
+  const depthAt = (shift: THREE.Vector3, enough = Infinity): number => {
+    let depth = 0;
+    if (mid.copy(right.center).add(shift).distanceTo(left.center) > right.reach + left.reach) return depth;
+    for (const cr of right.caps) {
+      mid.copy(cr.mid).add(shift);
+      for (const cl of left.caps) {
+        const room = cr.r + cl.r;
+        if (room <= depth || mid.distanceTo(cl.mid) > cr.reach + cl.reach) continue;
+        depth = Math.max(depth, room - segmentDistance(cr.a, cr.b, cl.a, cl.b, shift));
+        if (depth > enough) return depth;
+      }
+    }
+    return depth;
+  };
+  return { right, left, depthAt };
+}
+
+/** Normal de la palma (el signo no importa) a partir de las cápsulas de la palma. */
+function palmNormal(caps: Capsule[]): THREE.Vector3 {
+  const wrist = caps[0]!.a;
+  return new THREE.Vector3().crossVectors(caps[0]!.b.clone().sub(wrist), caps[3]!.b.clone().sub(wrist)).normalize();
+}
+
+/**
+ * Desplazamientos de la mano derecha respecto a la izquierda (en el modelo) que las sacan de
+ * estar metidas una en otra en la pose del keyframe; sin nada que sacar, solo el nulo. Con
+ * las manos muy metidas (cruzadas en X en los números, un puño hundido en los dedos de la
+ * otra) las normales de cada par de cápsulas se contradicen, así que se prueba en unas
+ * cuantas direcciones (las normales de las palmas, los ejes del cuerpo, de un centro de la
+ * palma al otro) y se busca por bisección cuánto hace falta en cada una, contando con que
+ * un brazo casi estirado no llega más lejos.
+ */
+function apartOptions(rig: VrmRig, kf: AvatarKeyframe & { hand2: HandSpec }, tol: number, max: number): THREE.Vector3[] {
+  const probe = handsProbe(rig);
+  if (probe.depthAt(new THREE.Vector3()) <= tol) return [new THREE.Vector3()];
+  const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
+  const toWorld = new THREE.Matrix3().setFromMatrix4(root.matrixWorld);
+  const toModel = toWorld.clone().invert();
+  const dirs = [
+    palmNormal(probe.right.caps),
+    palmNormal(probe.left.caps),
+    ...[rig.forward, rig.up, rig.right].map((v) => v.clone().applyMatrix3(toWorld)),
+    probe.right.center.clone().sub(probe.left.center),
+  ]
+    .map((d) => d.applyMatrix3(toModel).normalize())
+    .flatMap((d) => [d, d.clone().negate()]);
+  const hands = shiftedTargets(rig, kf);
+  const depth = (shift: THREE.Vector3) => {
+    const { r, l, r0, l0 } = hands(shift);
+    return probe.depthAt(r.sub(r0).sub(l.sub(l0)).applyMatrix3(toWorld), tol);
+  };
+  const out: THREE.Vector3[] = [];
+  for (const dir of dirs) {
+    if (depth(dir.clone().multiplyScalar(max)) > tol) continue;
+    let lo = 0;
+    let hi = max;
+    for (let k = 0; k < 7; k++) {
+      const m = (lo + hi) / 2;
+      if (depth(dir.clone().multiplyScalar(m)) > tol) lo = m;
+      else hi = m;
+    }
+    // Un poco más de lo justo: la bisección se queda en el borde.
+    out.push(dir.clone().multiplyScalar(1.05 * hi));
+  }
+  return out.length ? out : [new THREE.Vector3()];
+}
+
+/**
+ * La mano posada contra la cabeza: cuánto se mete en ella (en el modelo) si se desplaza
+ * `shift` (en el mundo). Las cápsulas de la mano se llevan a la cabeza en reposo, deshaciendo
+ * su giro, y se miran contra la cabeza vista de frente, de la cara al cogote.
+ */
+function headProbe(rig: VrmRig, side: Side) {
+  const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
+  const headNode = rig.vrm.humanoid.getNormalizedBoneNode(B.Head);
+  const { caps } = handCapsules(rig, side);
+  if (!headNode) return () => 0;
+  headNode.updateWorldMatrix(true, false);
+  const toModel = root.matrixWorld.clone().invert();
+  // Del mundo a la cabeza en reposo: a la cabeza (girada) y de ahí a donde estaba.
+  const toRestHead = new THREE.Matrix4().makeTranslation(rig.head)
+    .multiply(toModel.clone().multiply(headNode.matrixWorld).invert())
+    .multiply(toModel);
+  const points = caps.flatMap((c) => [0, 0.5, 1].map((t) => ({ p: c.a.clone().lerp(c.b, t), r: c.r })));
+  const q = new THREE.Vector3();
+  return (shift: THREE.Vector3, enough = Infinity): number => {
+    let depth = 0;
+    for (const { p, r } of points) {
+      q.copy(p).add(shift).applyMatrix4(toRestHead).sub(rig.eyes);
+      depth = Math.max(depth, headDepth(rig.face, [q.dot(rig.right), q.y, q.dot(rig.forward)], r));
+      if (depth > enough) break;
+    }
+    return depth;
+  };
+}
+
+/** Lo que una mano puede meterse en la cabeza sin que se note, y lo más que se aparta de ella (en brazos). */
+const HEAD_OVERLAP_TOL = 0.004;
+const HEAD_MAX_PUSH = 0.6;
+
+/**
+ * La mano fuera de la cabeza. El modelo tiene la cabeza mucho más grande que una persona
+ * (en proporción al brazo, casi el doble): con los nudillos en la mejilla o el pulgar en la
+ * frente y la orientación de la grabación, el resto de la mano quedaba dentro. Si toca la
+ * cara, la mano gira sobre el punto de contacto hacia fuera, de 15 en 15°, hasta que sale:
+ * el contacto se mantiene y la orientación cambia lo justo. Si no toca (o ni girada sale),
+ * se saca entera lo justo (`headPush`).
+ */
+function outOfHead(
+  rig: VrmRig,
+  side: Side,
+  hand: HandSpec,
+  contact: Contact | undefined,
+  fingers: Fingers,
+  touch: ThumbTouch | undefined,
+  head: Vec3 | undefined,
+  other: Fingers | null,
+): HandSpec {
+  const L = rig.armLen;
+  const tol = HEAD_OVERLAP_TOL * L;
+  const wristOf = (h: HandSpec) => reachable(rig, side, signingGoal(rig, side, h).target);
+  // Lejos de la cabeza: nada que hacer (ni que posar).
+  const d = wristOf(hand).sub(rig.eyes);
+  const g = rig.face;
+  if (Math.abs(d.dot(rig.right)) > -g.r0 + rig.handReach || d.y < g.u0 - rig.handReach || d.y > g.topU + rig.handReach) {
+    return hand;
+  }
+  poseHead(rig, head);
+  // Sin cerrar la pinza (lo más caro de posar): para ver si la mano se mete, basta.
+  const inside = (h: HandSpec) => {
+    poseArm(rig, side, signingGoal(rig, side, h));
+    poseFingers(rig, side, fingers);
+    return headProbe(rig, side);
+  };
+  const depthAt = inside(hand);
+  if (depthAt(new THREE.Vector3(), tol) <= tol) return hand;
+  const onFace = contact && (contact.face || HEAD_POINTS.has(contact.at)) && !isOtherHand(contact.at);
+  const n = onFace ? touchedSurface(rig, side, contact, RELAXED, head).n.normalize() : null;
+
+  // Girar sobre el contacto, hacia un lado o hacia el otro (con el contacto a media mano, lo
+  // que sale por un lado entra por el otro): la orientación que menos se mete.
+  let base = hand;
+  let baseDepth = depthAt(new THREE.Vector3());
+  if (onFace && n && hand.palmDir && hand.pointDir) {
+    const at = contactPoint(rig, side, contact, RELAXED, head);
+    const axis = new THREE.Vector3().crossVectors(wristOf(hand).sub(at), n);
+    if (axis.lengthSq() > 1e-10 * L * L) {
+      axis.normalize();
+      const local = new THREE.Vector3(axis.dot(rig.right), axis.dot(rig.up), axis.dot(rig.forward));
+      const turn = (v: [number, number, number], q: THREE.Quaternion) =>
+        new THREE.Vector3(...v).applyQuaternion(q).toArray() as [number, number, number];
+      for (const deg of [15, -15, 30, -30, 45, -45, 60, -60]) {
+        const q = new THREE.Quaternion().setFromAxisAngle(local, THREE.MathUtils.degToRad(deg));
+        const oriented = { ...hand, palmDir: turn(hand.palmDir, q), pointDir: turn(hand.pointDir, q) };
+        const placed = placeTouching(rig, side, oriented, contact, fingers, other ?? RELAXED, head, touch);
+        const dd = inside(placed)(new THREE.Vector3());
+        if (dd <= tol) return placed;
+        if (dd < baseDepth) {
+          base = placed;
+          baseDepth = dd;
+        }
+      }
+    }
+    inside(base);
+  }
+
+  // Si ni girando sale, se saca entera.
+  const push = headPush(rig, side, head);
+  return push.lengthSq() > 0 ? { ...base, ...toSigningSpace(rig, side, wristOf(base).add(push)) } : base;
+}
+
+/** Lo que las manos pueden meterse una en otra sin que se note (en brazos). */
+const HANDS_OVERLAP_TOL = 0.004;
+/** Lo más que se aparta una mano de la otra (en brazos): más, y el signo sería otro. */
+const HANDS_MAX_SHIFT = 0.25;
+/** Cada cuánto (ms de clip) se mira si las manos se meten una en otra. */
+const APART_STEP_MS = 1000 / 60;
+/** Lo que cuesta cambiar de golpe hacia dónde se apartan, frente a apartarlas más. */
+const APART_SWITCH_COST = 2;
+
+/** Lo más cerca del objetivo que llega la muñeca (`solveArm` no estira del todo el brazo). */
+function reachable(rig: VrmRig, side: Side, target: THREE.Vector3): THREE.Vector3 {
+  const arm = rig.arms[side];
+  const d = target.clone().sub(arm.shoulder);
+  const max = 0.97 * (arm.upperLen + arm.lowerLen);
+  return d.length() > max ? arm.shoulder.clone().addScaledVector(d.normalize(), max) : target;
+}
+
+/**
+ * Muñecas (en el modelo) con la mano derecha desplazada `shift` respecto a la izquierda:
+ * cada una la mitad, o la otra lo que no alcance.
+ */
+function shiftedTargets(rig: VrmRig, kf: AvatarKeyframe & { hand2: HandSpec }) {
+  const r0 = reachable(rig, "Right", signingGoal(rig, "Right", kf.hand).target);
+  const l0 = reachable(rig, "Left", signingGoal(rig, "Left", kf.hand2).target);
+  return (shift: THREE.Vector3) => {
+    const half = shift.clone().multiplyScalar(0.5);
+    const r = reachable(rig, "Right", r0.clone().add(half));
+    const short = half.clone().sub(r.clone().sub(r0));
+    const l = reachable(rig, "Left", l0.clone().sub(half).sub(short));
+    return { r, l, r0, l0 };
+  };
+}
+
+/** El keyframe con la mano derecha desplazada `shift` respecto a la izquierda. */
+function shiftHands(rig: VrmRig, kf: AvatarKeyframe, shift: THREE.Vector3): AvatarKeyframe {
+  if (!kf.hand2 || shift.lengthSq() < 1e-12) return kf;
+  const { r, l } = shiftedTargets(rig, { ...kf, hand2: kf.hand2 })(shift);
+  return {
+    ...kf,
+    hand: { ...kf.hand, ...toSigningSpace(rig, "Right", r) },
+    hand2: { ...kf.hand2, ...toSigningSpace(rig, "Left", l) },
+  };
+}
+
+/** El clip muestreado cada APART_STEP_MS (si ya lo está, tal cual). */
+function sampleEvenly(clip: AvatarClip): AvatarKeyframe[] {
+  const kfs = clip.keyframes;
+  const t0 = kfs[0]!.t;
+  const t1 = kfs[kfs.length - 1]!.t;
+  const n = Math.max(2, Math.ceil((t1 - t0) / APART_STEP_MS) + 1);
+  if (kfs.length === n) return kfs;
+  return Array.from({ length: n }, (_, i) => sampleClip(clip, t0 + ((t1 - t0) * i) / (n - 1)));
+}
+
+/**
+ * Suavizado (gaussiano de una muestra) de los desplazamientos que hacen falta en cada
+ * muestra: un cambio de lado dura unas pocas muestras. Lejos de un cambio de lado, sin
+ * quedarse por debajo de lo que hace falta.
+ */
+function smoothShifts(need: THREE.Vector3[]): THREE.Vector3[] {
+  const n = need.length;
+  return need.map((v, i) => {
+    const acc = new THREE.Vector3();
+    let wsum = 0;
+    for (let k = Math.max(0, i - 3); k <= Math.min(n - 1, i + 3); k++) {
+      const w = Math.exp(-0.5 * (k - i) ** 2);
+      acc.addScaledVector(need[k]!, w);
+      wsum += w;
+    }
+    acc.multiplyScalar(1 / wsum);
+    const size = v.length();
+    if (size > 0 && need.slice(Math.max(0, i - 3), i + 4).every((u) => u.dot(v) >= 0)) {
+      const dir = v.clone().normalize();
+      const along = acc.dot(dir);
+      if (along < size) acc.addScaledVector(dir, size - along);
+    }
+    return acc;
+  });
+}
+
+/**
+ * Las dos manos sin meterse una en otra en todo el signo: en los keyframes (dedos cruzados
+ * en CASA, un puño dentro del otro en ESPERAR) y de camino entre ellos. Se muestrea el clip,
+ * se ve en cada instante hacia dónde se pueden apartar y se elige con programación dinámica
+ * lo menos posible sin cambiar de lado de golpe: si en la grabación una mano pasa a través
+ * de la otra (la profundidad de la cámara no es fiable), cambia de lado donde menos cuesta,
+ * y el resultado se suaviza. Si hace falta apartarlas, el clip queda con un keyframe por
+ * muestra.
+ */
+function keepHandsApart(rig: VrmRig, clip: AvatarClip): AvatarClip {
+  const kfs = clip.keyframes;
+  if (kfs.length < 2 || !kfs.some((k) => k.hand2)) return clip;
+  const L = rig.armLen;
+  const samples = sampleEvenly(clip);
+  const n = samples.length;
+  const none = (o: THREE.Vector3[]) => o.length === 1 && o[0]!.lengthSq() === 0;
+  const options = samples.map((kf) => {
+    if (!kf.hand2) return [new THREE.Vector3()];
+    const hand2 = { ...kf, hand2: kf.hand2 };
+    // Muñecas tan lejos que ni con los dedos estirados se tocan: no hace falta posar.
+    const { r0, l0 } = shiftedTargets(rig, hand2)(new THREE.Vector3());
+    if (r0.distanceTo(l0) > 2.3 * rig.handReach) return [new THREE.Vector3()];
+    const fingers2 = kf.fingers2 ?? kf.fingers;
+    const touch2 = kf.fingers2 ? kf.thumbTouch2 : kf.thumbTouch;
+    poseArm(rig, "Right", signingGoal(rig, "Right", kf.hand));
+    poseArm(rig, "Left", signingGoal(rig, "Left", kf.hand2));
+    // Primero sin cerrar la pinza (lo más caro de posar); si se meten, ya con ella.
+    poseFingers(rig, "Right", kf.fingers);
+    poseFingers(rig, "Left", fingers2);
+    const opts = apartOptions(rig, hand2, HANDS_OVERLAP_TOL * L, HANDS_MAX_SHIFT * L);
+    if (none(opts) || !(kf.thumbTouch || touch2)) return opts;
+    poseFingers(rig, "Right", kf.fingers, kf.thumbTouch);
+    poseFingers(rig, "Left", fingers2, touch2);
+    return apartOptions(rig, hand2, HANDS_OVERLAP_TOL * L, HANDS_MAX_SHIFT * L);
+  });
+  if (options.every(none)) return clip;
+
+  // Camino de menor coste: lo que se apartan más lo que cambia de una muestra a la siguiente.
+  const cost: number[][] = [];
+  const from: number[][] = [];
+  options.forEach((opts, i) => {
+    from[i] = [];
+    cost[i] = opts.map((v, j) => {
+      if (i === 0) return v.length();
+      let best = Infinity;
+      options[i - 1]!.forEach((u, k) => {
+        const c = cost[i - 1]![k]! + APART_SWITCH_COST * v.distanceTo(u);
+        if (c < best) {
+          best = c;
+          from[i]![j] = k;
+        }
+      });
+      return best + v.length();
+    });
+  });
+  const chosen: THREE.Vector3[] = new Array(n);
+  let j = cost[n - 1]!.indexOf(Math.min(...cost[n - 1]!));
+  for (let i = n - 1; i >= 0; i--) {
+    chosen[i] = options[i]![j]!;
+    if (i > 0) j = from[i]![j]!;
+  }
+  const shifts = smoothShifts(chosen);
+  return { ...clip, keyframes: samples.map((kf, i) => shiftHands(rig, kf, shifts[i]!)) };
+}
+
+/**
+ * Lo que hay que sacar la mano de la cabeza (en el modelo) en la pose de ahora: por
+ * bisección, desde el centro de la cabeza hacia la mano y algo hacia delante (la normal de
+ * la cara vista de frente no sirve en los lados de la cabeza, donde la piel se mezcla con el
+ * pelo). Nulo si no se mete o si ni así sale.
+ */
+function headPush(rig: VrmRig, side: Side, head: Vec3 | undefined): THREE.Vector3 {
+  const L = rig.armLen;
+  const tol = HEAD_OVERLAP_TOL * L;
+  const depthAt = headProbe(rig, side);
+  if (depthAt(new THREE.Vector3(), tol) <= tol) return new THREE.Vector3();
+  const q = headRotation(rig, head);
+  const fwd = rig.forward.clone().applyQuaternion(q);
+  const [, cu, cf] = headCenter(rig.face);
+  const center = moveWithHead(rig, q, rig.eyes.clone().addScaledVector(rig.up, cu).addScaledVector(rig.forward, cf));
+  const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
+  root.updateWorldMatrix(true, false);
+  const wrist = new THREE.Vector3()
+    .setFromMatrixPosition(rig.vrm.humanoid.getNormalizedBoneNode(ARM[side].hand)!.matrixWorld)
+    .applyMatrix4(root.matrixWorld.clone().invert());
+  const dir = wrist.sub(center).normalize();
+  const ahead = dir.dot(fwd);
+  if (ahead < 0.5) dir.addScaledVector(fwd, 0.5 - ahead).normalize();
+  const dirWorld = dir.clone().applyMatrix3(new THREE.Matrix3().setFromMatrix4(root.matrixWorld)).normalize();
+  const clear = (s: number) => depthAt(dirWorld.clone().multiplyScalar(s * L), tol) <= tol;
+  if (!clear(HEAD_MAX_PUSH)) return new THREE.Vector3();
+  let lo = 0;
+  let hi = HEAD_MAX_PUSH;
+  for (let k = 0; k < 7; k++) {
+    const m = (lo + hi) / 2;
+    if (clear(m)) hi = m;
+    else lo = m;
+  }
+  return dir.multiplyScalar(hi * L);
+}
+
+/**
+ * Las manos fuera de la cabeza también de camino entre keyframes (de una mejilla a la otra,
+ * al subir a la frente). Los keyframes ya están fuera (`outOfHead`); aquí se muestrea el
+ * clip, se ve cuánto hay que sacar cada mano en cada muestra y se suaviza. Si no hace falta
+ * nada, el clip queda como estaba.
+ */
+function keepOutOfHead(rig: VrmRig, clip: AvatarClip): AvatarClip {
+  if (clip.keyframes.length < 2) return clip;
+  const samples = sampleEvenly(clip);
+  const g = rig.face;
+  const nearHead = (target: THREE.Vector3) => {
+    const d = target.clone().sub(rig.eyes);
+    return Math.abs(d.dot(rig.right)) < -g.r0 + rig.handReach && d.y > g.u0 - rig.handReach && d.y < g.topU + rig.handReach;
+  };
+  const pushes = { Right: [] as THREE.Vector3[], Left: [] as THREE.Vector3[] };
+  let any = false;
+  for (const kf of samples) {
+    let posedHead = false;
+    for (const side of ["Right", "Left"] as const) {
+      const hand = side === "Right" ? kf.hand : kf.hand2;
+      const goal = hand && signingGoal(rig, side, hand);
+      if (!goal || !nearHead(reachable(rig, side, goal.target.clone()))) {
+        pushes[side].push(new THREE.Vector3());
+        continue;
+      }
+      if (!posedHead) poseHead(rig, kf.head);
+      posedHead = true;
+      poseArm(rig, side, goal);
+      poseFingers(rig, side, side === "Right" || !kf.fingers2 ? kf.fingers : kf.fingers2);
+      const push = headPush(rig, side, kf.head);
+      any ||= push.lengthSq() > 0;
+      pushes[side].push(push);
+    }
+  }
+  if (!any) return clip;
+  const right = smoothShifts(pushes.Right);
+  const left = smoothShifts(pushes.Left);
+  const moved = (side: Side, hand: HandSpec, push: THREE.Vector3): HandSpec =>
+    push.lengthSq() < 1e-12
+      ? hand
+      : { ...hand, ...toSigningSpace(rig, side, reachable(rig, side, signingGoal(rig, side, hand).target).add(push)) };
+  return {
+    ...clip,
+    keyframes: samples.map((kf, i) => ({
+      ...kf,
+      hand: moved("Right", kf.hand, right[i]!),
+      ...(kf.hand2 && { hand2: moved("Left", kf.hand2, left[i]!) }),
+    })),
+  };
 }
 
 function idleGoal(rig: VrmRig, side: Side, tMs: number): ArmGoal {

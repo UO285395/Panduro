@@ -43,6 +43,8 @@ export type Cloud = {
   hair: Uint8Array;
   /** 1 si es de los ojos (globo, iris, pestañas): da el contorno de los ojos del modelo. */
   eye?: Uint8Array;
+  /** Triángulos de la malla (tres índices de vértice cada uno), para la cara vista de frente. */
+  tri?: Uint32Array;
 };
 
 /** Referencias del esqueleto en (r, u, f), ya relativas a los ojos. */
@@ -241,6 +243,8 @@ export type FaceGrid = {
   nu: number;
   skin: Float32Array;
   hair: Float32Array;
+  /** Lo más atrasado de la cabeza (piel o pelo) por celdas: hasta dónde llega por detrás. */
+  back: Float32Array;
 };
 
 export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
@@ -262,6 +266,7 @@ export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
   const nu = Math.ceil((topU - u0) / step) + 1;
   const skin = new Float32Array(nr * nu).fill(-Infinity);
   const hair = new Float32Array(nr * nu).fill(-Infinity);
+  const back = new Float32Array(nr * nu).fill(Infinity);
   for (let i = 0; i < c.r.length; i++) {
     const col = Math.floor((c.r[i]! - r0) / step);
     const row = Math.floor((c.u[i]! - u0) / step);
@@ -269,10 +274,44 @@ export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
     const k = row * nr + col;
     const grid = c.hair[i] ? hair : skin;
     if (c.f[i]! > grid[k]!) grid[k] = c.f[i]!;
+    if (c.f[i]! < back[k]!) back[k] = c.f[i]!;
+  }
+  // Los vértices solos dejan agujeros donde la malla tiene triángulos más grandes que una
+  // celda (en esta cara, casi todas las mejillas): en esas celdas solo caían vértices de la
+  // nuca y un contacto en la mejilla acababa dentro de la cabeza. Así que también se pinta
+  // cada triángulo, con la profundidad interpolada en el centro de cada celda que cubre.
+  const t = c.tri;
+  for (let j = 0; t && j + 2 < t.length; j += 3) {
+    const a = t[j]!;
+    const b = t[j + 1]!;
+    const d = t[j + 2]!;
+    const ra = c.r[a]!, rb = c.r[b]!, rd = c.r[d]!;
+    const ua = c.u[a]!, ub = c.u[b]!, ud = c.u[d]!;
+    const c0 = Math.max(0, Math.ceil((Math.min(ra, rb, rd) - r0) / step - 0.5));
+    const c1 = Math.min(nr - 1, Math.floor((Math.max(ra, rb, rd) - r0) / step - 0.5));
+    const w0 = Math.max(0, Math.ceil((Math.min(ua, ub, ud) - u0) / step - 0.5));
+    const w1 = Math.min(nu - 1, Math.floor((Math.max(ua, ub, ud) - u0) / step - 0.5));
+    if (c0 > c1 || w0 > w1) continue;
+    const det = (rb - ra) * (ud - ua) - (rd - ra) * (ub - ua);
+    if (Math.abs(det) < 1e-12) continue;
+    const grid = c.hair[a] && c.hair[b] && c.hair[d] ? hair : skin;
+    for (let row = w0; row <= w1; row++) {
+      const uc = u0 + (row + 0.5) * step;
+      for (let col = c0; col <= c1; col++) {
+        const rc = r0 + (col + 0.5) * step;
+        const l1 = ((rc - ra) * (ud - ua) - (rd - ra) * (uc - ua)) / det;
+        const l2 = ((rb - ra) * (uc - ua) - (rc - ra) * (ub - ua)) / det;
+        if (l1 < 0 || l2 < 0 || l1 + l2 > 1) continue;
+        const f = c.f[a]! + l1 * (c.f[b]! - c.f[a]!) + l2 * (c.f[d]! - c.f[a]!);
+        const k = row * nr + col;
+        if (f > grid[k]!) grid[k] = f;
+        if (f < back[k]!) back[k] = f;
+      }
+    }
   }
   // Las mallas tienen los vértices separados: se rellenan los huecos rodeados de cabeza
   // (con al menos 4 vecinas llenas), sin agrandar el contorno.
-  for (const grid of [skin, hair]) {
+  for (const [grid, sign] of [[skin, 1], [hair, 1], [back, -1]] as const) {
     for (let pass = 0; pass < 2; pass++) {
       const src = grid.slice();
       for (let row = 1; row < nu - 1; row++) {
@@ -285,16 +324,16 @@ export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
               const x = src[(row + dr) * nr + col + dc]!;
               if (Number.isFinite(x)) {
                 n++;
-                best = Math.max(best, x);
+                best = Math.max(best, sign * x);
               }
             }
           }
-          if (n >= 4) grid[row * nr + col] = best;
+          if (n >= 4) grid[row * nr + col] = sign * best;
         }
       }
     }
   }
-  return { halfEye, eyesToMouth, halfWidth, chinU, topU, eye: eyeBox(c, halfEye, eyesToMouth, halfWidth), r0, u0, step, nr, nu, skin, hair };
+  return { halfEye, eyesToMouth, halfWidth, chinU, topU, eye: eyeBox(c, halfEye, eyesToMouth, halfWidth), r0, u0, step, nr, nu, skin, hair, back };
 }
 
 /**
@@ -355,19 +394,50 @@ export function faceToModel(g: FaceGrid, [h, v]: FaceCoords): [number, number] {
 }
 
 /**
+ * Lo más adelantado de la cabeza en una celda: la piel, o el pelo pegado a ella (flequillo).
+ * Con `hairOnly`, donde no hay piel detrás (lo alto de la cabeza), el pelo.
+ */
+function frontAt(g: FaceGrid, col: number, row: number, hairOnly = false): number {
+  if (col < 0 || col >= g.nr || row < 0 || row >= g.nu) return -Infinity;
+  const k = row * g.nr + col;
+  const s = g.skin[k]!;
+  const hr = g.hair[k]!;
+  return hr > s && (hr - s < 0.35 * g.eyesToMouth || (hairOnly && !Number.isFinite(s))) ? hr : s;
+}
+
+/**
+ * Cuánto se mete en la cabeza una bola de radio `radius` centrada en (r, u, f): lo que le
+ * falta para salir por delante de la columna que la contiene (de la cara al cogote). Por
+ * detrás de la cabeza no cuenta: una mano no se saca de la cara atravesándola. Los mechones
+ * sueltos tampoco: que un dedo pase entre ellos no se nota, y en un modelo con el pelo de
+ * punta harían la cabeza el doble de ancha.
+ */
+export function headDepth(g: FaceGrid, [r, u, f]: V3, radius: number): number {
+  const col = Math.floor((r - g.r0) / g.step);
+  const row = Math.floor((u - g.u0) / g.step);
+  const front = frontAt(g, col, row);
+  if (!Number.isFinite(front) || f < Math.min(g.back[row * g.nr + col]!, front) - radius) return 0;
+  return Math.max(0, front + radius - f);
+}
+
+/** Centro de la cabeza (r, u, f): a media altura entre la barbilla y lo alto, y a medio camino de la cara a la nuca. */
+export function headCenter(g: FaceGrid): V3 {
+  const u = (g.chinU + g.topU) / 2;
+  const col = Math.floor(-g.r0 / g.step);
+  const row = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
+  const front = frontAt(g, col, row);
+  const back = g.back[row * g.nr + col]!;
+  return [0, u, Number.isFinite(front) && Number.isFinite(back) ? (front + back) / 2 : -g.halfWidth];
+}
+
+/**
  * Punto de la cabeza del modelo que se ve en esas coordenadas de cara mirándolo de
  * frente (lo que vio la cámara), con su normal. El pelo pegado a la piel (flequillo)
  * cuenta como superficie; el que sobresale mucho, no.
  */
 export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
   const [r, u] = faceToModel(g, face);
-  const cell = (col: number, row: number) => {
-    if (col < 0 || col >= g.nr || row < 0 || row >= g.nu) return -Infinity;
-    const k = row * g.nr + col;
-    const s = g.skin[k]!;
-    const hr = g.hair[k]!;
-    return hr > s && hr - s < 0.35 * g.eyesToMouth ? hr : s;
-  };
+  const cell = (col: number, row: number) => frontAt(g, col, row, true);
   const row = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
   const start = Math.min(g.nr - 1, Math.max(0, Math.floor((r - g.r0) / g.step)));
   let col = start;
@@ -375,6 +445,7 @@ export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
   const center = Math.floor(-g.r0 / g.step);
   while (!Number.isFinite(cell(col, row)) && col !== center) col += col > center ? -1 : 1;
   const f = cell(col, row);
+  if (!Number.isFinite(f)) return { p: [r, u, 0], n: [0, 0, 1] };
   const at = (dc: number, dr: number) => {
     const x = cell(col + dc, row + dr);
     return Number.isFinite(x) ? x : f - 2 * g.step;
@@ -383,7 +454,7 @@ export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
   const dfr = (at(1, 0) - at(-1, 0)) / (2 * g.step);
   const dfu = (at(0, 1) - at(0, -1)) / (2 * g.step);
   return {
-    p: [col === start ? r : g.r0 + (col + 0.5) * g.step, u, Number.isFinite(f) ? f : 0],
+    p: [col === start ? r : g.r0 + (col + 0.5) * g.step, u, f],
     n: norm([-dfr, -dfu, 1]),
   };
 }

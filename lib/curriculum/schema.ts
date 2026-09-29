@@ -51,6 +51,12 @@ const HandSchema = z.object({
   pointDir: Vec3Schema.optional(),
   // Hacia dónde sale el codo de la línea hombro→muñeca, en el mismo espacio (grabaciones).
   elbowDir: Vec3Schema.optional(),
+  // Cerca de la cara (grabaciones): a qué lado de ella está el centro de la palma, en
+  // coordenadas de cara (como `face` de los contactos: medias distancias entre los ojos, > 0
+  // a su derecha). El avatar la pone igual respecto a su cara, que puede ser mucho más ancha
+  // que la de una persona: medida en brazos, una mano junto a la oreja le quedaba delante de
+  // los ojos.
+  faceH: z.number().optional(),
   contact: ContactSchema.optional(),
 });
 export type HandSpec = z.infer<typeof HandSchema>;

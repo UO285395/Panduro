@@ -323,6 +323,51 @@ describe("capture: landmarks → clip", () => {
       expect(res.clip.keyframes[0]!.hand.contact!.weight).toBeGreaterThan(0.5);
     });
 
+    describe("junto a la oreja, en la imagen", () => {
+      // Cara en la imagen: media distancia entre ojos 0,05 y de los ojos a la boca 0,07; la
+      // oreja derecha del signante (a la izquierda de la imagen) en h = 3, algo girada.
+      const faceImg: Point3[] = [];
+      faceImg[2] = { x: 0.55, y: 0.3, z: 0 };
+      faceImg[5] = { x: 0.45, y: 0.3, z: 0 };
+      faceImg[7] = { x: 0.62, y: 0.314, z: 0 };
+      faceImg[8] = { x: 0.35, y: 0.314, z: 0 };
+      faceImg[9] = { x: 0.53, y: 0.37, z: 0 };
+      faceImg[10] = { x: 0.47, y: 0.37, z: 0 };
+      const at = (h: number, v: number) => ({ x: 0.5 - 0.05 * h, y: 0.3 - 0.07 * v });
+      // La yema del índice en (h, v) de la imagen; en 3D, 30 cm por delante de la oreja, como
+      // pone MediaPipe la mano con el brazo levantado aunque la toque.
+      const beside = (h: number, v: number): CaptureFrame[] => {
+        const tip = at(h, v);
+        const img = hand.map((p) => ({ x: tip.x + p.x - hand[8]!.x, y: tip.y + p.y - hand[8]!.y, z: p.z }));
+        const wrist = add(signer(0.08, 0.26, 0.32), mul(indexOffset, -1));
+        return Array.from({ length: 20 }, (_, i) => {
+          const p = withFace(pose({ elbow: add(R_SH, signer(0.1, 0, 0.2)), wrist }, DOWN_LEFT));
+          const poseImage = [...faceImg];
+          poseImage[16] = img[0]!;
+          return { t: i * 33, poseWorld: p, poseImage, aspect: 1, hands: { right: { world: hand, image: img } } };
+        });
+      };
+
+      it("las yemas en la oreja, fuera del contorno de la cara, son un contacto con ella", () => {
+        const res = framesToClip(beside(3.5, -0.2));
+        if (!res.ok) throw new Error(res.error);
+        const c = res.clip.keyframes[0]!.hand.contact;
+        expect(c).toMatchObject({ at: "ear", with: "tips" });
+        expect(c!.weight).toBeGreaterThanOrEqual(0.9);
+        // Fuera del contorno de la cara (h = 2,5 de oreja a oreja).
+        expect(c!.face![0]).toBeGreaterThan(2.5);
+      });
+
+      it("sin tocarla, guarda a qué lado de la cara queda la palma (faceH)", () => {
+        const res = framesToClip(beside(6, 1));
+        if (!res.ok) throw new Error(res.error);
+        const k = res.clip.keyframes[0]!;
+        expect(k.hand.contact).toBeUndefined();
+        expect(k.hand.faceH).toBeGreaterThan(5);
+        expect(k.hand.faceH).toBeLessThan(6);
+      });
+    });
+
     it("la mano dominante sobre la palma de la otra toca otherPalm; por detrás, otherBack", () => {
       // Mano pasiva con la palma hacia arriba delante del pecho.
       const baseWrist = add(L_SH, signer(0.1, -0.1, 0.3));

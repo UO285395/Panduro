@@ -73,7 +73,11 @@ python -m venv .venv
   con el grosor medido en su malla) y, si en un instante del signo una se mete en la otra
   (la profundidad de la cámara no es fiable: en los números cruzados en X o con un puño
   sobre los dedos de la otra salían metidas), las aparta lo justo. La dirección se elige a lo
-  largo de todo el signo para no cambiar de lado de golpe y el resultado se suaviza.
+  largo de todo el signo para no cambiar de lado de golpe y el resultado se suaviza. Lo que
+  siga metido se corrige en unas pasadas más, mirando también los instantes que no se metían
+  pero se han movido al apartar los de al lado y sin invertir el sentido de una muestra a la
+  siguiente: cuando una mano atravesaba la otra de atrás adelante, salir por detrás en un
+  instante y por delante en el siguiente se anulaba al suavizar; ahora la rodea.
 - Tampoco se meten en la cabeza, que en un modelo anime es casi el doble de grande que la de
   una persona en proporción al brazo: con los nudillos en la mejilla o el pulgar en la
   frente, el resto de la mano quedaba dentro. La mano gira sobre el punto de contacto hasta
@@ -97,10 +101,27 @@ python -m venv .venv
   más de fuera que el de una persona. Medido contra los vídeos, el error de dirección del
   pulgar baja de 19° a 0° (mediana) y de 38° a 14° (percentil 90); y quitar el giro fijo de
   8° que se daba a todos los dedos baja 2-3° el del resto.
+- La mano del modelo es más gruesa que la de una persona (media palma de 0,28 palmas frente a
+  unas 0,17): el pulgar puesto donde lo tenía el signante, pegado a la palma o cruzado sobre
+  los dedos, quedaba dentro. Tras colocarlo, el avatar lo gira desde su base lo justo para
+  sacarlo de la palma y de los dedos que no pinza. En las 1709 poses de mano de los vídeos,
+  las que lo tenían metido más de un 20 % de la palma bajan de 103 a 22 (más de un 10 %, de
+  383 a 148), a cambio de unos 3° más de error medio en su dirección.
 - En la cara, el punto de contacto se lleva a la cabeza del modelo anclado en lo que tienen
   las dos caras (el contorno del ojo, medido en las mallas de ojos del modelo, el borde de
   la cara, la boca y la barbilla): lo que en la persona queda junto al ojo cae junto al ojo
   del modelo aunque este sea enorme, como en los modelos anime.
+- La oreja queda fuera del contorno de la cara (y más con la cabeza algo girada), así que
+  también cuenta cuánto queda de ella en la imagen la parte de la mano. Encima de la oreja,
+  como dentro de la cara, pesa poco la profundidad: con el brazo levantado MediaPipe pone la
+  mano unos 30 cm por delante aunque la toque. Así se detectan el índice de OREJA, el pulgar
+  de ESCUCHAR y el de MÓVIL, que antes no tocaban nada.
+- Sin contacto, junto a la cara se guarda a qué lado de ella queda el centro de la palma
+  (`faceH`, en coordenadas de cara) y el avatar la pone igual respecto a la suya: medida en
+  brazos, una mano junto a la oreja (ESCUCHAR, PENSAR) le quedaba delante del ojo, porque su
+  cara es tres veces más ancha que la de una persona en proporción al brazo. Más allá del
+  borde de la cara, lo que sobra se cuenta en brazos (tamaño de mano, no de cara); y al lado
+  de la cabeza no se adelanta la mano para que no se meta en ella.
 - De la cara se sacan el giro de la cabeza y sus gestos (MediaPipe FaceLandmarker): cabeceo,
   giro e inclinación respecto a como el signante la tiene en reposo, y boca (la palabra que
   vocaliza), sonrisa, ceño y cejas levantadas respecto a su cara neutra, sin el temblor de la

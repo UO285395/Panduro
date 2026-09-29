@@ -4,6 +4,7 @@ import {
   faceToModel,
   headCenter,
   headDepth,
+  lateralToModel,
   measureBody,
   measureFace,
   surfaceFor,
@@ -171,6 +172,16 @@ describe("faceToModel: anclado en el contorno del ojo", () => {
     expect(r).toBeLessThan(grid.eye.outR);
     expect(u).toBeGreaterThan(grid.eye.bottom);
     expect(u).toBeLessThan(grid.eye.top);
+  });
+
+  it("a un lado de la cara: dentro, como la cara; más allá del borde, en brazos", () => {
+    expect(lateralToModel(grid, 1, anchors.armLen)).toBeCloseTo(faceToModel(grid, [1, 0])[0], 6);
+    expect(lateralToModel(grid, -1, anchors.armLen)).toBeCloseTo(-faceToModel(grid, [1, 0])[0], 6);
+    // Una mano junto a la oreja (2,7 medias distancias entre ojos más allá del borde de la
+    // cara, unos 8 cm en una persona) queda a esos 8 cm, en brazos, del borde de la del modelo.
+    const ear = lateralToModel(grid, 5, anchors.armLen);
+    expect(ear - grid.halfWidth).toBeCloseTo(2.7 * 0.055 * anchors.armLen, 6);
+    expect(lateralToModel(grid, 7, anchors.armLen)).toBeGreaterThan(ear);
   });
 });
 

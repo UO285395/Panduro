@@ -450,6 +450,21 @@ export function headCenter(g: FaceGrid): V3 {
   return [0, u, Number.isFinite(front) && Number.isFinite(back) ? (front + back) / 2 : -g.halfWidth];
 }
 
+/** Media distancia entre los ojos de una persona, en brazos (hombro→muñeca): unos 3 cm de 58. */
+const HUMAN_HALF_EYE_ARMS = 0.055;
+
+/**
+ * A qué distancia a un lado del centro de la cara del modelo (r) cae una mano que en la
+ * persona está a `h` (coordenada de cara). Dentro de la cara, anclado como `faceToModel`; más
+ * allá del borde, lo que sobra es tamaño de mano, no de cara, y se cuenta en brazos: con la
+ * cara del modelo mucho más ancha, contado en caras la mano junto a la oreja quedaría lejísimos.
+ */
+export function lateralToModel(g: FaceGrid, h: number, armLen: number): number {
+  const edge = HUMAN.edgeH;
+  if (Math.abs(h) <= edge) return faceToModel(g, [h, 0])[0];
+  return Math.sign(h) * (g.halfWidth + (Math.abs(h) - edge) * HUMAN_HALF_EYE_ARMS * armLen);
+}
+
 /**
  * Punto de la cabeza del modelo que se ve en esas coordenadas de cara mirándolo de
  * frente (lo que vio la cámara), con su normal. El pelo pegado a la piel (flequillo)

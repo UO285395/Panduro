@@ -7,6 +7,7 @@ import {
   headCenter,
   headDepth,
   isOtherHand,
+  lateralToModel,
   measureBody,
   measureFace,
   surfaceFor,
@@ -796,7 +797,46 @@ function poseFingersNow(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb
     setNorm(rig.vrm, finger.bones[2], curl(flex.distal));
   });
   if (thumb?.tip) reachThumbTip(rig, side, thumb.tip);
+  keepThumbOut(rig, side, thumb?.touch);
   closePinch(rig, side, thumb?.touch);
+}
+
+/** Lo que el pulgar se puede meter en la palma o en un dedo sin que se note (en palmas). */
+const THUMB_SINK = 0.03;
+
+/**
+ * El pulgar fuera de la palma y de los dedos que no pinza: el del signante va pegado a su
+ * palma, y en este modelo, de mano más gruesa, ese mismo sitio queda dentro. Se gira todo el
+ * pulgar desde su base lo justo para sacar la falange que más se mete, unas pocas veces.
+ */
+function keepThumbOut(rig: VrmRig, side: Side, touch: ThumbTouch | undefined) {
+  const cmc = rig.vrm.humanoid.getNormalizedBoneNode(rig.arms[side].fingers[0]!.bones[0]);
+  if (!cmc) return;
+  const closest = { s: 0, diff: new THREE.Vector3() };
+  for (let it = 0; it < 4; it++) {
+    const { caps } = handCapsules(rig, side);
+    const len = caps[1]!.a.distanceTo(caps[1]!.b);
+    let worst = THUMB_SINK * len;
+    let move: { at: THREE.Vector3; to: THREE.Vector3 } | null = null;
+    // Cápsulas: 0-3 palma, 4-6 pulgar (de la base a la yema), 7-18 los otros dedos.
+    for (const t of [5, 6]) {
+      const ct = caps[t]!;
+      for (let k = 0; k < caps.length; k++) {
+        if (k >= 4 && k <= 6) continue;
+        if (k > 6 && (touch?.[Math.floor((k - 7) / 3)] ?? 0) > 0.3) continue;
+        const c = caps[k]!;
+        const d = segmentDistance(ct.a, ct.b, c.a, c.b, undefined, closest);
+        const over = ct.r + c.r - d;
+        if (over <= worst || d < 1e-9) continue;
+        worst = over;
+        const at = ct.a.clone().lerp(ct.b, closest.s);
+        move = { at, to: at.clone().addScaledVector(closest.diff, over / d) };
+      }
+    }
+    if (!move) return;
+    const { at, to } = move;
+    ccdStep(cmc, () => at.clone(), to);
+  }
 }
 
 /**
@@ -1096,10 +1136,15 @@ function resolveHand(
   head?: Vec3,
   thumb?: Thumb,
 ): HandSpec {
-  const { contact, ...rest } = hand;
+  const { contact, ...recorded } = hand;
   const L = rig.armLen;
+  const beside = besideFace(rig, side, recorded);
+  const rest = beside.hand;
   // Tocar la otra mano solo tiene sentido si la otra mano está en el signo.
   if (!contact || (isOtherHand(contact.at) && !otherFingers)) {
+    // Al lado de la cabeza (junto a la oreja) no hace falta adelantarla: no está delante de
+    // la cara, y si roza la cabeza la saca `outOfHead`.
+    if (beside.lateral) return rest;
     const minFwd = rig.faceFwd + 0.12 * L;
     const fwd = Math.max(Math.max(0.55 * L, minFwd) + hand.z * 0.9 * L, minFwd);
     return { ...rest, z: (fwd / L - 0.55) / 0.9 };
@@ -1125,6 +1170,40 @@ function placeTouching(
   const reached = reachContact(rig, side, goal, fingers, contact, other, head, thumb);
   return { ...oriented, ...toSigningSpace(rig, side, free.lerp(reached, contact.weight ?? 1)) };
 }
+
+/**
+ * La mano cerca de la cara, al mismo lado de ella que en la grabación (`faceH`: dónde tenía
+ * el centro de la palma), medido en la cara del modelo: en brazos, una mano junto a la oreja
+ * de una persona le quedaba delante de los ojos, porque su cara es mucho más ancha. Del todo
+ * de la barbilla para arriba, nada a la altura del pecho; y cada vez menos cuanto más lejos
+ * a un lado. `lateral`: la mano queda al lado de la cabeza y no delante.
+ */
+function besideFace(rig: VrmRig, side: Side, hand: HandSpec): { hand: HandSpec; lateral: boolean } {
+  if (hand.faceH === undefined) return { hand, lateral: false };
+  const v = (hand.y - Y_MOUTH) / Y_PER_FACE - 1;
+  const w = THREE.MathUtils.clamp((v + 3) / 1.5, 0, 1) * THREE.MathUtils.clamp((FACE_H_FAR - Math.abs(hand.faceH)) / 3, 0, 1);
+  if (w <= 0) return { hand, lateral: false };
+  // Dónde queda ahora el centro de la palma y dónde tendría que estar, a lo ancho.
+  poseArm(rig, side, signingGoal(rig, side, hand));
+  const j = handJointsWorld(rig, side);
+  const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
+  const toModel = root.matrixWorld.clone().invert();
+  const palm = [0, 5, 9, 13, 17]
+    .reduce((a, k) => a.add(j[k]!), new THREE.Vector3())
+    .multiplyScalar(1 / 5)
+    .applyMatrix4(toModel);
+  const now = palm.sub(rig.eyes).dot(rig.right);
+  const want = lateralToModel(rig.face, hand.faceH, rig.armLen);
+  const outward = side === "Right" ? 1 : -1;
+  const shift = w * (want - now);
+  return {
+    hand: { ...hand, x: hand.x + (shift * outward) / (1.2 * rig.armLen) },
+    lateral: w > 0.5 && Math.abs(want) > rig.face.halfWidth,
+  };
+}
+
+/** Más allá de esto a un lado de la cara (coordenada h), la muñeca ya no se coloca respecto a ella. */
+const FACE_H_FAR = 10;
 
 /**
  * Orientación por defecto al tocar, en espacio del signante:
@@ -1261,7 +1340,14 @@ const R = new THREE.Vector3();
  * Distancia entre dos segmentos, el primero desplazado `shift` (Ericson, «Real-Time
  * Collision Detection»). Sin crear vectores: se llama miles de veces al resolver un clip.
  */
-export function segmentDistance(p1: THREE.Vector3, q1: THREE.Vector3, p2: THREE.Vector3, q2: THREE.Vector3, shift?: THREE.Vector3): number {
+export function segmentDistance(
+  p1: THREE.Vector3,
+  q1: THREE.Vector3,
+  p2: THREE.Vector3,
+  q2: THREE.Vector3,
+  shift?: THREE.Vector3,
+  closest?: { s: number; diff: THREE.Vector3 },
+): number {
   D1.subVectors(q1, p1);
   D2.subVectors(q2, p2);
   R.subVectors(p1, p2);
@@ -1293,7 +1379,12 @@ export function segmentDistance(p1: THREE.Vector3, q1: THREE.Vector3, p2: THREE.
     }
   }
   // (p1 + shift + s·d1) − (p2 + t·d2)
-  return R.addScaledVector(D1, s).addScaledVector(D2, -t).length();
+  R.addScaledVector(D1, s).addScaledVector(D2, -t);
+  if (closest) {
+    closest.s = s;
+    closest.diff.copy(R);
+  }
+  return R.length();
 }
 
 /**
@@ -1304,13 +1395,14 @@ function handsProbe(rig: VrmRig) {
   const right = handCapsules(rig, "Right");
   const left = handCapsules(rig, "Left");
   const mid = new THREE.Vector3();
-  const depthAt = (shift: THREE.Vector3, enough = Infinity): number => {
+  /** Con `slack`, lo que les falta para quedar a esa distancia (0: están al menos así de separadas). */
+  const depthAt = (shift: THREE.Vector3, enough = Infinity, slack = 0): number => {
     let depth = 0;
-    if (mid.copy(right.center).add(shift).distanceTo(left.center) > right.reach + left.reach) return depth;
+    if (mid.copy(right.center).add(shift).distanceTo(left.center) > right.reach + left.reach + slack) return depth;
     for (const cr of right.caps) {
       mid.copy(cr.mid).add(shift);
       for (const cl of left.caps) {
-        const room = cr.r + cl.r;
+        const room = cr.r + cl.r + slack;
         if (room <= depth || mid.distanceTo(cl.mid) > cr.reach + cl.reach) continue;
         depth = Math.max(depth, room - segmentDistance(cr.a, cr.b, cl.a, cl.b, shift));
         if (depth > enough) return depth;
@@ -1479,6 +1571,10 @@ function outOfHead(
 const HANDS_OVERLAP_TOL = 0.004;
 /** Lo más que se aparta una mano de la otra (en brazos): más, y el signo sería otro. */
 const HANDS_MAX_SHIFT = 0.25;
+/** En las últimas pasadas, lo que cuesta invertir el sentido: casi nunca compensa (ver keepHandsApart). */
+const RESIDUAL_FLIP_COST = 10;
+/** Lo que puede cambiar la mano al poner el pulgar en su sitio (en brazos). */
+const THUMB_SLACK = 0.06;
 /** Cada cuánto (ms de clip) se mira si las manos se meten una en otra. */
 const APART_STEP_MS = 1000 / 60;
 /** Lo que cuesta cambiar de golpe hacia dónde se apartan, frente a apartarlas más. */
@@ -1556,6 +1652,40 @@ function smoothShifts(need: THREE.Vector3[]): THREE.Vector3[] {
 }
 
 /**
+ * Una opción por muestra, por el camino de menor coste: lo que se apartan más lo que cambia
+ * de una muestra a la siguiente (programación dinámica). Con `flipCost`, invertir el sentido
+ * de una muestra a la siguiente cuesta además eso por lo que se apartan las dos.
+ */
+function cheapestPath(options: THREE.Vector3[][], flipCost = 0): THREE.Vector3[] {
+  const n = options.length;
+  const cost: number[][] = [];
+  const from: number[][] = [];
+  options.forEach((opts, i) => {
+    from[i] = [];
+    cost[i] = opts.map((v, j) => {
+      if (i === 0) return v.length();
+      let best = Infinity;
+      options[i - 1]!.forEach((u, k) => {
+        const flip = v.dot(u) < 0 ? flipCost * (v.length() + u.length()) : 0;
+        const c = cost[i - 1]![k]! + APART_SWITCH_COST * v.distanceTo(u) + flip;
+        if (c < best) {
+          best = c;
+          from[i]![j] = k;
+        }
+      });
+      return best + v.length();
+    });
+  });
+  const chosen: THREE.Vector3[] = new Array(n);
+  let j = cost[n - 1]!.indexOf(Math.min(...cost[n - 1]!));
+  for (let i = n - 1; i >= 0; i--) {
+    chosen[i] = options[i]![j]!;
+    if (i > 0) j = from[i]![j]!;
+  }
+  return chosen;
+}
+
+/**
  * Las dos manos sin meterse una en otra en todo el signo: en los keyframes (dedos cruzados
  * en CASA, un puño dentro del otro en ESPERAR) y de camino entre ellos. Se muestrea el clip,
  * se ve en cada instante hacia dónde se pueden apartar y se elige con programación dinámica
@@ -1587,7 +1717,10 @@ function keepHandsApart(rig: VrmRig, clip: AvatarClip): AvatarClip {
     poseFingers(rig, "Right", kf.fingers);
     poseFingers(rig, "Left", fingers2);
     const opts = apartOptions(rig, hand2, HANDS_OVERLAP_TOL * L, HANDS_MAX_SHIFT * L);
-    if (none(opts) || !(thumb.touch || thumb2.touch || thumb.tip || thumb2.tip)) return opts;
+    if (!(thumb.touch || thumb2.touch || thumb.tip || thumb2.tip)) return opts;
+    // Sin meterse, pero tan cerca que el pulgar en su sitio (hasta su yema, fuera de la palma)
+    // podría hacerlo.
+    if (none(opts) && handsProbe(rig).depthAt(new THREE.Vector3(), Infinity, THUMB_SLACK * L) === 0) return opts;
     poseFingers(rig, "Right", kf.fingers, thumb);
     poseFingers(rig, "Left", fingers2, thumb2);
     return apartOptions(rig, hand2, HANDS_OVERLAP_TOL * L, HANDS_MAX_SHIFT * L);
@@ -1595,44 +1728,25 @@ function keepHandsApart(rig: VrmRig, clip: AvatarClip): AvatarClip {
   const options = samples.map(optionsAt);
   if (options.every(none)) return clip;
 
-  // Camino de menor coste: lo que se apartan más lo que cambia de una muestra a la siguiente.
-  const cost: number[][] = [];
-  const from: number[][] = [];
-  options.forEach((opts, i) => {
-    from[i] = [];
-    cost[i] = opts.map((v, j) => {
-      if (i === 0) return v.length();
-      let best = Infinity;
-      options[i - 1]!.forEach((u, k) => {
-        const c = cost[i - 1]![k]! + APART_SWITCH_COST * v.distanceTo(u);
-        if (c < best) {
-          best = c;
-          from[i]![j] = k;
-        }
-      });
-      return best + v.length();
-    });
-  });
-  const chosen: THREE.Vector3[] = new Array(n);
-  let j = cost[n - 1]!.indexOf(Math.min(...cost[n - 1]!));
-  for (let i = n - 1; i >= 0; i--) {
-    chosen[i] = options[i]![j]!;
-    if (i > 0) j = from[i]![j]!;
-  }
-  const shifts = smoothShifts(chosen);
+  const shifts = smoothShifts(cheapestPath(options));
   const apart = samples.map((kf, i) => shiftHands(rig, kf, shifts[i]!));
   // Al cambiar de lado el suavizado las deja metidas un momento: lo que siga dentro, fuera
   // con lo mínimo que haga falta en esa muestra (es poco y dura dos o tres muestras), también
-  // suavizado para que no dé un tirón.
+  // suavizado para que no dé un tirón. Se mira también donde no se metían pero se han movido:
+  // al apartarlas en las muestras de al lado, una mano que pasaba rozando la otra acababa dentro.
   let keyframes = apart;
-  for (let pass = 0; pass < 2; pass++) {
-    const rest = keyframes.map((kf, i) => {
-      if (none(options[i]!) || !kf.hand2) return new THREE.Vector3();
-      const opts = optionsAt(kf);
-      return none(opts) ? new THREE.Vector3() : opts.reduce((a, b) => (b.lengthSq() < a.lengthSq() ? b : a));
-    });
+  const moved = shifts.map((s) => s.lengthSq() > 0);
+  for (let pass = 0; pass < 3; pass++) {
+    // Por el mismo lado en las muestras seguidas: si una mano atraviesa la otra, lo mínimo en
+    // cada muestra es salir por delante en una y por detrás en la siguiente, y suavizado se
+    // anula. Aquí invertir el sentido cuesta mucho más: la mano rodea a la otra.
+    const rest = cheapestPath(
+      keyframes.map((kf, i) => ((none(options[i]!) && !moved[i]) || !kf.hand2 ? [new THREE.Vector3()] : optionsAt(kf))),
+      RESIDUAL_FLIP_COST,
+    );
     if (rest.every((v) => v.lengthSq() === 0)) break;
     const extra = smoothShifts(rest);
+    extra.forEach((s, i) => (moved[i] ||= s.lengthSq() > 0));
     keyframes = keyframes.map((kf, i) => shiftHands(rig, kf, extra[i]!));
   }
   return { ...clip, keyframes };

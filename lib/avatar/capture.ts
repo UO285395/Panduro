@@ -85,6 +85,8 @@ const FLEX_CHANNELS = [4, 5, 7, 8, 10, 11, 13, 14];
  * (~5°) y dedos (rad, ~7°). Sin los keyframes sobrantes la spline no sigue el temblor.
  */
 const SIMPLIFY_TOL = { pos: 0.015, dir: 0.09, finger: 0.12, elbow: 0.2, head: 0.035, expr: 0.12 };
+/** Por debajo de esto (coordenada v de cara: 0 los ojos, −1 la boca) la mano ya no está a la altura de la cara. */
+const FACE_H_BELOW = -3;
 /** Separación mínima del codo respecto a la línea hombro→muñeca (en brazos) para fiarse de ella. */
 const ELBOW_MIN = 0.06;
 const FULL = distributeFlex(1);
@@ -310,6 +312,8 @@ export function assignHands(
 type Sample = {
   t: number;
   pos: Vec;
+  /** A qué lado de la cara está el centro de la palma (coordenada h de cara), si está a su altura. */
+  faceH?: number;
   /** fingers: flexión 0..1; joints: fingerPose aplanado (5 × 3). */
   hand?: { fingers: number[]; joints: number[]; touch: number[]; tip: Vec; palm: Vec; point: Vec; image: Point3[] };
   /** Hacia dónde sale el codo de la línea hombro→muñeca (sin él, el brazo está casi recto). */
@@ -466,6 +470,8 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   // Hacia la cámara (hacia el interlocutor) es -z en las coordenadas de MediaPipe.
   const o = handOrientation(h.world, side);
   const indexDir = unit(sub(v(h.world[8]!), v(h.world[5]!)));
+  const earImg = f.poseImage?.[r ? FACE.rEar : FACE.lEar];
+  const earFace = f.poseImage && earImg ? faceCoords(f.poseImage, aspect, earImg) : null;
   /** null: la parte no puede estar tocando la cara; undefined: no hay cara en la imagen. */
   const faceTouch = (what: NonNullable<Contact["with"]>, q: Vec): Sample["touch"] | null => {
     if (!f.poseImage) return undefined;
@@ -479,8 +485,13 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
     const at = namedFacePoint(face);
     const ref = targets.find(([name]) => name === at) ?? targets.find(([name]) => name === "forehead")!;
     const depth = q[2] - ref[1][2];
-    const w = outsideFace(face) === 0 && face[1] > CHIN_V ? FACE_DEPTH_WEIGHT_INSIDE : FACE_DEPTH_WEIGHT;
-    return { at, with: what, face, d: Math.hypot(outsideFace(face), w * depth) };
+    // La oreja queda fuera del contorno de la cara, y más con la cabeza girada: cuenta
+    // también lo que queda de ella en la imagen (OREJA, ESCUCHAR). Encima de ella la
+    // profundidad es tan poco fiable como dentro de la cara (la mano sale 30 cm por delante).
+    const out = outsideFace(face);
+    const gap = earFace ? earGap(face, earFace) : Infinity;
+    const w = Math.min(out, gap) < EAR_ON_M && face[1] > CHIN_V ? FACE_DEPTH_WEIGHT_INSIDE : FACE_DEPTH_WEIGHT;
+    return { at: gap < out ? "ear" : at, with: what, face, d: Math.hypot(Math.min(out, gap), w * depth) };
   };
 
   let best: Sample["touch"];
@@ -514,6 +525,18 @@ function outsideFace([h, v]: FaceCoords): number {
   const cv = (FACE_OUTLINE.v0 + FACE_OUTLINE.v1) / 2;
   const k = Math.hypot(h / FACE_OUTLINE.h, (v - cv) / ((FACE_OUTLINE.v1 - FACE_OUTLINE.v0) / 2));
   return Math.max(0, k - 1) * FACE_OUTLINE.h * FACE_UNIT_M;
+}
+
+/** Media distancia entre los ojos de una persona (m): la unidad de h en coordenadas de cara. */
+const HALF_EYE_M = 0.032;
+/** De la oreja (el landmark, hacia su centro) a su borde (m). */
+const EAR_RADIUS_M = 0.02;
+/** A esto o menos de la cara o de la oreja en la imagen, la mano se ve encima de ellas. */
+const EAR_ON_M = 0.01;
+
+/** Distancia (m) de un punto a la oreja en la imagen, las dos en coordenadas de cara; 0 si cae en ella. */
+function earGap([h, v]: FaceCoords, [eh, ev]: FaceCoords): number {
+  return Math.max(0, Math.hypot((h - eh) * HALF_EYE_M, (v - ev) * FACE_UNIT_M) - EAR_RADIUS_M);
 }
 
 /**
@@ -933,11 +956,16 @@ export function framesToClip(
     ];
     const h = f.hands[side];
     if (!h || mirroredHand(h.world, side)) return { t: f.t, pos, elbow };
+    // A qué lado de la cara está el centro de la palma, si está a su altura (HandSpec.faceH).
+    const palmImg = [0, 5, 9, 13, 17].reduce((a, i) => ({ x: a.x + h.image[i]!.x / 5, y: a.y + h.image[i]!.y / 5 }), { x: 0, y: 0 });
+    const pf = f.poseImage ? faceCoords(f.poseImage, f.aspect ?? 1, palmImg) : null;
+    const faceH = pf && pf[1] > FACE_H_BELOW ? pf[0] : undefined;
     const o = handOrientation(h.world, side);
     const fingers = fingerFlex(h.world, side);
     return {
       t: f.t,
       pos,
+      faceH,
       elbow,
       hand: {
         fingers,
@@ -1010,8 +1038,17 @@ export function framesToClip(
     const palmCh = channel(samples, (s) => s.hand?.palm, dirSigma);
     const pointCh = channel(samples, (s) => s.hand?.point, dirSigma);
     const elbowCh = channel(samples, (s) => s.elbow, sigma);
+    // Al lado de la cara: solo en los instantes en que la palma estaba a su altura.
+    const faceHCh = channel(samples, (s) => (s.faceH === undefined ? undefined : [s.faceH]), sigma);
+    const faceHAt = faceHCh.length ? resample(faceHCh, times).map((a) => a[0]!) : null;
+    const nearFace = times.map((t) => {
+      let best: Sample | null = null;
+      for (const s of samples) if (s && (!best || Math.abs(s.t - t) < Math.abs(best.t - t))) best = s;
+      return best?.faceH !== undefined;
+    });
     return {
       pos,
+      faceH: faceHAt && times.map((_, i) => (nearFace[i] ? (opts.leftHanded ? -1 : 1) * faceHAt[i]! : undefined)),
       fingers: fingerCh.length ? resample(fingerCh, times) : null,
       // Solo si en algún momento el pulgar toca de verdad una yema.
       touch: touchCh.length && touchCh.some((p) => Math.max(...p.val) > 0.5) ? resample(touchCh, times) : null,
@@ -1041,6 +1078,7 @@ export function framesToClip(
       ? { palmDir: d.palm[i]!.map(round) as Vec, pointDir: d.point[i]!.map(round) as Vec }
       : {}),
     ...(d.elbow ? { elbowDir: d.elbow[i]!.map(round2) as Vec } : {}),
+    ...(d.faceH?.[i] !== undefined ? { faceH: round2(d.faceH[i]!) } : {}),
   });
   const fingerSpec = (d: ReturnType<typeof build>, i: number): AvatarKeyframe["fingers"] => {
     const j = d.fingers?.[i];

@@ -160,6 +160,13 @@ python -m venv .venv
   keyframes que se pueden sacar interpolando. La posición, la orientación de la mano y los
   dedos se suavizan cada uno según su propia velocidad: un golpe de dedos o un aleteo con
   la muñeca quieta se conserva.
+- En el reproductor, las manos del modelo se ven un 15 % más grandes (en un modelo anime son
+  pequeñas para el cuerpo y, del tamaño del reproductor, no se distinguía la forma de la
+  mano). Se agrandan antes de medir el modelo, así que contactos y colisiones cuentan ya con
+  las manos grandes. La cámara encuadra cada signo lo más cerca que deja lo que ocupan la
+  cabeza, los hombros y las manos durante él (medido en el propio avatar, sin la subida
+  desde el reposo ni la vuelta), sin alejarse más que antes, y pasa de un encuadre a otro
+  con suavidad.
 - La fuente y la licencia quedan en cada signo; añádelas a `CREDITS.md`.
 
 Con licencias NC (DILSE, LSE-Health) Panduro puede usarlos porque no es comercial; con SA

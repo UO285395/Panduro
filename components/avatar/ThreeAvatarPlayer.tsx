@@ -10,7 +10,9 @@ import {
   applyVrmKeyframe,
   blendFromSnapshot,
   createVrmRig,
+  enlargeHands,
   resolveClip,
+  signBounds,
   snapshotPose,
 } from "@/lib/avatar/vrmMapper";
 import { addHandOutline, HAND_OUTLINE_WIDTH } from "@/lib/avatar/handOutline";
@@ -28,6 +30,12 @@ import {
 
 /** Fundido entre la pose anterior y la nueva al cambiar de signo. */
 const CLIP_FADE_MS = 350;
+/** Margen alrededor de la cabeza y las manos al encuadrar un signo (fracción de lo que ocupan). */
+const FRAME_MARGIN = 0.12;
+/** Hasta dónde de lo alto de la cabeza (pelo incluido, desde los ojos) entra siempre en el encuadre. */
+const HEAD_TOP = 0.92;
+/** Lo que tarda la cámara en ir al encuadre de otro signo (constante de tiempo, ms). */
+const CAMERA_EASE_MS = 250;
 
 type Props = {
   clip: AvatarClip | null;
@@ -265,10 +273,12 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           scene: import("three").Group;
           vrm: import("@pixiv/three-vrm").VRM;
         };
+        enlargeHands(vrm);
         const rig = createVrmRig(vrm);
         addHandOutline(vrm, HAND_OUTLINE_WIDTH * rig.armLen);
         vrmScene.rotation.y = rig.facingY;
         scene.add(vrmScene);
+        vrmScene.updateMatrixWorld(true);
         setMode("vrm");
         callbacksRef.current.onReady?.("vrm");
 
@@ -278,23 +288,46 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         softbox.position.set(0, 1.5, 2.0);
         scene.add(softbox);
 
-        // Auto-fit camera to VRM bounding box — works regardless of model scale
-        {
-          const box = new THREE.Box3().setFromObject(vrmScene);
-          const bCenter = box.getCenter(new THREE.Vector3());
-          const bSize = box.getSize(new THREE.Vector3());
-          // Encuadre torso→cabeza: de 40% a 105% de la altura total
-          const showMin = box.min.y + bSize.y * 0.40;
-          const showMax = box.max.y + bSize.y * 0.05;
-          const showCy = (showMin + showMax) / 2;
-          const showH = showMax - showMin;
-          camera.fov = 28;
-          camera.updateProjectionMatrix();
-          const halfFov = (camera.fov / 2) * Math.PI / 180;
-          const dist = (showH / 2) / Math.tan(halfFov) * 1.25;
-          camera.position.set(bCenter.x, showCy, bCenter.z + dist);
-          camera.lookAt(bCenter.x, showCy, bCenter.z);
-        }
+        // Encuadre a partir de la caja del modelo (vale para cualquier escala). En reposo, del
+        // pecho a la cabeza; con un signo, lo más cerca que deja lo que ocupan la cabeza, los
+        // hombros y las manos durante el signo, sin alejarse más que antes.
+        const box = new THREE.Box3().setFromObject(vrmScene);
+        const bCenter = box.getCenter(new THREE.Vector3());
+        const bSize = box.getSize(new THREE.Vector3());
+        camera.fov = 28;
+        camera.updateProjectionMatrix();
+        const tanHalf = Math.tan(((camera.fov / 2) * Math.PI) / 180);
+        type Framing = { pos: import("three").Vector3; look: import("three").Vector3 };
+        const at = (cy: number, dist: number): Framing => ({
+          pos: new THREE.Vector3(bCenter.x, cy, bCenter.z + dist),
+          look: new THREE.Vector3(bCenter.x, cy, bCenter.z),
+        });
+        const idleMin = box.min.y + bSize.y * 0.42;
+        const idleMax = box.max.y + bSize.y * 0.03;
+        const idle = at((idleMin + idleMax) / 2, ((idleMax - idleMin) / 2 / tanHalf) * 1.12);
+        const widest = ((box.max.y + bSize.y * 0.05 - (box.min.y + bSize.y * 0.4)) / 2 / tanHalf) * 1.25;
+        // Lo que se ve siempre: la cabeza (sin las puntas del pelo) y los hombros.
+        const toWorld = vrm.humanoid.normalizedHumanBonesRoot.matrixWorld;
+        const headTop = rig.eyes.clone().addScaledVector(rig.up, HEAD_TOP * rig.face.topU).applyMatrix4(toWorld);
+        const always = new THREE.Box3()
+          .expandByPoint(headTop)
+          .expandByPoint(rig.arms.Right.shoulder.clone().applyMatrix4(toWorld))
+          .expandByPoint(rig.arms.Left.shoulder.clone().applyMatrix4(toWorld));
+        const framingOf = (clip: AvatarClip): Framing => {
+          const region = signBounds(rig, clip).union(always);
+          const size = region.getSize(new THREE.Vector3());
+          region.expandByVector(size.multiplyScalar(FRAME_MARGIN / 2));
+          const halfW = Math.max(region.max.x - bCenter.x, bCenter.x - region.min.x);
+          const halfH = (region.max.y - region.min.y) / 2;
+          const front = Math.max(0, region.max.z - bCenter.z);
+          const dist = Math.min(widest, Math.max(halfW, halfH) / tanHalf + front);
+          return at((region.min.y + region.max.y) / 2, dist);
+        };
+        let framedFor: AvatarClip | null | undefined;
+        let target = idle;
+        const cam = { pos: idle.pos.clone(), look: idle.look.clone() };
+        camera.position.copy(cam.pos);
+        camera.lookAt(cam.look);
 
         const clock = new THREE.Clock();
         // Al cambiar de signo (o de signo a reposo) se funde la pose anterior
@@ -310,6 +343,19 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
             if (shown !== undefined) fade = { from: snapshotPose(rig), at: now };
             shown = active;
           }
+          // Después de guardar la pose para el fundido: medir el signo la cambia.
+          const first = framedFor === undefined;
+          if (active !== framedFor) {
+            target = active ? framingOf(active) : idle;
+            framedFor = active;
+          }
+          const delta = clock.getDelta();
+          // Al cargar, directamente al encuadre del signo; después, sin saltos.
+          const ease = first ? 1 : 1 - Math.exp((-1000 * delta) / CAMERA_EASE_MS);
+          cam.pos.lerp(target.pos, ease);
+          cam.look.lerp(target.look, ease);
+          camera.position.copy(cam.pos);
+          camera.lookAt(cam.look);
           const dt = (now - startedAt) * SIGN_PLAYBACK_RATE;
           // Rotaciones normalizadas ANTES de vrm.update(), que las pasa a los
           // huesos reales en el mismo frame.
@@ -323,7 +369,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
             if (u >= 1) fade = null;
             else blendFromSnapshot(rig, fade.from, u * u * (3 - 2 * u));
           }
-          vrm.update(clock.getDelta());
+          vrm.update(delta);
           renderer.render(scene, camera);
           raf = requestAnimationFrame(loop);
         };

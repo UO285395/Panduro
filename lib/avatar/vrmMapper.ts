@@ -130,6 +130,8 @@ export type VrmRig = {
   exprNames: string[];
   /** Clips con los contactos ya resueltos para este modelo. */
   resolved: WeakMap<AvatarClip, AvatarClip>;
+  /** Lo que ocupan las manos en cada clip (ver signBounds). */
+  bounds: WeakMap<AvatarClip, THREE.Box3>;
   /**
    * Mientras se resuelve un clip, los dedos ya posados (sus rotaciones) por forma de mano:
    * no dependen del brazo, y se posan cientos de veces con los mismos valores.
@@ -283,8 +285,57 @@ export function createVrmRig(vrm: VRM): VrmRig {
     handReach,
     ...faceExpressions(vrm),
     resolved: new WeakMap(),
+    bounds: new WeakMap(),
   };
 }
+
+/**
+ * Cuánto más grandes que las del modelo se ven sus manos. En un modelo anime son pequeñas
+ * para el cuerpo y, del tamaño del reproductor, no se distinguía la forma de la mano.
+ */
+export const HAND_SCALE = 1.15;
+
+/**
+ * Agranda las manos del modelo (la mano y sus dedos): la real, que es la que se ve, y la
+ * normalizada, con la que el mapper mide contactos y colisiones. Antes de `createVrmRig`, que
+ * así mide las yemas, el alcance y el grosor de la mano ya agrandada.
+ */
+export function enlargeHands(vrm: VRM, scale = HAND_SCALE) {
+  for (const b of [B.RightHand, B.LeftHand]) {
+    vrm.humanoid.getNormalizedBoneNode(b)?.scale.multiplyScalar(scale);
+    vrm.humanoid.getRawBoneNode(b)?.scale.multiplyScalar(scale);
+  }
+  vrm.scene.updateMatrixWorld(true);
+}
+
+/**
+ * Lo que ocupan las manos durante el signo, en el mundo (yemas y muñecas), para acercar la
+ * cámara lo que se pueda sin que se salgan del cuadro. Sin el principio y el final del clip,
+ * cuando suben desde el reposo o vuelven a él; con una mano, sin la otra, que está en reposo.
+ */
+export function signBounds(rig: VrmRig, clip: AvatarClip): THREE.Box3 {
+  const hit = rig.bounds.get(clip);
+  if (hit) return hit.clone();
+  const r = resolveClip(rig, clip);
+  const kfs = r.keyframes;
+  const t0 = kfs[0]!.t;
+  const t1 = kfs[kfs.length - 1]!.t;
+  const box = new THREE.Box3();
+  for (let k = 0; k <= BOUNDS_SAMPLES; k++) {
+    const t = t0 + (t1 - t0) * (BOUNDS_TRIM + ((1 - 2 * BOUNDS_TRIM) * k) / BOUNDS_SAMPLES);
+    const kf = sampleClip(r, t);
+    applyVrmKeyframe(rig, kf, t);
+    for (const side of kf.hand2 ? (["Right", "Left"] as const) : (["Right"] as const)) {
+      for (const j of handJointsWorld(rig, side)) box.expandByPoint(j);
+    }
+  }
+  rig.bounds.set(clip, box);
+  return box.clone();
+}
+
+/** Muestras del clip para medir lo que ocupa, y qué parte se deja al principio y al final. */
+const BOUNDS_SAMPLES = 16;
+const BOUNDS_TRIM = 0.1;
 
 /**
  * Cada gesto de la cara en las expresiones del modelo: la boca con sus vocales (VRM trae

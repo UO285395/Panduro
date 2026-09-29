@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSnapshotDemo, isSignedIn } from "@/lib/storage/demoStore";
-import { getLessonSequence } from "@/lib/curriculum/loader";
+import { getLessonSequence } from "@/lib/curriculum/structure";
 import type { UserSnapshot } from "@/lib/progress/queries";
 import { StatsView } from "./stats-view";
 

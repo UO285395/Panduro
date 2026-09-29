@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RecognitionUpdate } from "@/lib/esku/application/use-cases/RecognizeSignsUseCase";
 import { createGloss, type SignCandidate } from "@/lib/esku/domain/recognition/value-objects/Gloss";
 import type { Transcript } from "@/lib/esku/domain/transcript/entities/Transcript";
-import type { AvatarClip } from "@/lib/curriculum/schema";
+import { useSignClip } from "@/lib/avatar/useSignClip";
 import { drawFrame } from "@/lib/recognition/drawFrame";
 import { createRecognizer, VOCABULARY_MANIFEST_URL, type Recognizer } from "@/lib/recognition/engine";
 import {
@@ -32,7 +32,8 @@ type Status = "idle" | "loading" | "running" | "error";
 type Props = {
   initialHistory: TranslationRow[];
   demo?: boolean;
-  clipsMap?: Record<string, AvatarClip | null>;
+  /** Signos del currículo (sus animaciones se piden al enseñarlas). */
+  signIds?: string[];
   signOptions?: SignOption[];
 };
 
@@ -63,7 +64,7 @@ function readMode(): TranslateMode {
   }
 }
 
-export function TranslateView({ initialHistory, demo, clipsMap = {}, signOptions = [] }: Props) {
+export function TranslateView({ initialHistory, demo, signIds = [], signOptions = [] }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const recognizerRef = useRef<Recognizer | null>(null);
@@ -93,11 +94,12 @@ export function TranslateView({ initialHistory, demo, clipsMap = {}, signOptions
   const [alternatives, setAlternatives] = useState<Map<string, string[]>>(new Map());
   const [openToken, setOpenToken] = useState<string | null>(null);
 
-  const knownIds = useMemo(() => new Set(Object.keys(clipsMap)), [clipsMap]);
+  const knownIds = useMemo(() => new Set(signIds), [signIds]);
   const tokens = useMemo(() => tokenize(transcript?.entries ?? [], edits), [transcript, edits]);
   const text = renderTokens(tokens);
   const lastWord = [...tokens].reverse().find((t) => t.kind === "word");
   const lastWordId = lastWord ? curriculumIdFor(lastWord.text, knownIds) : null;
+  const lastWordClip = useSignClip(lastWordId);
 
   useEffect(() => {
     const saved = readMode();
@@ -511,7 +513,6 @@ export function TranslateView({ initialHistory, demo, clipsMap = {}, signOptions
             recognizer={getRecognizer}
             running={running}
             signOptions={signOptions}
-            clipsMap={clipsMap}
             words={tokens.map((t) => t.text)}
             clearTranscript={clearAll}
           />
@@ -546,13 +547,13 @@ export function TranslateView({ initialHistory, demo, clipsMap = {}, signOptions
         </div>
 
         <aside className="space-y-4">
-          {lastWordId && clipsMap[lastWordId] && (
+          {lastWordClip && (
             <div className="space-y-1">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Así se signa «{lastWord?.text}»
               </h2>
               <div className="overflow-hidden rounded-xl border border-brand-200 dark:border-brand-800">
-                <AvatarPlayer clip={clipsMap[lastWordId]!} size={260} />
+                <AvatarPlayer clip={lastWordClip} size={260} />
               </div>
             </div>
           )}

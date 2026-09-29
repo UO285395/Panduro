@@ -6,7 +6,7 @@ import type { Exercise } from "@/lib/curriculum/schema";
 import type { LandmarkFrame } from "@/lib/esku/domain/landmarks/value-objects/LandmarkFrame";
 import { WEAK_LETTERS } from "@/lib/esku/infrastructure/recognition/CtcAlphabetClassifier";
 import { createAlphabet } from "@/lib/recognition/engine";
-import { getLetterMeta } from "@/lib/recognition/templates";
+import { getLetterMeta } from "@/lib/recognition/letters";
 
 type Props = {
   exercise: Extract<Exercise, { type: "sign_this" }>;

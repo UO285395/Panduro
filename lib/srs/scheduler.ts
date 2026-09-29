@@ -1,5 +1,5 @@
 import type { Lesson } from "@/lib/curriculum/schema";
-import { getAllUnits } from "@/lib/curriculum/loader";
+import { getAllUnits } from "@/lib/curriculum/structure";
 
 /**
  * Formato de las card_id que persisten los reviews:

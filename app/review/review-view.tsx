@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { QUALITY_LABELS, type Quality } from "@/lib/srs/sm2";
 import { labelForCard } from "@/lib/srs/scheduler";
-import { getSign } from "@/lib/curriculum/loader";
-import { getLetterMeta } from "@/lib/recognition/templates";
+import { getSign } from "@/lib/curriculum/structure";
+import { getLetterMeta } from "@/lib/recognition/letters";
 import type { PendingReview } from "@/lib/progress/queries";
 
 type Props = {

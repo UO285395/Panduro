@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LandmarkFrame } from "@/lib/esku/domain/landmarks/value-objects/LandmarkFrame";
 import { MIN_PROTOTYPES_PER_SIGN } from "@/lib/esku/domain/recognition/entities/CustomSign";
-import type { AvatarClip } from "@/lib/curriculum/schema";
+import { useSignClip } from "@/lib/avatar/useSignClip";
 import type { Recognizer } from "@/lib/recognition/engine";
 import {
   measureReliability,
@@ -25,7 +25,6 @@ type Props = {
   recognizer: () => Recognizer | null;
   running: boolean;
   signOptions: SignOption[];
-  clipsMap: Record<string, AvatarClip | null>;
   /** Palabras escritas ahora mismo en la transcripción. */
   words: string[];
   clearTranscript: () => void;
@@ -40,7 +39,7 @@ const ERRORS: Record<string, string> = {
   DuplicateSignTextError: "Ya has enseñado un signo con esa palabra. Bórralo antes para regrabarlo.",
 };
 
-export function TeachPanel({ recognizer, running, signOptions, clipsMap, words, clearTranscript }: Props) {
+export function TeachPanel({ recognizer, running, signOptions, words, clearTranscript }: Props) {
   const [text, setText] = useState("");
   const [takes, setTakes] = useState<(readonly LandmarkFrame[])[]>([]);
   const [recording, setRecording] = useState(false);
@@ -55,7 +54,7 @@ export function TeachPanel({ recognizer, running, signOptions, clipsMap, words, 
     [signOptions],
   );
   const guideId = byTranslation.get(normalizeWord(text));
-  const guideClip = guideId ? clipsMap[guideId] : null;
+  const guideClip = useSignClip(guideId);
 
   const refresh = useCallback(async () => {
     const rec = recognizer();

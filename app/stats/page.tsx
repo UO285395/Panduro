@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getUserSnapshot } from "@/lib/progress/queries";
-import { getAllLevels, getLessonSequence } from "@/lib/curriculum/loader";
+import { getAllLevels, getLessonSequence } from "@/lib/curriculum/structure";
 import { DEMO_MODE } from "@/lib/storage/flags";
 import { StatsCloud } from "./stats-cloud";
 import { StatsDemo } from "./stats-demo";

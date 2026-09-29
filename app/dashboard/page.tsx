@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAllLevels, getLessonSequence } from "@/lib/curriculum/loader";
+import { getAllLevels, getLessonSequence } from "@/lib/curriculum/structure";
 import { getUserSnapshot } from "@/lib/progress/queries";
 import { DEMO_MODE } from "@/lib/storage/flags";
 import { DashboardCloud } from "./dashboard-cloud";
@@ -23,7 +23,8 @@ export default async function DashboardPage() {
   }
   if (!snapshot.onboardingCompleted) redirect("/onboarding");
 
-  const levels = getAllLevels();
+  // El árbol de lecciones no necesita los signos (ni sus animaciones): fuera del payload.
+  const levels = getAllLevels().map((level) => ({ ...level, signs: [] }));
   const sequence = getLessonSequence().map(({ unit, lesson }) => ({
     unitId: unit.id,
     lessonId: lesson.id,

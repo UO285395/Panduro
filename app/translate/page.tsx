@@ -20,23 +20,19 @@ function buildSignOptions() {
   return out.sort((a, b) => a.translation.localeCompare(b.translation, "es"));
 }
 
-function buildClipsMap() {
-  const signsMap = getSignsMap();
-  const out: Record<string, import("@/lib/curriculum/schema").AvatarClip | null> = {};
-  for (const [id, sign] of signsMap) {
-    out[id] = sign.avatarClip ?? null;
-  }
-  return out;
+/** Signos del currículo; su animación se pide a /api/clips cuando hace falta enseñarla. */
+function buildSignIds() {
+  return [...getSignsMap().keys()];
 }
 
 export default async function TranslatePage() {
-  const clipsMap = buildClipsMap();
+  const signIds = buildSignIds();
   const signOptions = buildSignOptions();
   if (DEMO_MODE) {
-    return <TranslateView demo initialHistory={[]} clipsMap={clipsMap} signOptions={signOptions} />;
+    return <TranslateView demo initialHistory={[]} signIds={signIds} signOptions={signOptions} />;
   }
   const snapshot = await getUserSnapshot();
   if (!snapshot) redirect("/login");
   const history = await listTranslations(10);
-  return <TranslateView initialHistory={history} clipsMap={clipsMap} signOptions={signOptions} />;
+  return <TranslateView initialHistory={history} signIds={signIds} signOptions={signOptions} />;
 }

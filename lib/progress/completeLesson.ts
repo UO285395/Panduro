@@ -4,7 +4,7 @@ import { completeLesson as completeLessonServer } from "./actions";
 import { completeLessonDemo } from "@/lib/storage/demoStore";
 import { DEMO_MODE } from "@/lib/storage/flags";
 import { cardIdsForLesson } from "@/lib/srs/scheduler";
-import { getLesson } from "@/lib/curriculum/loader";
+import { getLesson } from "@/lib/curriculum/structure";
 
 /**
  * Fachada cliente. En modo demo persiste en localStorage; en cloud llama al

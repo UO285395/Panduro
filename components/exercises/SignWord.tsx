@@ -9,7 +9,6 @@ import { normalizeLandmarks } from "@/lib/mediapipe/landmarks";
 import { createVocabulary, vocabularyConcepts } from "@/lib/recognition/engine";
 import { extractFeatures } from "@/lib/recognition/features";
 import { KnnClassifier, withoutSameHandshape } from "@/lib/recognition/knn";
-import { loadGlobalTemplates, loadLocalTemplates } from "@/lib/recognition/templates";
 import { conceptFor, glossKey } from "@/lib/recognition/vocabularyMap";
 
 type Props = {
@@ -37,14 +36,19 @@ const EARLY_EXIT_MS = 350;
  */
 export function SignWord({ exercise, sign, onAnswer, disabled }: Props) {
   const vocabulary = useMemo(() => createVocabulary(), []);
-  const handshapes = useMemo(
-    () =>
-      new KnnClassifier(
-        withoutSameHandshape([...loadGlobalTemplates(), ...loadLocalTemplates()], exercise.signId),
-        3,
-      ),
-    [exercise.signId],
-  );
+  // Las plantillas de formas de mano pesan varios MB: se cargan al llegar al ejercicio.
+  const [handshapes, setHandshapes] = useState<KnnClassifier | null>(null);
+  useEffect(() => {
+    let alive = true;
+    import("@/lib/recognition/templates").then(({ loadGlobalTemplates, loadLocalTemplates }) => {
+      if (!alive) return;
+      const all = [...loadGlobalTemplates(), ...loadLocalTemplates()];
+      setHandshapes(new KnnClassifier(withoutSameHandshape(all, exercise.signId), 3));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [exercise.signId]);
   const [concept, setConcept] = useState<string | null | undefined>(undefined);
   const conceptRef = useRef<string | null>(null);
   const segmenterRef = useRef(new SignSegmenter());
@@ -129,7 +133,7 @@ export function SignWord({ exercise, sign, onAnswer, disabled }: Props) {
       }
 
       const hand = dominantHand(frame);
-      if (!hand) {
+      if (!hand || !handshapes) {
         highSinceRef.current = null;
         return;
       }

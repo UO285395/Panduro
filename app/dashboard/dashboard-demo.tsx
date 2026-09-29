@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllLevels, getLessonSequence } from "@/lib/curriculum/loader";
+import { getAllLevels, getLessonSequence } from "@/lib/curriculum/structure";
 import {
   getSnapshotDemo,
   isSignedIn,

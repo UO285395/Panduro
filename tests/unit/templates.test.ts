@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { getLetterMeta, listLetters, loadGlobalTemplates } from "@/lib/recognition/templates";
 import { KnnClassifier } from "@/lib/recognition/knn";
+import { LETTERS } from "@/lib/recognition/letters";
+import fingerspelling from "@/content/signs/fingerspelling.json";
 
 describe("fingerspelling templates", () => {
   it("expone las 27 letras A-Z + Ñ", () => {
@@ -18,6 +20,13 @@ describe("fingerspelling templates", () => {
       expect(meta!.translation).toBe(l);
       expect(meta!.description.length).toBeGreaterThan(10);
     }
+  });
+
+  it("los metadatos ligeros de las letras coinciden con fingerspelling.json", () => {
+    const full = Object.fromEntries(
+      Object.entries(fingerspelling.letters).map(([k, l]) => [k, { translation: l.translation, description: l.description }]),
+    );
+    expect(LETTERS).toEqual(full);
   });
 
   it("loadGlobalTemplates devuelve al menos 12 letras + 6 signos con plantillas sintéticas", () => {

@@ -34,10 +34,8 @@ type LexiconJson = {
 const source = fingerspellingData as FingerspellingJson;
 const lexicon = lexiconData as LexiconJson;
 
-/** Metadatos por letra (traducción y descripción). */
-export function getLetterMeta(letterId: string) {
-  return source.letters[letterId];
-}
+/** Metadatos por letra (traducción y descripción), sin cargar las plantillas. */
+export { getLetterMeta } from "./letters";
 
 /** Todas las letras conocidas (A–Z + Ñ), ordenadas alfabéticamente. */
 export function listLetters(): string[] {

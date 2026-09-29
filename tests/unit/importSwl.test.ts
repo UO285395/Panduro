@@ -17,7 +17,7 @@ function openHand(): T[] {
   return pts;
 }
 
-function frame(raisedSide: "right" | "left" | null): SwlFrame {
+function frame(raisedSide: "right" | "left" | "both" | null): SwlFrame {
   const pose: [number, number, number, number][] = Array.from({ length: 17 }, () => [0, 0, 0, 1]);
   const set = (i: number, v: T) => (pose[i] = [...v, 1]);
   set(9, s(-0.03, 0.2, 0.1));
@@ -26,20 +26,21 @@ function frame(raisedSide: "right" | "left" | null): SwlFrame {
   set(12, s(0.18, 0, 0));
   const raised = (side: 1 | -1) => ({ elbow: s(0.23 * side, -0.1, 0.26), wrist: s(0.28 * side, 0.16, 0.31) });
   const down = (side: 1 | -1) => ({ elbow: s(0.18 * side, -0.28, 0), wrist: s(0.18 * side, -0.55, 0) });
-  const r = raisedSide === "right" ? raised(1) : down(1);
-  const l = raisedSide === "left" ? raised(-1) : down(-1);
+  const up = (side: "right" | "left") => raisedSide === side || raisedSide === "both";
+  const r = up("right") ? raised(1) : down(1);
+  const l = up("left") ? raised(-1) : down(-1);
   set(14, r.elbow);
   set(16, r.wrist);
   set(13, l.elbow);
   set(15, l.wrist);
-  const wristImage = (side: "left" | "right"): T => [side === "right" ? 0.3 : 0.7, raisedSide === side ? 0.4 : 0.8, 0];
+  const wristImage = (side: "left" | "right"): T => [side === "right" ? 0.3 : 0.7, up(side) ? 0.4 : 0.8, 0];
   const hand = openHand();
   return {
     poseWorld: pose,
     wrists: [wristImage("left"), wristImage("right")],
-    hands: raisedSide
-      ? [{ world: hand, image: hand.map((p) => add([...wristImage(raisedSide)], [p[0], p[1], 0])) }]
-      : [],
+    hands: (["right", "left"] as const)
+      .filter(up)
+      .map((side) => ({ world: hand, image: hand.map((p) => add([...wristImage(side)], [p[0], p[1], 0])) })),
   };
 }
 
@@ -60,5 +61,13 @@ describe("importSwl", () => {
     const { result, leftHanded } = convertSample(sequence("left"), 30);
     expect(result.ok).toBe(true);
     expect(leftHanded).toBe(true);
+  });
+
+  it("a dos manos, la pasiva levantada más rato no hace zurdo al signante", () => {
+    // La izquierda sube antes y baja después (PROGRAMA, NOMBRE): la derecha sigue siendo la dominante.
+    const frames = Array.from({ length: 40 }, (_, i) => frame(i >= 12 && i < 28 ? "both" : i >= 4 && i < 36 ? "left" : null));
+    const { result, leftHanded } = convertSample(frames, 30);
+    expect(result.ok).toBe(true);
+    expect(leftHanded).toBe(false);
   });
 });

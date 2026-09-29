@@ -50,6 +50,8 @@ export type CaptureStats = {
   handRate: number;
   twoHands: boolean;
   durationMs: number;
+  /** Dónde empieza el clip en la grabación (ms): el t = 0 de sus keyframes. */
+  startMs: number;
 };
 
 export type CaptureResult =
@@ -1126,6 +1128,7 @@ export function framesToClip(
       handedness: second ? "two" : "one",
       duration: Math.max(200, Math.min(6000, durationMs)),
       keyframes: kept,
+      shoulderX: round2(len(shoulderLine) / 2 / armLen),
     },
     templates: pickTemplates(domRange, opts.leftHanded ?? false),
     stats: {
@@ -1134,6 +1137,7 @@ export function framesToClip(
       handRate: withHand / domRange.length,
       twoHands: !!second,
       durationMs,
+      startMs: Math.round(t0),
     },
   };
 }

@@ -13,7 +13,7 @@ import {
   resolveClip,
   snapshotPose,
 } from "@/lib/avatar/vrmMapper";
-import { addHandOutline } from "@/lib/avatar/handOutline";
+import { addHandOutline, HAND_OUTLINE_WIDTH } from "@/lib/avatar/handOutline";
 import {
   BONE_LENGTHS,
   KNUCKLE_RADIUS,
@@ -266,7 +266,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           vrm: import("@pixiv/three-vrm").VRM;
         };
         const rig = createVrmRig(vrm);
-        addHandOutline(vrm, 0.016 * rig.armLen);
+        addHandOutline(vrm, HAND_OUTLINE_WIDTH * rig.armLen);
         vrmScene.rotation.y = rig.facingY;
         scene.add(vrmScene);
         setMode("vrm");

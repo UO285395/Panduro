@@ -78,6 +78,29 @@ python -m venv .venv
   pero se han movido al apartar los de al lado y sin invertir el sentido de una muestra a la
   siguiente: cuando una mano atravesaba la otra de atrás adelante, salir por detrás en un
   instante y por delante en el siguiente se anulaba al suavizar; ahora la rodea.
+- Con los dedos de las dos manos cruzados vistos de frente (una X, los números del 16 al 19,
+  BUENAS NOCHES, PROGRAMA), una mano va entera por delante de la otra en todos los cruces y
+  se apartan solo hacia el que mira, así que la figura de frente no cambia. Entre las dos
+  queda además el grosor del contorno: pegadas, el de la mano de atrás asomaba por los dedos
+  de la de delante y se veían los dedos de las dos mezclados. Entre las dos manos la
+  profundidad de la grabación no es fiable (en PROGRAMA ponía la derecha 0,3 brazos por detrás
+  de la izquierda, y en el vídeo pasa por delante), así que en un cruce que dura la dominante
+  va delante, que es lo habitual (la pasiva hace de base y la otra actúa sobre ella), salvo
+  que se estén tocando. Ese apartar hacia el que mira se reparte en el tiempo: empieza antes
+  del cruce y acaba después, sin adelantar y atrasar las manos de golpe. En los 160 signos a
+  dos manos, los que dejaban dedos entrelazados pasan de 17 a ninguno y los que tenían las
+  manos metidas más de 0,02 brazos, de 15 a 2.
+- Cada grabación guarda la media distancia entre los hombros del signante (`shoulderX`, en
+  brazos). La posición de cada mano se mide desde su hombro, y el avatar tiene los hombros
+  más separados que una persona (0,42 brazos frente a 0,35): dos manos que se juntaban o se
+  cruzaban delante del pecho le quedaban a casi una palma. Ahora, junto al centro del cuerpo
+  se conserva lo que distaba de él, y a la altura del hombro y más afuera, del hombro.
+- La mano dominante se toma de la derecha salvo que la izquierda signe mucho más (2,5 veces
+  el tiempo levantada). En los signos a dos manos la pasiva suele estar levantada más rato
+  que la que se mueve, y con poco margen 20 signos del DILSE (PROGRAMA, NOMBRE, SÍMBOLO,
+  LIBRO…) salían en espejo, con la mano pasiva haciendo de dominante. Basta además con que la
+  dominante se vea en la mitad de los fotogramas: se pierde cuando tapa a la otra y esos
+  huecos se rellenan interpolando.
 - Tampoco se meten en la cabeza, que en un modelo anime es casi el doble de grande que la de
   una persona en proporción al brazo: con los nudillos en la mejilla o el pulgar en la
   frente, el resto de la mano quedaba dentro. La mano gira sobre el punto de contacto hasta

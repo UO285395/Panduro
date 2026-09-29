@@ -109,6 +109,10 @@ const AvatarClipSchema = z.object({
   handedness: z.enum(["one", "two"]).default("one"),
   duration: z.number().int().min(200).max(6000),
   keyframes: z.array(AvatarKeyframeSchema).min(2),
+  // Grabaciones: media distancia entre los hombros del signante, en brazos. `x` se mide desde
+  // el hombro de cada mano; con esto el avatar sabe dónde está el centro del cuerpo y junta
+  // las manos donde se juntaban, aunque sus hombros estén más separados.
+  shoulderX: z.number().optional(),
 });
 export type AvatarClip = z.infer<typeof AvatarClipSchema>;
 

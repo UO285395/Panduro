@@ -15,6 +15,9 @@ const FINGER_BONES: B[] = [
   B.LeftLittleProximal, B.LeftLittleIntermediate, B.LeftLittleDistal,
 ];
 
+/** Grosor del contorno de las manos, en brazos del modelo. */
+export const HAND_OUTLINE_WIDTH = 0.016;
+
 /**
  * Contorno de las manos con la técnica de casco invertido (la misma que usa
  * MToon): se duplican los triángulos de piel que tocan la mano o los dedos,

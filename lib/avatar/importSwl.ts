@@ -62,7 +62,15 @@ export function convertSample(
   if (!right.ok) return left.ok ? { result: left, leftHanded: true } : { result: right, leftHanded: false };
   if (!left.ok) return { result: right, leftHanded: false };
   const activity = (r: typeof right & { ok: true }) => r.stats.durationMs * r.stats.handRate;
-  return activity(left) > activity(right) * 1.2
+  return activity(left) > activity(right) * LEFT_HANDED_MIN
     ? { result: left, leftHanded: true }
     : { result: right, leftHanded: false };
 }
+
+/**
+ * Cuánto más tiene que signar la mano izquierda para tomar al signante por zurdo. En los signos
+ * a dos manos la pasiva suele estar levantada más rato que la que se mueve (PROGRAMA, NOMBRE,
+ * SÍMBOLO, LIBRO), y con poco margen el avatar los hacía en espejo, con la mano pasiva como
+ * dominante: en el DILSE, con signantes diestros, salían 20 así con hasta 1,95 veces más.
+ */
+const LEFT_HANDED_MIN = 2.5;

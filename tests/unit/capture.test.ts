@@ -189,6 +189,8 @@ describe("capture: landmarks → clip", () => {
     expect(k.hand.pointDir![1]).toBeGreaterThan(0.99);
     expect(res.clip.handedness).toBe("one");
     expect(res.templates.length).toBeGreaterThan(0);
+    // Media distancia entre los hombros, en brazos: el avatar sabe dónde está el centro del cuerpo.
+    expect(res.clip.shoulderX).toBeCloseTo(0.18 / ARM, 2);
   });
 
   it("por encima de la boca la altura se cuenta en la cara: la muñeca a la altura de los ojos es 0.85", () => {
@@ -230,6 +232,8 @@ describe("capture: landmarks → clip", () => {
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.stats.durationMs).toBe((31 - 8) * 33);
+    // El t = 0 del clip en la grabación, para compararlo con el vídeo.
+    expect(res.stats.startMs).toBe(8 * 33);
   });
 
   it("falla con un mensaje claro si la mano no se levanta", () => {

@@ -15,6 +15,7 @@ import {
   type Cloud,
   type FaceGrid,
 } from "./bodyPoints";
+import { HAND_OUTLINE_WIDTH } from "./handOutline";
 import { sampleClip } from "./interpolate";
 import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST, Y_MOUTH, Y_PER_FACE } from "./pose";
 
@@ -1273,7 +1274,7 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
 function resolveClipNow(rig: VrmRig, clip: AvatarClip): AvatarClip {
   const resolved: AvatarClip = {
     ...clip,
-    keyframes: clip.keyframes.map((kf) => {
+    keyframes: centeredHands(rig, clip).map((kf) => {
       // La mano pasiva primero: la dominante puede tocarla, y para eso tiene que estar posada.
       const fingers2 = kf.fingers2 ?? kf.fingers;
       const thumb2 = thumbOf(kf, "Left");
@@ -1293,6 +1294,30 @@ function resolveClipNow(rig: VrmRig, clip: AvatarClip): AvatarClip {
   const clear = keepOutOfHead(rig, keepHandsApart(rig, resolved));
   rig.resolved.set(clip, clear);
   return clear;
+}
+
+/**
+ * `x` de cada mano en el modelo, contando con el centro del cuerpo. En la grabación se mide
+ * desde el hombro de su lado, y este modelo tiene los hombros más separados que una persona
+ * (en brazos: 0,42 frente a 0,35): dos manos que se juntaban o se cruzaban delante del pecho
+ * (AMIGO, NOMBRE, los números cruzados) le quedaban a casi una palma de distancia. Junto al
+ * centro se conserva lo que distaba de él; a la altura del hombro y más afuera, del hombro,
+ * y entre medias, a partes.
+ */
+function centeredHands(rig: VrmRig, clip: AvatarClip): AvatarKeyframe[] {
+  const human = clip.shoulderX;
+  if (!human) return clip.keyframes;
+  const model = rig.arms.Right.shoulder.distanceTo(rig.arms.Left.shoulder) / (2 * rig.armLen);
+  const x = (hx: number) => {
+    const fromCenter = human + 1.2 * hx;
+    const toShoulder = THREE.MathUtils.clamp(fromCenter / human, 0, 1);
+    return (fromCenter + (model - human) * toShoulder - model) / 1.2;
+  };
+  return clip.keyframes.map((kf) => ({
+    ...kf,
+    hand: { ...kf.hand, x: x(kf.hand.x) },
+    ...(kf.hand2 ? { hand2: { ...kf.hand2, x: x(kf.hand2.x) } } : {}),
+  }));
 }
 
 // --- Las dos manos sin atravesarse ---------------------------------------------
@@ -1430,10 +1455,53 @@ function palmNormal(caps: Capsule[]): THREE.Vector3 {
  */
 function apartOptions(rig: VrmRig, kf: AvatarKeyframe & { hand2: HandSpec }, tol: number, max: number): THREE.Vector3[] {
   const probe = handsProbe(rig);
-  if (probe.depthAt(new THREE.Vector3()) <= tol) return [new THREE.Vector3()];
   const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
   const toWorld = new THREE.Matrix3().setFromMatrix4(root.matrixWorld);
   const toModel = toWorld.clone().invert();
+  const zero = new THREE.Vector3();
+  const view = rig.forward.clone().applyMatrix3(toWorld).normalize();
+  // Entre las dos, además, el contorno: pegadas, el de la mano de atrás asoma por los dedos de
+  // la de delante y de frente se ven los dedos de las dos mezclados.
+  const crossings = crossingsOf(probe, view, HAND_OUTLINE_WIDTH * rig.armLen);
+  // Lo que les falta en los cruces con la derecha por delante (+1) o por detrás (−1).
+  const layer = (rel: THREE.Vector3, order: number) =>
+    crossings.reduce((m, c) => Math.max(m, c.room - order * (c.dz + rel.dot(view))), 0);
+  // Si no se tocan, también cuando la dominante queda detrás (ver BEHIND_COST).
+  const touching = !!kf.hand.contact && isOtherHand(kf.hand.contact.at);
+  const tangled = crossings.length > 0 && (touching ? Math.min(layer(zero, 1), layer(zero, -1)) : layer(zero, 1)) > tol;
+  if (!tangled && probe.depthAt(zero) <= tol) return [zero];
+  const hands = shiftedTargets(rig, kf);
+  const depth = (shift: THREE.Vector3, order = 0) => {
+    const { r, l, r0, l0 } = hands(shift);
+    const rel = r.sub(r0).sub(l.sub(l0)).applyMatrix3(toWorld);
+    return Math.max(probe.depthAt(rel, tol), order ? layer(rel, order) : 0);
+  };
+  const along = (dir: THREE.Vector3, order = 0, most = max): THREE.Vector3 | null => {
+    if (depth(dir.clone().multiplyScalar(most), order) > tol) return null;
+    let lo = 0;
+    let hi = most;
+    for (let k = 0; k < 7; k++) {
+      const m = (lo + hi) / 2;
+      if (depth(dir.clone().multiplyScalar(m), order) > tol) lo = m;
+      else hi = m;
+    }
+    // Un poco más de lo justo: la bisección se queda en el borde.
+    return dir.clone().multiplyScalar(1.05 * hi);
+  };
+  // Con los dedos cruzados, una mano entera por delante de la otra y apartándolas solo hacia
+  // el que mira: de frente la figura (la X, el tejado) queda igual.
+  const layered: ApartOption[] = [];
+  if (tangled) {
+    const fwd = rig.forward.clone().normalize();
+    for (const [dir, order] of [[fwd, 1], [fwd.clone().negate(), -1]] as const) {
+      // Hacia el que mira se pueden apartar más: de frente el signo no cambia.
+      const v = along(dir, order, LAYER_MAX_SHIFT * rig.armLen);
+      // La dominante, por delante: la pasiva suele hacer de base y la otra actúa sobre ella de
+      // cara al que mira (PROGRAMA, SÍMBOLO, VOTO). Entre las dos manos la profundidad de la
+      // grabación no es fiable, así que detrás solo si delante hay que apartarlas mucho más.
+      if (v) layered.push(order < 0 && !touching ? Object.assign(v, { penalty: BEHIND_COST * rig.armLen }) : v);
+    }
+  }
   const dirs = [
     palmNormal(probe.right.caps),
     palmNormal(probe.left.caps),
@@ -1442,25 +1510,65 @@ function apartOptions(rig: VrmRig, kf: AvatarKeyframe & { hand2: HandSpec }, tol
   ]
     .map((d) => d.applyMatrix3(toModel).normalize())
     .flatMap((d) => [d, d.clone().negate()]);
-  const hands = shiftedTargets(rig, kf);
-  const depth = (shift: THREE.Vector3) => {
-    const { r, l, r0, l0 } = hands(shift);
-    return probe.depthAt(r.sub(r0).sub(l.sub(l0)).applyMatrix3(toWorld), tol);
-  };
-  const out: THREE.Vector3[] = [];
-  for (const dir of dirs) {
-    if (depth(dir.clone().multiplyScalar(max)) > tol) continue;
-    let lo = 0;
-    let hi = max;
-    for (let k = 0; k < 7; k++) {
-      const m = (lo + hi) / 2;
-      if (depth(dir.clone().multiplyScalar(m)) > tol) lo = m;
-      else hi = m;
+  // Las de siempre, también con los dedos cruzados (con un orden de manos que no cabe, o que
+  // cambia de una muestra a otra cuando una mano pasa a través de la otra, el camino necesita
+  // alternativas), pero cargando lo que dejan entrelazado.
+  const out: ApartOption[] = dirs
+    .map((dir) => along(dir))
+    .filter((v): v is THREE.Vector3 => v !== null)
+    .map((v) => {
+      if (!tangled || !layered.length) return v;
+      const { r, l, r0, l0 } = hands(v);
+      const rel = r.sub(r0).sub(l.sub(l0)).applyMatrix3(toWorld);
+      const behind = !touching && layer(rel, 1) > tol ? BEHIND_COST * rig.armLen : 0;
+      return Object.assign(v, { penalty: TANGLE_COST * Math.min(layer(rel, 1), layer(rel, -1)) + behind });
+    });
+  const all = [...layered, ...out];
+  return all.length ? all : [zero];
+}
+
+/** Un desplazamiento para apartar las manos y lo que cuesta además elegirlo (en brazos). */
+type ApartOption = THREE.Vector3 & { penalty?: number };
+/** Lo que cuesta dejar los dedos entrelazados, frente a apartar las manos. */
+const TANGLE_COST = 4;
+/**
+ * Lo que cuesta, en cada instante, que la mano dominante quede detrás en un cruce (en brazos):
+ * se pone delante si para eso no hay que apartarlas más que esto hacia el que mira.
+ */
+const BEHIND_COST = 0.5;
+/** Lo más que se apartan las manos hacia el que mira para poner una delante de la otra (en brazos). */
+const LAYER_MAX_SHIFT = 0.5;
+
+/**
+ * Dónde se cruzan, vistas de frente, las falanges y la palma de una mano con las de la otra
+ * (una X, los números cruzados, BUENAS NOCHES): en cada cruce, cuánto está la derecha por
+ * delante de la izquierda hacia el que mira (`dz`) y cuánto haría falta (`room`, los dos
+ * grosores). Una persona pone una mano entera delante de la otra; si en unos cruces queda
+ * delante y en otros detrás, los dedos se entrelazan como un peine y de frente no se
+ * entiende la forma, aunque no se atraviesen.
+ */
+function crossingsOf(probe: ReturnType<typeof handsProbe>, view: THREE.Vector3, gap: number): { room: number; dz: number }[] {
+  const up = new THREE.Vector3(0, 1, 0).projectOnPlane(view).normalize();
+  const side = new THREE.Vector3().crossVectors(view, up);
+  const flat = (p: THREE.Vector3): [number, number] => [p.dot(side), p.dot(up)];
+  const out: { room: number; dz: number }[] = [];
+  for (const cr of probe.right.caps) {
+    const [ax, ay] = flat(cr.a);
+    const [bx, by] = flat(cr.b);
+    for (const cl of probe.left.caps) {
+      const [cx, cy] = flat(cl.a);
+      const [dx, dy] = flat(cl.b);
+      // Segmentos a→b y c→d en el plano: a + s·(b − a) = c + t·(d − c).
+      const den = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+      if (Math.abs(den) < 1e-12) continue;
+      const s = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / den;
+      const t = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / den;
+      if (s < 0 || s > 1 || t < 0 || t > 1) continue;
+      const dz = cr.a.clone().lerp(cr.b, s).sub(cl.a.clone().lerp(cl.b, t)).dot(view);
+      out.push({ room: cr.r + cl.r + gap, dz });
     }
-    // Un poco más de lo justo: la bisección se queda en el borde.
-    out.push(dir.clone().multiplyScalar(1.05 * hi));
   }
-  return out.length ? out : [new THREE.Vector3()];
+  return out;
 }
 
 /**
@@ -1571,7 +1679,7 @@ function outOfHead(
 const HANDS_OVERLAP_TOL = 0.004;
 /** Lo más que se aparta una mano de la otra (en brazos): más, y el signo sería otro. */
 const HANDS_MAX_SHIFT = 0.25;
-/** En las últimas pasadas, lo que cuesta invertir el sentido: casi nunca compensa (ver keepHandsApart). */
+/** Lo que cuesta invertir el sentido del apartado de una muestra a la siguiente: casi nunca compensa (ver keepHandsApart). */
 const RESIDUAL_FLIP_COST = 10;
 /** Lo que puede cambiar la mano al poner el pulgar en su sitio (en brazos). */
 const THUMB_SLACK = 0.06;
@@ -1652,18 +1760,44 @@ function smoothShifts(need: THREE.Vector3[]): THREE.Vector3[] {
 }
 
 /**
+ * Lo que se apartan las manos hacia el que mira (para poner una delante de la otra en un
+ * cruce), sin cambiar más de `step` de una muestra a la siguiente: empieza antes del cruce y
+ * acaba después, en vez de adelantar y atrasar las manos de golpe. Solo se añade: donde hacía
+ * falta apartarlas, siguen apartadas lo mismo.
+ */
+function rampDepth(shifts: THREE.Vector3[], view: THREE.Vector3, step: number): THREE.Vector3[] {
+  const depth = shifts.map((v) => v.dot(view));
+  const envelope = (sign: number) => {
+    const out = depth.map((d) => Math.max(0, sign * d));
+    for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i]!, out[i - 1]! - step);
+    for (let i = out.length - 2; i >= 0; i--) out[i] = Math.max(out[i]!, out[i + 1]! - step);
+    return out;
+  };
+  const ahead = envelope(1);
+  const back = envelope(-1);
+  return shifts.map((v, i) => {
+    // Donde las dos envolventes se pisan (cambia de sentido), la que manda es la que más aparta.
+    const want = ahead[i]! >= back[i]! ? ahead[i]! : -back[i]!;
+    return v.clone().addScaledVector(view, want - depth[i]!);
+  });
+}
+
+/** Lo más que cambia de una muestra a la siguiente lo que se apartan hacia el que mira (en brazos). */
+const DEPTH_RAMP = 0.02;
+
+/**
  * Una opción por muestra, por el camino de menor coste: lo que se apartan más lo que cambia
  * de una muestra a la siguiente (programación dinámica). Con `flipCost`, invertir el sentido
  * de una muestra a la siguiente cuesta además eso por lo que se apartan las dos.
  */
-function cheapestPath(options: THREE.Vector3[][], flipCost = 0): THREE.Vector3[] {
+function cheapestPath(options: ApartOption[][], flipCost = 0): THREE.Vector3[] {
   const n = options.length;
   const cost: number[][] = [];
   const from: number[][] = [];
   options.forEach((opts, i) => {
     from[i] = [];
     cost[i] = opts.map((v, j) => {
-      if (i === 0) return v.length();
+      if (i === 0) return v.length() + (v.penalty ?? 0);
       let best = Infinity;
       options[i - 1]!.forEach((u, k) => {
         const flip = v.dot(u) < 0 ? flipCost * (v.length() + u.length()) : 0;
@@ -1673,7 +1807,7 @@ function cheapestPath(options: THREE.Vector3[][], flipCost = 0): THREE.Vector3[]
           from[i]![j] = k;
         }
       });
-      return best + v.length();
+      return best + v.length() + (v.penalty ?? 0);
     });
   });
   const chosen: THREE.Vector3[] = new Array(n);
@@ -1728,7 +1862,11 @@ function keepHandsApart(rig: VrmRig, clip: AvatarClip): AvatarClip {
   const options = samples.map(optionsAt);
   if (options.every(none)) return clip;
 
-  const shifts = smoothShifts(cheapestPath(options));
+  // Como en las pasadas de después, sin invertir el sentido de una muestra a otra: al suavizar
+  // se anulaba (una mano que pasa a través de la otra, los dos órdenes de un cruce).
+  const view = rig.forward.clone().normalize();
+  const chosen = cheapestPath(options, RESIDUAL_FLIP_COST);
+  const shifts = rampDepth(smoothShifts(chosen), view, DEPTH_RAMP * L);
   const apart = samples.map((kf, i) => shiftHands(rig, kf, shifts[i]!));
   // Al cambiar de lado el suavizado las deja metidas un momento: lo que siga dentro, fuera
   // con lo mínimo que haga falta en esa muestra (es poco y dura dos o tres muestras), también

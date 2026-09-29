@@ -16,7 +16,12 @@ import { gunzipSync } from "node:zlib";
 import { convertSample, type SwlExport } from "@/lib/avatar/importSwl";
 import { CapturedSignsSchema, type CapturedSigns } from "@/lib/curriculum/schema";
 
-const MIN_HAND_RATE = 0.6;
+/**
+ * Fotogramas con la mano dominante detectada. Algo menos de dos tercios basta: en los signos a
+ * dos manos la dominante se pierde cuando tapa a la otra (NOMBRE, LIBRO) y esos huecos se
+ * rellenan interpolando; con más exigencia esos signos salían del lado contrario, en espejo.
+ */
+const MIN_HAND_RATE = 0.5;
 /** Menos no es un signo (la simplificación deja en dos keyframes un movimiento sencillo). */
 const MIN_DURATION_MS = 400;
 

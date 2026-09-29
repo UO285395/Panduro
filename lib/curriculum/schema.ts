@@ -45,12 +45,26 @@ const HandSchema = z.object({
   // sustituyen a rot/forearmRoll.
   palmDir: Vec3Schema.optional(),
   pointDir: Vec3Schema.optional(),
+  // Hacia dónde sale el codo de la línea hombro→muñeca, en el mismo espacio (grabaciones).
+  elbowDir: Vec3Schema.optional(),
   contact: ContactSchema.optional(),
 });
 export type HandSpec = z.infer<typeof HandSchema>;
 
+// Gestos de la cara medidos en una grabación (0..1): la boca al vocalizar la palabra
+// (mandíbula abierta, labios en «u», boca estirada), sonrisa, comisuras abajo, ceño y cejas
+// levantadas. El mapper los lleva a las expresiones de cada modelo.
+export const EXPRESSIONS = ["jaw", "pucker", "stretch", "smile", "frown", "browDown", "browUp"] as const;
+const ExpressionsSchema = z.record(z.enum(EXPRESSIONS), z.number().min(0).max(1));
+export type Expressions = z.infer<typeof ExpressionsSchema>;
+
 const AvatarKeyframeSchema = z.object({
   t: z.number().min(0), // ms desde el inicio
+  // Cabeza medida en una grabación, respecto a la postura neutra del signante (rad):
+  // [giro, cabeceo, inclinación]; giro > 0 mira hacia su derecha, cabeceo > 0 hacia abajo
+  // e inclinación > 0 lleva la coronilla hacia su derecha.
+  head: Vec3Schema.optional(),
+  expr: ExpressionsSchema.optional(),
   hand: HandSchema,
   fingers: z
     .tuple([

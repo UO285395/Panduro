@@ -106,6 +106,49 @@ describe("sampleClip", () => {
   });
 });
 
+describe("cabeza, cara y codo", () => {
+  const face: AvatarClip = {
+    handedness: "one",
+    duration: 1000,
+    keyframes: [
+      {
+        t: 0,
+        head: [0, 0, 0],
+        expr: { browDown: 1 },
+        hand: { x: 0, y: 0, z: 0, rot: [0, 0, 0], elbowDir: [0, -1, 0] },
+        fingers: [0, 0, 0, 0, 0],
+      },
+      {
+        t: 1000,
+        head: [0.2, -0.1, 0],
+        hand: { x: 0, y: 0, z: 0, rot: [0, 0, 0], elbowDir: [1, 0, 0] },
+        fingers: [0, 0, 0, 0, 0],
+      },
+    ],
+  };
+
+  it("interpola el giro de la cabeza", () => {
+    const k = sampleClip(face, 500);
+    expect(k.head![0]).toBeCloseTo(0.1, 5);
+    expect(k.head![1]).toBeCloseTo(-0.05, 5);
+  });
+
+  it("una expresión que falta en un keyframe vale 0 allí", () => {
+    expect(sampleClip(face, 500).expr?.browDown).toBeCloseTo(0.5, 5);
+  });
+
+  it("el codo queda como dirección unitaria", () => {
+    const e = sampleClip(face, 500).hand.elbowDir!;
+    expect(Math.hypot(...e)).toBeCloseTo(1, 5);
+    expect(e[0]).toBeCloseTo(Math.SQRT1_2, 5);
+  });
+
+  it("un clip sin cabeza no se inventa una", () => {
+    expect(sampleClip(clip, 500).head).toBeUndefined();
+    expect(sampleClip(clip, 500).expr).toBeUndefined();
+  });
+});
+
 describe("sampleLoop", () => {
   it("se detiene al final y vuelve al inicio sin saltos", () => {
     expect(sampleLoop(clip, 1000 + LOOP_HOLD_MS / 2).hand.x).toBe(2);

@@ -66,6 +66,16 @@ python -m venv .venv
 - Cada dedo se guarda como `[azimut, elevación, flexión]`: nudillo y falanges por separado
   (B doblada frente a garra), separación de los dedos y posición del pulgar. MediaPipe dobla
   de más los dedos estirados; la calibración sale de los propios vídeos del DILSE.
+- De la cara se sacan el giro de la cabeza y sus gestos (MediaPipe FaceLandmarker): cabeceo,
+  giro e inclinación respecto a como el signante la tiene en reposo, y boca (la palabra que
+  vocaliza), sonrisa, ceño y cejas levantadas respecto a su cara neutra, sin el temblor de la
+  detección. El avatar gira el cuello y la cabeza y pone esas expresiones con las de su modelo
+  (las cejas, con los morphs de cejas si los tiene). Los contactos con la cara siguen a la
+  cabeza cuando esta se mueve.
+- El codo se guarda como la dirección en la que sale de la línea hombro→muñeca y el avatar lo
+  usa para doblar el brazo como en el vídeo.
+- Si el vídeo ya se había procesado con una versión anterior del script, se vuelve a procesar
+  (cada muestra guarda su `format`).
 - Las trayectorias se suavizan más con la mano casi quieta (donde se nota el temblor) que en
   los movimientos rápidos (para no perder un saludo o un golpe doble), y se quitan los
   keyframes que se pueden sacar interpolando.

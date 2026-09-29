@@ -4,9 +4,9 @@
 Sirve para cualquier colección de vídeos de signos aislados: los del Diccionario de la
 LSE de la Fundación CNSE (DILSE, CC BY-NC-SA), los del corpus de la UPM para generación
 de movimiento, Sign4all, grabaciones propias… Por cada vídeo extrae con MediaPipe la
-pose y las dos manos fotograma a fotograma y escribe un JSON con el mismo formato que
-scripts/swl_lse_export.py. En /dev/grabar → «Importar landmarks» se convierte cada
-muestra en un clip del avatar, se revisa y se descarga; luego
+pose, las dos manos y la cara (giro de la cabeza y gestos) fotograma a fotograma y escribe
+un JSON con el mismo formato que scripts/swl_lse_export.py. En /dev/grabar → «Importar
+landmarks» se convierte cada muestra en un clip del avatar, se revisa y se descarga; luego
 `node scripts/add-captured.mjs archivo.json` lo añade al curso.
 
 Qué signo es cada vídeo:
@@ -42,7 +42,17 @@ VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"}
 MODELS = {
     "pose": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
     "hand": "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task",
+    "face": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
 }
+# Gestos de la cara que se guardan (blendshapes de FaceLandmarker, en este orden): cejas,
+# ojos, boca. En LSE son parte del signo (preguntas, negación, intensidad, labialización).
+BLENDSHAPES = (
+    "browDownLeft", "browDownRight", "browInnerUp", "browOuterUpLeft", "browOuterUpRight",
+    "eyeBlinkLeft", "eyeBlinkRight", "eyeWideLeft", "eyeWideRight", "jawOpen", "mouthClose",
+    "mouthFunnel", "mouthPucker", "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft",
+    "mouthStretchRight", "mouthFrownLeft", "mouthFrownRight", "cheekPuff",
+)
+FORMAT = 3  # 3: con la cara (blendshapes y giro de la cabeza)
 
 
 def model_path(kind: str, cache: Path) -> str:
@@ -61,7 +71,7 @@ def point(p, visibility: bool = False) -> list[float]:
     return out
 
 
-def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], float, float]:
+def extract(video: Path, pose_model: str, hand_model: str, face_model: str) -> tuple[list[dict], float, float]:
     import cv2
     import mediapipe as mp
     from mediapipe.tasks.python import BaseOptions
@@ -73,6 +83,12 @@ def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], 
     )
     hands = vision.HandLandmarker.create_from_options(
         vision.HandLandmarkerOptions(base_options=BaseOptions(model_asset_path=hand_model), running_mode=mode, num_hands=2)
+    )
+    faces = vision.FaceLandmarker.create_from_options(
+        vision.FaceLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=face_model), running_mode=mode, num_faces=1,
+            output_face_blendshapes=True, output_facial_transformation_matrixes=True,
+        )
     )
     capture = cv2.VideoCapture(str(video))
     fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
@@ -102,20 +118,27 @@ def extract(video: Path, pose_model: str, hand_model: str) -> tuple[list[dict], 
             for img, wld in zip(h.hand_landmarks or [], h.hand_world_landmarks or []):
                 if len(img) == 21 and len(wld) == 21:
                     entry["hands"].append({"image": [point(q) for q in img], "world": [point(q) for q in wld]})
+            fc = faces.detect_for_video(image, timestamp)
+            if fc.face_blendshapes and fc.facial_transformation_matrixes:
+                scores = {c.category_name: c.score for c in fc.face_blendshapes[0]}
+                entry["faceBs"] = [round(float(scores.get(n, 0.0)), 3) for n in BLENDSHAPES]
+                # Giro de la cabeza respecto a la cámara (matriz 3×3 por filas).
+                entry["headR"] = [round(float(x), 4) for x in fc.facial_transformation_matrixes[0][:3, :3].flatten()]
             frames.append(entry)
     finally:
         capture.release()
         pose.close()
         hands.close()
+        faces.close()
     return frames, fps, round(width / height, 4)
 
 
-def extract_task(task: tuple[Path, Path, str, str, str]) -> tuple[str, dict]:
-    video, root, sign, pose_model, hand_model = task
-    frames, fps, aspect = extract(video, pose_model, hand_model)
+def extract_task(task: tuple[Path, Path, str, str, str, str]) -> tuple[str, dict]:
+    video, root, sign, pose_model, hand_model, face_model = task
+    frames, fps, aspect = extract(video, pose_model, hand_model, face_model)
     # aspect (ancho/alto): las coordenadas de imagen van de 0 a 1 en los dos ejes.
     return sign, {"sample": video.relative_to(root).as_posix(), "label": video.stem, "fps": fps,
-                  "aspect": aspect, "bytes": video.stat().st_size, "frames": frames}
+                  "aspect": aspect, "bytes": video.stat().st_size, "format": FORMAT, "frames": frames}
 
 
 def sign_for(video: Path, root: Path, mapping: dict[str, str], wanted: set[str]) -> str | None:
@@ -166,6 +189,7 @@ def main() -> None:
         sys.exit(f"No hay vídeos en {args.videos}")
     pose_model = model_path("pose", args.models)
     hand_model = model_path("hand", args.models)
+    face_model = model_path("face", args.models)
 
     out: dict = {"source": args.source, "license": args.license, "doi": args.url, "fps": 25.0, "signs": {}}
     if args.out.exists():
@@ -179,7 +203,7 @@ def main() -> None:
                 sample["url"] = pages[sign]
     # Ya hechos, salvo que el vídeo haya cambiado (p. ej. otra acepción con el mismo nombre).
     done = {sample["sample"]: sample.get("bytes") for samples in out["signs"].values() for sample in samples
-            if "aspect" in sample}  # las de antes no tienen la cara en la imagen: se rehacen
+            if sample.get("format") == FORMAT}  # las de un formato anterior se rehacen
     skipped = []
     tasks = []
     for video in videos:
@@ -191,7 +215,7 @@ def main() -> None:
             continue
         rel = video.relative_to(args.videos).as_posix()
         if rel not in done or done[rel] not in (None, video.stat().st_size):
-            tasks.append((video, args.videos, sign, pose_model, hand_model))
+            tasks.append((video, args.videos, sign, pose_model, hand_model, face_model))
     if len(tasks) < len(videos) - len(skipped):
         print(f"Ya en {args.out}: {len(videos) - len(skipped) - len(tasks)} vídeos; faltan {len(tasks)}.")
 

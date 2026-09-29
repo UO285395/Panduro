@@ -1,4 +1,4 @@
-import type { AvatarClip, AvatarKeyframe, FingerValue } from "@/lib/curriculum/schema";
+import { EXPRESSIONS, type AvatarClip, type AvatarKeyframe, type Expressions, type FingerValue } from "@/lib/curriculum/schema";
 import { getFingerFlex, isMeasured, MCP_MAX, PIP_MAX, REST_AZIMUTH, type MeasuredFinger } from "./pose";
 
 /** Velocidad de reproducción de los signos (0.8 = un 20 % más despacio). */
@@ -22,13 +22,14 @@ type Vec3 = [number, number, number];
  * una oscilación. Al principio y al final del signo arranca y se detiene sin tirones.
  */
 
-const HAND_CHANNELS = 13; // x y z · rot×3 · roll · palm×3 · point×3
+const HAND_CHANNELS = 16; // x y z · rot×3 · roll · palm×3 · point×3 · codo×3
 const FINGER_CHANNELS = 15; // por dedo: flexión y abducción, o azimut, elevación y flexión (medido)
 
 type Layout = {
   roll: boolean;
   palm: boolean;
   point: boolean;
+  elbow: boolean;
 };
 
 type Prepared = {
@@ -44,6 +45,9 @@ type Prepared = {
   measured2: boolean[];
   twoHands: boolean;
   fingers2: boolean;
+  head: boolean;
+  /** Expresiones que aparecen en el clip; donde un keyframe no la tiene, vale 0. */
+  expr: (keyof Expressions)[];
 };
 
 const cache = new WeakMap<AvatarClip, Prepared>();
@@ -73,7 +77,8 @@ function handChannels(kfs: AvatarKeyframe[], i: number, pick: (k: AvatarKeyframe
   if (!h) return new Array(HAND_CHANNELS).fill(0);
   const palm = nearest(kfs, i, (k) => pick(k)?.palmDir) ?? [0, 0, 1];
   const point = nearest(kfs, i, (k) => pick(k)?.pointDir) ?? [0, 1, 0];
-  return [h.x, h.y, h.z, ...h.rot, h.forearmRoll ?? 0, ...palm, ...point];
+  const elbow = nearest(kfs, i, (k) => pick(k)?.elbowDir) ?? [0, -1, 0];
+  return [h.x, h.y, h.z, ...h.rot, h.forearmRoll ?? 0, ...palm, ...point, ...elbow];
 }
 
 function fingerChannels(f: Fingers, measured: boolean[]): number[] {
@@ -85,6 +90,7 @@ function layoutOf(kfs: AvatarKeyframe[], pick: (k: AvatarKeyframe) => Hand | und
     roll: kfs.some((k) => pick(k)?.forearmRoll !== undefined),
     palm: kfs.some((k) => pick(k)?.palmDir !== undefined),
     point: kfs.some((k) => pick(k)?.pointDir !== undefined),
+    elbow: kfs.some((k) => pick(k)?.elbowDir !== undefined),
   };
 }
 
@@ -101,11 +107,15 @@ function prepare(clip: AvatarClip): Prepared {
     }));
   const measured = measuredIn((k) => k.fingers);
   const measured2 = measuredIn((k) => k.fingers2);
+  const head = kfs.some((k) => k.head);
+  const expr = EXPRESSIONS.filter((e) => kfs.some((k) => k.expr?.[e] !== undefined));
   const values = kfs.map((kf, i) => [
     ...handChannels(kfs, i, (k) => k.hand),
     ...fingerChannels(kf.fingers, measured),
     ...(twoHands ? handChannels(kfs, i, (k) => k.hand2) : []),
     ...(fingers2 ? fingerChannels(nearest(kfs, i, (k) => k.fingers2)!, measured2) : []),
+    ...(head ? nearest(kfs, i, (k) => k.head)! : []),
+    ...expr.map((e) => kf.expr?.[e] ?? 0),
   ]);
   const times = kfs.map((k) => k.t);
   const n = kfs.length;
@@ -139,6 +149,8 @@ function prepare(clip: AvatarClip): Prepared {
     measured2,
     twoHands,
     fingers2,
+    head,
+    expr,
   };
   cache.set(clip, prepared);
   return prepared;
@@ -159,6 +171,7 @@ function toHand(c: number[], at: number, layout: Layout): Hand {
   if (layout.roll) hand.forearmRoll = c[at + 6]!;
   if (layout.palm) hand.palmDir = unit(c.slice(at + 7, at + 10));
   if (layout.point) hand.pointDir = unit(c.slice(at + 10, at + 13));
+  if (layout.elbow) hand.elbowDir = unit(c.slice(at + 13, at + 16));
   return hand;
 }
 
@@ -183,7 +196,19 @@ function toKeyframe(p: Prepared, c: number[], t: number): AvatarKeyframe {
     kf.hand2 = toHand(c, at, p.hand2);
     at += HAND_CHANNELS;
   }
-  if (p.fingers2) kf.fingers2 = toFingers(c, at, p.abduction2, p.measured2);
+  if (p.fingers2) {
+    kf.fingers2 = toFingers(c, at, p.abduction2, p.measured2);
+    at += FINGER_CHANNELS;
+  }
+  if (p.head) {
+    kf.head = [c[at]!, c[at + 1]!, c[at + 2]!];
+    at += 3;
+  }
+  if (p.expr.length) {
+    const expr: Expressions = {};
+    p.expr.forEach((e, k) => (expr[e] = Math.max(0, Math.min(1, c[at + k]!))));
+    kf.expr = expr;
+  }
   return kf;
 }
 

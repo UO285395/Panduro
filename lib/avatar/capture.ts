@@ -1,4 +1,4 @@
-import type { AvatarClip, AvatarKeyframe, Contact } from "@/lib/curriculum/schema";
+import type { AvatarClip, AvatarKeyframe, Contact, Expressions } from "@/lib/curriculum/schema";
 import type { Point3 } from "@/lib/mediapipe/types";
 import type { FaceCoords } from "./bodyPoints";
 import {
@@ -34,6 +34,12 @@ export type CaptureFrame = {
   /** landmarks de PoseLandmarker en la imagen (al menos la cara, 0-10) y ancho/alto del vídeo. */
   poseImage?: Point3[] | null;
   aspect?: number;
+  /**
+   * FaceLandmarker: blendshapes en el orden de FACE_BLENDSHAPES y giro de la cabeza respecto
+   * a la cámara (matriz 3×3 por filas; x a la derecha de la imagen, y arriba, z hacia la cámara).
+   */
+  faceBlend?: number[] | null;
+  headR?: number[] | null;
   /** Manos ya asignadas a su lado anatómico (ver assignHands). */
   hands: Partial<Record<Side, HandSample>>;
 };
@@ -66,7 +72,9 @@ const SMOOTH_SPEED = 1.0;
  * posición en unidades del espacio de signado (~1.5 % del brazo), direcciones de la mano
  * (~5°) y dedos (rad, ~7°). Sin los keyframes sobrantes la spline no sigue el temblor.
  */
-const SIMPLIFY_TOL = { pos: 0.015, dir: 0.09, finger: 0.12 };
+const SIMPLIFY_TOL = { pos: 0.015, dir: 0.09, finger: 0.12, elbow: 0.2, head: 0.035, expr: 0.12 };
+/** Separación mínima del codo respecto a la línea hombro→muñeca (en brazos) para fiarse de ella. */
+const ELBOW_MIN = 0.06;
 const FULL = distributeFlex(1);
 const FINGER_MAX = FULL.proximal + FULL.middle + FULL.distal;
 /** Igual que THUMB_FLEX_SCALE del mapper: el pulgar dobla menos. */
@@ -111,6 +119,7 @@ const median = (xs: number[]) => {
   return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
 };
 const round = (x: number) => Math.round(x * 1000) / 1000;
+const round2 = (x: number) => Math.round(x * 100) / 100;
 const mirrorX = (a: Vec): Vec => [-a[0], a[1], a[2]];
 
 /** Inversa de smoothstep: distributeFlex aplica smoothstep a la flexión. */
@@ -251,6 +260,8 @@ type Sample = {
   pos: Vec;
   /** fingers: flexión 0..1; joints: fingerPose aplanado (5 × 3). */
   hand?: { fingers: number[]; joints: number[]; palm: Vec; point: Vec; image: Point3[] };
+  /** Hacia dónde sale el codo de la línea hombro→muñeca (sin él, el brazo está casi recto). */
+  elbow?: Vec;
   /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
   touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number; face?: FaceCoords };
 };
@@ -262,8 +273,16 @@ export const TOUCH_NEAR = 0.035;
 export const TOUCH_FAR = 0.07;
 /** Un contacto que dura esto o más cuenta como pleno (ver touchRuns). */
 const TOUCH_HOLD_MS = 200;
-/** Peso de la profundidad (z de la cámara) al medir si la mano toca la cara. */
+/**
+ * Peso de la profundidad (z de la cámara) al medir si la mano toca la cara. Con el brazo
+ * levantado MediaPipe pone la mano 20-30 cm por delante de donde está: dentro de la cara y
+ * por encima de la barbilla, que la mano se vea encima en la imagen pesa más (DESCUBRIR,
+ * NARIZ, DULCE, TELÉFONO…); en la barbilla y por debajo no, porque una mano delante del
+ * cuello o del pecho se proyecta justo ahí (IGUALDAD, PORQUE, TRADICIÓN).
+ */
 const FACE_DEPTH_WEIGHT = 0.25;
+const FACE_DEPTH_WEIGHT_INSIDE = 0.15;
+const CHIN_V = -1.6;
 
 /**
  * Qué toca la mano en un fotograma: la parte de la mano (yemas, índice, pulgar, palma o
@@ -336,14 +355,24 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   // espacio está estrechada y daba la sien o la mejilla más lejos de lo que estaban.
   const imageOf = (ids: number[]) =>
     ids.reduce((acc, i) => ({ x: acc.x + h.image[i]!.x / ids.length, y: acc.y + h.image[i]!.y / ids.length }), { x: 0, y: 0 });
-  const faceTouch = (what: NonNullable<Contact["with"]>, q: Vec): Sample["touch"] => {
+  // Hacia la cámara (hacia el interlocutor) es -z en las coordenadas de MediaPipe.
+  const o = handOrientation(h.world, side);
+  const indexDir = unit(sub(v(h.world[8]!), v(h.world[5]!)));
+  /** null: la parte no puede estar tocando la cara; undefined: no hay cara en la imagen. */
+  const faceTouch = (what: NonNullable<Contact["with"]>, q: Vec): Sample["touch"] | null => {
     if (!f.poseImage) return undefined;
+    // Con las yemas o la palma mirando hacia delante la mano pasa por delante de la cara (se
+    // ve encima en la imagen), no la toca.
+    if (what === "index" && -indexDir[2] > 0.5) return null;
+    if (what === "tips" && -o.point[2] > 0.5) return null;
+    if (what === "palm" && -o.palm[2] > 0.3) return null;
     const face = faceCoords(f.poseImage, f.aspect ?? 1, imageOf(partIds.find(([n]) => n === what)![1]));
     if (!face) return undefined;
     const at = namedFacePoint(face);
     const ref = targets.find(([name]) => name === at) ?? targets.find(([name]) => name === "forehead")!;
     const depth = q[2] - ref[1][2];
-    return { at, with: what, face, d: Math.hypot(outsideFace(face), FACE_DEPTH_WEIGHT * depth) };
+    const w = outsideFace(face) === 0 && face[1] > CHIN_V ? FACE_DEPTH_WEIGHT_INSIDE : FACE_DEPTH_WEIGHT;
+    return { at, with: what, face, d: Math.hypot(outsideFace(face), w * depth) };
   };
 
   let best: Sample["touch"];
@@ -355,7 +384,7 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
       bestPart = q;
     }
     for (const [where, tp] of targets) {
-      if (onFace && !where.startsWith("other")) continue;
+      if (onFace !== undefined && !where.startsWith("other")) continue;
       const diff = sub(q, tp);
       // Contra la cara, la profundidad cuenta poco: con el brazo levantado la pose pone la
       // muñeca 15-30 cm por delante aunque la mano toque la frente o la barbilla (en el
@@ -591,6 +620,104 @@ function channel(
   return smooth(out, sigmaMs);
 }
 
+/** Orden de los blendshapes que guarda scripts/videos_to_signs.py (BLENDSHAPES). */
+export const FACE_BLENDSHAPES = [
+  "browDownLeft", "browDownRight", "browInnerUp", "browOuterUpLeft", "browOuterUpRight",
+  "eyeBlinkLeft", "eyeBlinkRight", "eyeWideLeft", "eyeWideRight", "jawOpen", "mouthClose",
+  "mouthFunnel", "mouthPucker", "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft",
+  "mouthStretchRight", "mouthFrownLeft", "mouthFrownRight", "cheekPuff",
+] as const;
+type Blendshape = (typeof FACE_BLENDSHAPES)[number];
+const bs = (b: number[], ...names: Blendshape[]) =>
+  names.reduce((acc, n) => acc + (b[FACE_BLENDSHAPES.indexOf(n)] ?? 0), 0) / names.length;
+
+/**
+ * Cada gesto de la cara a partir de los blendshapes de MediaPipe: lo que cuenta es lo
+ * que se aparta de la cara neutra del propio signante (hay quien tiene las cejas bajas o
+ * sonríe en reposo), menos lo que se mueve sin querer, y a partir de ahí [zona muerta,
+ * recorrido hasta el máximo]. Medido en los 305 vídeos del DILSE: el ceño sale en QUÉ, QUIÉN
+ * y CUÁNDO, las cejas arriba en DESCUBRIR y PERDÓN, la sonrisa en ALEGRE y SÍ, la boca
+ * abierta en SORPRENDIDO y los labios en «u» al vocalizar NUBLADO o CUÁNTO. El parpadeo del
+ * vídeo no se copia: es al azar y el avatar ya parpadea solo.
+ */
+const EXPRESSION_SOURCES: [keyof Expressions, (b: number[]) => number, number, number][] = [
+  ["jaw", (b) => bs(b, "jawOpen"), 0.04, 0.35],
+  ["pucker", (b) => bs(b, "mouthPucker"), 0.05, 0.9],
+  ["stretch", (b) => bs(b, "mouthStretchLeft", "mouthStretchRight"), 0.03, 0.15],
+  ["smile", (b) => bs(b, "mouthSmileLeft", "mouthSmileRight"), 0.08, 0.35],
+  ["frown", (b) => bs(b, "mouthFrownLeft", "mouthFrownRight"), 0.03, 0.25],
+  ["browDown", (b) => bs(b, "browDownLeft", "browDownRight"), 0.08, 0.3],
+  ["browUp", (b) => Math.max(bs(b, "browInnerUp"), bs(b, "browOuterUpLeft", "browOuterUpRight")), 0.05, 0.3],
+];
+/** Suavizado de la cabeza y la cara (ms): la labialización cambia deprisa. */
+const HEAD_SIGMA_MS = 70;
+const EXPR_SIGMA_MS = 50;
+/** Por debajo de esto, en todo el signo, la cabeza está quieta (lo demás es la detección). */
+const HEAD_MIN = 4 * DEG;
+const HEAD_MAX = 35 * DEG;
+/** Una expresión que no llega a esto en todo el signo no se guarda; y por keyframe, menos de EXPR_MIN es 0. */
+const EXPR_PEAK = 0.2;
+const EXPR_MIN = 0.06;
+
+/**
+ * Giro de la cabeza (ver AvatarKeyframe.head) a partir de la matriz de FaceLandmarker: las
+ * columnas son los ejes de la cara en la cámara. La derecha del signante es la izquierda de
+ * la imagen, así que el giro y el cabeceo cambian de signo.
+ */
+function headAngles(m: number[]): Vec {
+  const fwd: Vec = [m[2]!, m[5]!, m[8]!];
+  const right: Vec = [m[0]!, m[3]!, m[6]!];
+  return [-Math.atan2(fwd[0], fwd[2]), -Math.asin(clamp(fwd[1], -1, 1)), Math.atan2(right[1], right[0])];
+}
+
+/**
+ * Cabeza y cara durante el signo, respecto a como las tiene el signante en reposo (los
+ * fotogramas de antes y después del signo; si no hay bastantes, todos): el avatar no hereda
+ * que la cámara esté algo ladeada ni la cara de cada uno.
+ */
+function faceTrack(
+  frames: CaptureFrame[],
+  lo: number,
+  hi: number,
+  times: number[],
+  leftHanded: boolean,
+): { head: Vec[] | null; expr: (Expressions | null)[] } | null {
+  const all = frames
+    .map((f, i) => ({ f, i }))
+    .filter(({ f }) => f.headR?.length === 9 && f.faceBlend?.length === FACE_BLENDSHAPES.length);
+  const inRange = all.filter(({ i }) => i >= lo && i <= hi);
+  if (inRange.length < 0.5 * (hi - lo + 1)) return null;
+  const rest = all.filter(({ i }) => i < lo || i > hi);
+  const neutral = rest.length >= 4 ? rest : all;
+  const heads = (xs: typeof all) => xs.map(({ f }) => headAngles(f.headR!));
+  const exprs = (xs: typeof all) => xs.map(({ f }) => EXPRESSION_SOURCES.map(([, get]) => get(f.faceBlend!)));
+  const h0 = [0, 1, 2].map((k) => median(heads(neutral).map((h) => h[k]!)));
+  const e0 = EXPRESSION_SOURCES.map((_, k) => median(exprs(neutral).map((e) => e[k]!)));
+
+  const headPts = inRange.map(({ f }) => ({ t: f.t, val: headAngles(f.headR!).map((a, k) => a - h0[k]!) }));
+  // En espejo (zurdos) el giro y la inclinación cambian de lado; el cabeceo no.
+  const flip = leftHanded ? [-1, 1, -1] : [1, 1, 1];
+  const head = resample(smooth(headPts, HEAD_SIGMA_MS), times).map(
+    (h) => h.map((a, k) => round2(clamp(a * flip[k]!, -HEAD_MAX, HEAD_MAX))) as Vec,
+  );
+  const moves = head.some((h) => h.some((a) => Math.abs(a) >= HEAD_MIN));
+
+  const exprPts = inRange.map(({ f }) => ({
+    t: f.t,
+    val: EXPRESSION_SOURCES.map(([, get, dead, span], k) => clamp((get(f.faceBlend!) - e0[k]! - dead) / span, 0, 1)),
+  }));
+  const weights = resample(smooth(exprPts, EXPR_SIGMA_MS), times);
+  const used = EXPRESSION_SOURCES.map((_, k) => weights.some((w) => w[k]! >= EXPR_PEAK));
+  const expr = weights.map((w) => {
+    const e: Expressions = {};
+    EXPRESSION_SOURCES.forEach(([name], k) => {
+      if (used[k] && w[k]! >= EXPR_MIN) e[name] = round2(w[k]!);
+    });
+    return Object.keys(e).length ? e : null;
+  });
+  return { head: moves ? head : null, expr };
+}
+
 export function framesToClip(
   frames: CaptureFrame[],
   opts: {
@@ -658,12 +785,26 @@ export function framesToClip(
       ? Y_CHEST + ((Y_MOUTH - Y_CHEST) * (up - chestUp)) / (mouthUp - chestUp)
       : Y_MOUTH + (Y_PER_FACE * (up - mouthUp)) / Math.max(0.02, eyesUp - mouthUp);
 
+  /**
+   * El codo como polo de la IK del avatar: hacia dónde sale de la línea hombro→muñeca, en el
+   * espacio del signante. Con el brazo casi recto esa dirección es ruido y no se da.
+   */
+  const elbowOf = (p: Landmark[], si: number, ei: number, wi: number): Vec | undefined => {
+    if ((p[ei]!.visibility ?? 1) < 0.5) return undefined;
+    const s = v(p[si]!);
+    const axis = unit(sub(v(p[wi]!), s));
+    const e = sub(v(p[ei]!), s);
+    const off = sub(e, scale(axis, dot(e, axis)));
+    return len(off) < ELBOW_MIN * armLen ? undefined : toSigner(unit(off));
+  };
+
   const sampleSide = (f: CaptureFrame, side: Side): Sample | null => {
     const p = f.poseWorld;
     if (!p || p.length <= P.rWrist) return null;
-    const [si, wi] = side === "right" ? [P.rShoulder, P.rWrist] : [P.lShoulder, P.lWrist];
+    const [si, ei, wi] = side === "right" ? [P.rShoulder, P.rElbow, P.rWrist] : [P.lShoulder, P.lElbow, P.lWrist];
     const wrist = p[wi]!;
     if ((wrist.visibility ?? 1) < 0.5) return null;
+    const elbow = elbowOf(p, si, ei, wi);
     const rel = sub(v(wrist), v(p[si]!));
     const outward = side === "right" ? R : scale(R, -1);
     const up = heightNearFace(f, wi, dot(sub(v(wrist), mid(p[P.lShoulder]!, p[P.rShoulder]!)), U));
@@ -673,12 +814,13 @@ export function framesToClip(
       (dot(rel, F) / armLen - 0.55) / 0.9,
     ];
     const h = f.hands[side];
-    if (!h || mirroredHand(h.world, side)) return { t: f.t, pos };
+    if (!h || mirroredHand(h.world, side)) return { t: f.t, pos, elbow };
     const o = handOrientation(h.world, side);
     const fingers = fingerFlex(h.world, side);
     return {
       t: f.t,
       pos,
+      elbow,
       hand: { fingers, joints: fingerPose(h.world, side).flat(), palm: toSigner(o.palm), point: toSigner(o.point), image: h.image },
       touch: detectTouch(f, side, fingers),
     };
@@ -720,11 +862,16 @@ export function framesToClip(
     const fingerCh = channel(samples, (s) => s.hand?.joints, sigma);
     const palmCh = channel(samples, (s) => s.hand?.palm, sigma);
     const pointCh = channel(samples, (s) => s.hand?.point, sigma);
+    const elbowCh = channel(samples, (s) => s.elbow, sigma);
     return {
       pos,
       fingers: fingerCh.length ? resample(fingerCh, times) : null,
       palm: palmCh.length ? resample(palmCh, times).map((a) => mirror(unit(a as Vec))) : null,
       point: pointCh.length ? resample(pointCh, times).map((a) => mirror(unit(a as Vec))) : null,
+      // Solo si el brazo está doblado en buena parte del signo; si no, el polo por defecto.
+      elbow: elbowCh.length >= 0.5 * samples.filter(Boolean).length
+        ? resample(elbowCh, times).map((a) => mirror(unit(a as Vec)))
+        : null,
     };
   };
 
@@ -743,6 +890,7 @@ export function framesToClip(
     ...(d.palm && d.point
       ? { palmDir: d.palm[i]!.map(round) as Vec, pointDir: d.point[i]!.map(round) as Vec }
       : {}),
+    ...(d.elbow ? { elbowDir: d.elbow[i]!.map(round2) as Vec } : {}),
   });
   const fingerSpec = (d: ReturnType<typeof build>, i: number): AvatarKeyframe["fingers"] => {
     const j = d.fingers?.[i];
@@ -762,10 +910,14 @@ export function framesToClip(
     return run && contactOfRun(run, t, opts.leftHanded ?? false);
   };
 
+  const face = faceTrack(frames, lo, hi, times, opts.leftHanded ?? false);
+
   const keyframes: AvatarKeyframe[] = times.map((t, i) => {
     const contact = contactAt(t);
     return {
       t: Math.round(t - t0),
+      ...(face?.head ? { head: face.head[i]! } : {}),
+      ...(face?.expr[i] ? { expr: face.expr[i]! } : {}),
       hand: { ...handSpec(main, i), ...(contact ? { contact } : {}) },
       fingers: fingerSpec(main, i),
       ...(second ? { hand2: handSpec(second, i), fingers2: fingerSpec(second, i) } : {}),
@@ -795,7 +947,7 @@ export function framesToClip(
 }
 
 /** Canales de un keyframe agrupados por tolerancia (ver SIMPLIFY_TOL). */
-function channelsOf(k: AvatarKeyframe): { pos: number[]; dir: number[]; finger: number[] } {
+function channelsOf(k: AvatarKeyframe): Record<keyof typeof SIMPLIFY_TOL, number[]> {
   const hands = [k.hand, k.hand2].filter((h): h is AvatarKeyframe["hand"] => !!h);
   const fingerVals = [k.fingers, k.fingers2 ?? []].flatMap((fs) =>
     fs.flatMap((f) => (Array.isArray(f) ? f : typeof f === "number" ? [f] : [f.flex, f.abduction ?? 0])),
@@ -804,6 +956,9 @@ function channelsOf(k: AvatarKeyframe): { pos: number[]; dir: number[]; finger: 
     pos: hands.flatMap((h) => [h.x, h.y, h.z]),
     dir: hands.flatMap((h) => [...(h.palmDir ?? []), ...(h.pointDir ?? [])]),
     finger: fingerVals,
+    elbow: hands.flatMap((h) => h.elbowDir ?? []),
+    head: k.head ?? [],
+    expr: EXPRESSION_SOURCES.map(([name]) => k.expr?.[name] ?? 0),
   };
 }
 
@@ -832,7 +987,7 @@ export function simplifyKeyframes(kfs: AvatarKeyframe[]): AvatarKeyframe[] {
   const err = (i: number, a: number, b: number) => {
     const u = (kfs[i]!.t - kfs[a]!.t) / (kfs[b]!.t - kfs[a]!.t || 1);
     let worst = 0;
-    for (const g of ["pos", "dir", "finger"] as const) {
+    for (const g of Object.keys(SIMPLIFY_TOL) as (keyof typeof SIMPLIFY_TOL)[]) {
       const va = ch[a]![g];
       const vb = ch[b]![g];
       const vi = ch[i]![g];

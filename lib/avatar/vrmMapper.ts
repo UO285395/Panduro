@@ -1,7 +1,7 @@
 import type { VRM } from "@pixiv/three-vrm";
-import { VRMHumanBoneName as B } from "@pixiv/three-vrm";
+import { VRMHumanBoneName as B, VRMExpression, VRMExpressionMorphTargetBind } from "@pixiv/three-vrm";
 import * as THREE from "three";
-import type { AvatarClip, AvatarKeyframe, Contact } from "@/lib/curriculum/schema";
+import { EXPRESSIONS, type AvatarClip, type AvatarKeyframe, type Contact, type Expressions } from "@/lib/curriculum/schema";
 import {
   faceSurface,
   isOtherHand,
@@ -33,6 +33,7 @@ import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST,
 
 type Side = "Right" | "Left";
 type HandSpec = AvatarKeyframe["hand"];
+type Vec3 = [number, number, number];
 
 const ARM = {
   Right: { upper: B.RightUpperArm, lower: B.RightLowerArm, hand: B.RightHand },
@@ -98,6 +99,13 @@ export type VrmRig = {
   body: BodyMap;
   /** Lo más adelantado de la cabeza por columnas: dónde cae un contacto con coordenadas de cara. */
   face: FaceGrid;
+  /** Articulaciones del cuello y de la cabeza en reposo: el giro de la cabeza se reparte entre las dos. */
+  neck: THREE.Vector3;
+  head: THREE.Vector3;
+  /** Expresión del modelo (y peso máximo) para cada gesto de la cara que puede hacer. */
+  expressions: Partial<Record<keyof Expressions, [string, number]>>;
+  /** Todas las expresiones que toca el mapper, parpadeo incluido. */
+  exprNames: string[];
   /** Clips con los contactos ya resueltos para este modelo. */
   resolved: WeakMap<AvatarClip, AvatarClip>;
 };
@@ -234,8 +242,63 @@ export function createVrmRig(vrm: VRM): VrmRig {
     eyes: origin,
     body,
     face,
+    neck: pos(B.Neck) ?? head.clone(),
+    head,
+    ...faceExpressions(vrm),
     resolved: new WeakMap(),
   };
+}
+
+/**
+ * Cada gesto de la cara en las expresiones del modelo: la boca con sus vocales (VRM trae
+ * aa, ih, ou, ee y oh) y la sonrisa y la pena con las emociones. Las cejas, con los morphs
+ * que muevan solo las cejas si el modelo los tiene: el «angry» de muchos modelos anime pinta
+ * además un símbolo de enfado en la frente, y VRM0 no trae cejas levantadas.
+ */
+function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
+  const em = vrm.expressionManager;
+  if (!em) return { expressions: {}, exprNames: [] };
+  const custom = (name: string, pick: (target: string, mesh: string) => boolean): string | null => {
+    if (em.getExpression(name)) return name;
+    const expr = new VRMExpression(name);
+    let binds = 0;
+    vrm.scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.morphTargetDictionary) return;
+      const meshName = `${mesh.parent?.name ?? ""}/${mesh.name}`;
+      for (const [target, index] of Object.entries(mesh.morphTargetDictionary)) {
+        if (!pick(target, meshName)) continue;
+        expr.addBind(new VRMExpressionMorphTargetBind({ primitives: [mesh], index, weight: 1 }));
+        binds++;
+      }
+    });
+    if (!binds) return null;
+    em.registerExpression(expr);
+    return name;
+  };
+  const has = (name: string) => (em.getExpression(name) ? name : null);
+  // Ceño: cejas abajo y, si la malla de las cejas tiene su forma de enfado, también esa.
+  const browDown = custom(
+    "panduroBrowDown",
+    (t, mesh) => /eyebrows?[ _.]*down|brw_angry/i.test(t) || (/brow/i.test(mesh) && /angry/i.test(t)),
+  );
+  const browUp = custom("panduroBrowUp", (t) => /eyebrows?[ _.]*up|brw_surprised/i.test(t));
+  const table: Record<keyof Expressions, [string | null, number]> = {
+    jaw: [has("aa"), 1],
+    pucker: [has("ou"), 0.9],
+    stretch: [has("ih"), 0.8],
+    smile: [has("happy"), 0.8],
+    frown: [has("sad"), 0.8],
+    browDown: browDown ? [browDown, 1] : [has("angry"), 0.4],
+    browUp: browUp ? [browUp, 1] : [has("surprised"), 1],
+  };
+  const expressions: VrmRig["expressions"] = {};
+  for (const e of EXPRESSIONS) {
+    const [name, gain] = table[e];
+    if (name) expressions[e] = [name, gain];
+  }
+  const exprNames = [...Object.values(expressions).map(([name]) => name), ...(has("blink") ? ["blink"] : [])];
+  return { expressions, exprNames };
 }
 
 const HAIR = /hair|kami|bang|ahoge|髪/i;
@@ -395,13 +458,14 @@ function signingGoal(rig: VrmRig, side: Side, hand: HandSpec): ArmGoal {
     .addScaledVector(outward, hand.x * 1.2 * L)
     .addScaledVector(rig.forward, (0.55 + hand.z * 0.9) * L)
     .setY(heightToModel(rig, hand.y));
-  const pole = outward.clone().multiplyScalar(0.25)
-    .addScaledVector(rig.up, -1)
-    .addScaledVector(rig.forward, -0.3);
   const toModel = (v: [number, number, number]) =>
     rig.right.clone().multiplyScalar(v[0])
       .addScaledVector(rig.up, v[1])
       .addScaledVector(rig.forward, v[2]);
+  // El codo, hacia donde lo tenía el signante (grabaciones); si no, abajo, algo hacia fuera y atrás.
+  const pole = hand.elbowDir
+    ? toModel(hand.elbowDir)
+    : outward.clone().multiplyScalar(0.25).addScaledVector(rig.up, -1).addScaledVector(rig.forward, -0.3);
   return {
     target,
     pole,
@@ -433,6 +497,64 @@ function heightToModel(rig: VrmRig, y: number): number {
 function heightFromModel(rig: VrmRig, h: number): number {
   if (h <= rig.mouthY) return Y_CHEST + ((Y_MOUTH - Y_CHEST) * (h - rig.chestY)) / (rig.mouthY - rig.chestY);
   return Y_MOUTH + (Y_PER_FACE * (h - rig.mouthY)) / Math.max(1e-3, rig.eyes.y - rig.mouthY);
+}
+
+// --- Cabeza y cara ---------------------------------------------------------
+
+/** Parte del giro de la cabeza que hace el cuello; el resto, la propia cabeza. */
+const NECK_SHARE = 0.4;
+/** Puntos del cuerpo que están en la cabeza y se mueven con ella. */
+const HEAD_POINTS = new Set<string>(["chin", "mouth", "nose", "forehead", "top", "eye", "cheek", "temple", "ear"]);
+
+/** Giro de la cabeza en el modelo (ver AvatarKeyframe.head). */
+function headRotation(rig: VrmRig, head: Vec3 | undefined): THREE.Quaternion {
+  if (!head) return new THREE.Quaternion();
+  const [yaw, pitch, roll] = head;
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  // Ejes de la cara en el espacio del signante: mira hacia `fwd` con la coronilla hacia `up`.
+  const fwd: Vec3 = [sy * cp, -sp, cy * cp];
+  const side: Vec3 = [cy, 0, -sy];
+  const up = [sy * sp, cp, cy * sp].map((u, k) => u * Math.cos(roll) + side[k]! * Math.sin(roll)) as Vec3;
+  const toModel = (v: Vec3) =>
+    rig.right.clone().multiplyScalar(v[0]).addScaledVector(rig.up, v[1]).addScaledVector(rig.forward, v[2]);
+  return rotation(basis(rig.forward, rig.up).invert(), basis(toModel(fwd), toModel(up)));
+}
+
+/** Dónde queda un punto de la cabeza (en reposo) con la cabeza girada `q`. */
+function moveWithHead(rig: VrmRig, q: THREE.Quaternion, p: THREE.Vector3): THREE.Vector3 {
+  const qNeck = new THREE.Quaternion().slerp(q, NECK_SHARE);
+  const headAt = rig.head.clone().sub(rig.neck).applyQuaternion(qNeck).add(rig.neck);
+  return p.clone().sub(rig.head).applyQuaternion(q).add(headAt);
+}
+
+function poseHead(rig: VrmRig, head: Vec3 | undefined) {
+  const q = headRotation(rig, head);
+  const hasNeck = !!rig.vrm.humanoid.getNormalizedBoneNode(B.Neck);
+  const share = hasNeck ? NECK_SHARE : 0;
+  setNorm(rig.vrm, B.Neck, new THREE.Quaternion().slerp(q, share));
+  // La cabeza cuelga del cuello: su parte del giro, ya en el marco del cuello girado.
+  setNorm(rig.vrm, B.Head, new THREE.Quaternion().slerp(q, 1 - share));
+}
+
+/** Parpadeo natural: uno cada 4 s, en un momento distinto de cada tramo, de unos 180 ms. */
+function blinkAt(tMs: number): number {
+  const slot = Math.floor(tMs / 4000);
+  const r = Math.abs(Math.sin(slot * 12.9898 + 78.233) * 43758.5453) % 1;
+  const u = tMs - slot * 4000 - (400 + 2800 * r);
+  if (u < 0 || u > 180) return 0;
+  return u < 70 ? u / 70 : 1 - (u - 70) / 110;
+}
+
+function setExpressions(rig: VrmRig, expr: Expressions | undefined, tMs: number) {
+  const em = rig.vrm.expressionManager;
+  if (!em) return;
+  for (const name of rig.exprNames) em.setValue(name, 0);
+  for (const e of EXPRESSIONS) {
+    const target = rig.expressions[e];
+    if (target) em.setValue(target[0], Math.min(1, (em.getValue(target[0]) ?? 0) + (expr?.[e] ?? 0) * target[1]));
+  }
+  // Con el ceño los ojos se entornan un poco (como en el «angry» del modelo, sin su símbolo).
+  if (rig.exprNames.includes("blink")) em.setValue("blink", Math.max(blinkAt(tMs), 0.25 * (expr?.browDown ?? 0)));
 }
 
 // --- Contactos -------------------------------------------------------------
@@ -520,7 +642,7 @@ type Touched = { p: THREE.Vector3; n: THREE.Vector3 };
  * Dónde está lo que se toca. Los puntos del cuerpo salen de la malla; las partes de la
  * otra mano, de su pose en este mismo keyframe (tiene que estar ya posada).
  */
-function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Fingers): Touched {
+function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Fingers, head?: Vec3): Touched {
   if (isOtherHand(c.at)) {
     const other: Side = side === "Right" ? "Left" : "Right";
     const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
@@ -544,13 +666,20 @@ function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Finge
   const s = c.face ? faceSurface(rig.face, c.face) : surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
   const local = (v: [number, number, number]) =>
     rig.right.clone().multiplyScalar(v[0]).addScaledVector(rig.up, v[1]).addScaledVector(rig.forward, v[2]);
-  return { p: rig.eyes.clone().add(local(s.p)), n: local(s.n) };
+  const p = rig.eyes.clone().add(local(s.p));
+  const n = local(s.n);
+  // En la cara, el punto se mueve con la cabeza si el signo la gira.
+  if (head && (c.face || HEAD_POINTS.has(c.at))) {
+    const q = headRotation(rig, head);
+    return { p: moveWithHead(rig, q, p), n: n.applyQuaternion(q) };
+  }
+  return { p, n };
 }
 
 /** Punto (en el modelo) donde debe quedar la parte de la mano. */
-function contactPoint(rig: VrmRig, side: Side, c: Contact, otherFingers: Fingers): THREE.Vector3 {
+function contactPoint(rig: VrmRig, side: Side, c: Contact, otherFingers: Fingers, head?: Vec3): THREE.Vector3 {
   const L = rig.armLen;
-  const touched = touchedSurface(rig, side, c, otherFingers);
+  const touched = touchedSurface(rig, side, c, otherFingers, head);
   const outward = rig.right.clone().multiplyScalar(side === "Right" ? 1 : -1);
   const skin = c.with === "palm" || c.with === "back" ? SKIN / 2 : SKIN;
   return touched.p
@@ -571,8 +700,9 @@ function reachContact(
   fingers: Fingers,
   c: Contact,
   otherFingers: Fingers,
+  head?: Vec3,
 ): THREE.Vector3 {
-  const want = contactPoint(rig, side, c, otherFingers);
+  const want = contactPoint(rig, side, c, otherFingers, head);
   const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
   root.updateWorldMatrix(true, false);
   const toModel = root.matrixWorld.clone().invert();
@@ -600,6 +730,7 @@ function resolveHand(
   fingers: Fingers,
   /** Dedos de la otra mano si está signando (y ya posada); null si está en reposo. */
   otherFingers: Fingers | null,
+  head?: Vec3,
 ): HandSpec {
   const { contact, ...rest } = hand;
   const L = rig.armLen;
@@ -610,10 +741,10 @@ function resolveHand(
     return { ...rest, z: (fwd / L - 0.55) / 0.9 };
   }
   const other = otherFingers ?? RELAXED;
-  const oriented = { ...rest, ...contactOrientation(rig, side, contact, hand, other) };
+  const oriented = { ...rest, ...contactOrientation(rig, side, contact, hand, other, head) };
   const goal = signingGoal(rig, side, oriented);
   const free = goal.target.clone();
-  const touch = reachContact(rig, side, goal, fingers, contact, other);
+  const touch = reachContact(rig, side, goal, fingers, contact, other, head);
   return { ...oriented, ...toSigningSpace(rig, side, free.lerp(touch, contact.weight ?? 1)) };
 }
 
@@ -632,9 +763,10 @@ function contactOrientation(
   c: Contact,
   hand: HandSpec,
   otherFingers: Fingers,
+  head?: Vec3,
 ): Pick<HandSpec, "palmDir" | "pointDir"> {
   // Normal de lo tocado, en espacio del signante (x su derecha, y arriba, z adelante).
-  const m = touchedSurface(rig, side, c, otherFingers).n;
+  const m = touchedSurface(rig, side, c, otherFingers, head).n;
   const n = new THREE.Vector3(m.dot(rig.right), m.dot(rig.up), m.dot(rig.forward)).normalize();
   const up = new THREE.Vector3(0, 1, 0);
   const fwd = new THREE.Vector3(0, 0, 1);
@@ -678,12 +810,12 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
     keyframes: clip.keyframes.map((kf) => {
       // La mano pasiva primero: la dominante puede tocarla, y para eso tiene que estar posada.
       const fingers2 = kf.fingers2 ?? kf.fingers;
-      const hand2 = kf.hand2 && resolveHand(rig, "Left", kf.hand2, fingers2, null);
+      const hand2 = kf.hand2 && resolveHand(rig, "Left", kf.hand2, fingers2, null, kf.head);
       if (hand2) {
         poseArm(rig, "Left", signingGoal(rig, "Left", hand2));
         poseFingers(rig, "Left", fingers2);
       }
-      return { ...kf, hand: resolveHand(rig, "Right", kf.hand, kf.fingers, hand2 ? fingers2 : null), hand2 };
+      return { ...kf, hand: resolveHand(rig, "Right", kf.hand, kf.fingers, hand2 ? fingers2 : null, kf.head), hand2 };
     }),
   };
   rig.resolved.set(clip, resolved);
@@ -714,6 +846,8 @@ const RELAXED: Fingers = [0.15, 0.15, 0.15, 0.15, 0.15];
  * reposo. El keyframe tiene que venir de un clip pasado por `resolveClip`.
  */
 export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number) {
+  poseHead(rig, kf.head);
+  setExpressions(rig, kf.expr, tMs);
   poseArm(rig, "Right", signingGoal(rig, "Right", kf.hand));
   poseFingers(rig, "Right", kf.fingers);
   if (kf.hand2) {
@@ -727,36 +861,48 @@ export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number) {
 
 /** Reposo: brazos caídos junto al cuerpo, palmas hacia los muslos. */
 export function applyVrmIdle(rig: VrmRig, tMs: number) {
+  poseHead(rig, undefined);
+  setExpressions(rig, undefined, tMs);
   for (const side of ["Right", "Left"] as const) {
     poseArm(rig, side, idleGoal(rig, side, tMs));
     poseFingers(rig, side, RELAXED);
   }
 }
 
-/** Huesos que anima el mapper (brazos y dedos de los dos lados). */
-const POSED: B[] = (["Right", "Left"] as const).flatMap((side) => [
-  ARM[side].upper,
-  ARM[side].lower,
-  ARM[side].hand,
-  ...FINGERS[side].flat(),
-]);
+/** Huesos que anima el mapper (cuello, cabeza, brazos y dedos de los dos lados). */
+const POSED: B[] = [
+  B.Neck,
+  B.Head,
+  ...(["Right", "Left"] as const).flatMap((side) => [
+    ARM[side].upper,
+    ARM[side].lower,
+    ARM[side].hand,
+    ...FINGERS[side].flat(),
+  ]),
+];
 
-export type PoseSnapshot = Map<B, THREE.Quaternion>;
+export type PoseSnapshot = { bones: Map<B, THREE.Quaternion>; expr: Map<string, number> };
 
 /** Copia de la pose actual, para fundirla con la siguiente. */
 export function snapshotPose(rig: VrmRig): PoseSnapshot {
-  const snap: PoseSnapshot = new Map();
+  const snap: PoseSnapshot = { bones: new Map(), expr: new Map() };
   for (const name of POSED) {
     const node = rig.vrm.humanoid.getNormalizedBoneNode(name);
-    if (node) snap.set(name, node.quaternion.clone());
+    if (node) snap.bones.set(name, node.quaternion.clone());
   }
+  for (const e of rig.exprNames) snap.expr.set(e, rig.vrm.expressionManager?.getValue(e) ?? 0);
   return snap;
 }
 
 /** Mezcla la pose recién aplicada con una anterior (u = 0 anterior, 1 nueva). */
 export function blendFromSnapshot(rig: VrmRig, from: PoseSnapshot, u: number) {
-  for (const [name, q] of from) {
+  for (const [name, q] of from.bones) {
     const node = rig.vrm.humanoid.getNormalizedBoneNode(name);
     if (node) node.quaternion.copy(q.clone().slerp(node.quaternion, u));
+  }
+  const em = rig.vrm.expressionManager;
+  for (const [e, w] of from.expr) {
+    // El parpadeo no se funde: a medias dejaría los ojos entornados.
+    if (em && e !== "blink") em.setValue(e, w + ((em.getValue(e) ?? 0) - w) * u);
   }
 }

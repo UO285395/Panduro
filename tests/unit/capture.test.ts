@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assignHands,
+  FACE_BLENDSHAPES,
   faceCoords,
   fingerFlex,
   fingerPose,
@@ -461,5 +462,54 @@ describe("capture: suavizado según la velocidad", () => {
 
   it("una oscilación rápida conserva su amplitud", () => {
     expect(spread(adaptive, 1100, 1900)).toBeGreaterThan(0.85 * spread(fixed, 1100, 1900));
+  });
+});
+
+describe("capture: cabeza, cara y codo", () => {
+  // Giro de la cabeza sobre el eje vertical de la cámara (matriz 3×3 por filas). Con θ < 0
+  // la cara mira hacia la izquierda de la imagen, que es la derecha del signante.
+  const yawMatrix = (deg: number) => {
+    const a = (deg * Math.PI) / 180;
+    return [Math.cos(a), 0, Math.sin(a), 0, 1, 0, -Math.sin(a), 0, Math.cos(a)];
+  };
+  const blend = (values: Partial<Record<(typeof FACE_BLENDSHAPES)[number], number>>) =>
+    FACE_BLENDSHAPES.map((n) => values[n] ?? 0);
+  // La signante tiene las cejas algo bajas en reposo; la cámara está girada 5°.
+  const NEUTRAL = { browDownLeft: 0.3, browDownRight: 0.3, mouthSmileLeft: 0.1, mouthSmileRight: 0.1 };
+  const frames: CaptureFrame[] = Array.from({ length: 40 }, (_, i) => {
+    const signing = i >= 10 && i < 30;
+    return {
+      ...frame(i * 40, signing, signing ? HOLA_HAND : undefined),
+      headR: yawMatrix(signing ? 5 - 15 : 5),
+      faceBlend: blend(signing ? { ...NEUTRAL, browDownLeft: 0.7, browDownRight: 0.7, jawOpen: 0.03 } : NEUTRAL),
+    };
+  });
+  const res = framesToClip(frames, { simplify: false });
+  if (!res.ok) throw new Error(res.error);
+  const mid = sampleClip(res.clip, res.clip.duration / 2);
+
+  it("el giro de la cabeza, respecto a como la tiene en reposo", () => {
+    expect(mid.head![0]).toBeCloseTo((15 * Math.PI) / 180, 2);
+    expect(Math.abs(mid.head![1])).toBeLessThan(0.01);
+    expect(Math.abs(mid.head![2])).toBeLessThan(0.01);
+  });
+
+  it("los gestos de la cara, lo que se apartan de su cara neutra y sin el temblor", () => {
+    expect(mid.expr?.browDown).toBeGreaterThan(0.95);
+    // La boca apenas se mueve (dentro de la zona muerta) y la sonrisa es la de reposo.
+    expect(mid.expr?.jaw ?? 0).toBe(0);
+    expect(mid.expr?.smile ?? 0).toBe(0);
+  });
+
+  it("el codo sale de la línea hombro→muñeca hacia abajo y adelante", () => {
+    const e = mid.hand.elbowDir!;
+    expect(e[0]).toBeCloseTo(-0.01, 1);
+    expect(e[1]).toBeCloseTo(-0.89, 1);
+    expect(e[2]).toBeCloseTo(0.46, 1);
+  });
+
+  it("sin cara ni giro no guarda nada de la cabeza", () => {
+    const plain = framesToClip(frames.map(({ headR: _h, faceBlend: _f, ...f }) => f));
+    expect(plain.ok && plain.clip.keyframes.some((k) => k.head || k.expr)).toBe(false);
   });
 });

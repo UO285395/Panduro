@@ -10,6 +10,9 @@ export type SwlFrame = {
   hands: { image: Triple[]; world: Triple[] }[];
   /** Pose 0-10 (nariz, ojos, orejas, boca) en la imagen. */
   face?: Triple[];
+  /** FaceLandmarker: blendshapes (en el orden de FACE_BLENDSHAPES) y giro de la cabeza. */
+  faceBs?: number[];
+  headR?: number[];
 };
 /**
  * `fps` por muestra cuando los vídeos no comparten frecuencia y `url` con la página del
@@ -38,6 +41,7 @@ export function toCaptureFrames(frames: SwlFrame[], fps: number, aspect?: number
       t: (i * 1000) / fps,
       poseWorld: f.poseWorld ? f.poseWorld.map((a) => ({ ...toPoint(a), visibility: a[3] })) : null,
       ...(f.face ? { poseImage, aspect } : {}),
+      ...(f.faceBs && f.headR ? { faceBlend: f.faceBs, headR: f.headR } : {}),
       hands: f.wrists ? assignHands(poseImage, hands) : {},
     };
   });

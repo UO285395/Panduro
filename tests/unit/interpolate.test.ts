@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOOP_HOLD_MS, LOOP_RETURN_MS, phaseOf, sampleClip, sampleLoop } from "@/lib/avatar/interpolate";
+import { LOOP_HOLD_MS, LOOP_RETURN_MS, phaseOf, returnPath, sampleClip, sampleLoop } from "@/lib/avatar/interpolate";
 import type { AvatarClip } from "@/lib/curriculum/schema";
 
 const clip: AvatarClip = {
@@ -183,6 +183,24 @@ describe("sampleLoop", () => {
     const period = 1000 + LOOP_HOLD_MS + LOOP_RETURN_MS;
     expect(sampleLoop(clip, period - 0.01).hand.x).toBeCloseTo(0, 3);
     expect(sampleLoop(clip, period + 250).hand.x).toBeCloseTo(0.375, 4);
+  });
+
+  it("la vuelta al inicio muestreada es la misma que la mezcla", () => {
+    const back = returnPath(clip, 1000 / 60);
+    expect(back.duration).toBe(LOOP_RETURN_MS);
+    expect(back.keyframes[0]!.hand.x).toBe(2);
+    expect(back.keyframes[back.keyframes.length - 1]!.hand.x).toBeCloseTo(0, 6);
+    const at = 1000 + LOOP_HOLD_MS + LOOP_RETURN_MS / 2;
+    expect(sampleLoop({ ...clip, back }, at).hand.x).toBeCloseTo(sampleLoop(clip, at).hand.x, 3);
+  });
+
+  it("con la vuelta ya hecha, la sigue", () => {
+    const back = returnPath(clip, 1000 / 60);
+    back.keyframes = back.keyframes.map((k) => ({ ...k, hand: { ...k.hand, y: k.hand.y + 0.5 } }));
+    const at = 1000 + LOOP_HOLD_MS + LOOP_RETURN_MS / 2;
+    const k = sampleLoop({ ...clip, back }, at);
+    expect(k.hand.y).toBeCloseTo(0.5, 3);
+    expect(k.t).toBe(at);
   });
 });
 

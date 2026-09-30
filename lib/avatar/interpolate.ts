@@ -287,20 +287,40 @@ export function loopDuration(clip: AvatarClip): number {
 }
 
 /**
+ * Un clip con la vuelta al inicio ya hecha (`back`, de 0 a LOOP_RETURN_MS): la que sale de
+ * mezclar el último keyframe con el primero puede llevar una mano a través de la otra, y
+ * quien reproduce el clip puede haberla corregido.
+ */
+export type LoopingClip = AvatarClip & { back?: AvatarClip };
+
+/** Keyframe de la vuelta al inicio de un signo que se repite, a `back` ms de empezarla. */
+function returnAt(clip: AvatarClip, back: number, t = back): AvatarKeyframe {
+  const p = prepare(clip);
+  const u = back / LOOP_RETURN_MS;
+  const eased = u * u * u * (u * (u * 6 - 15) + 10);
+  return blend(p, p.values[p.values.length - 1]!, p.values[0]!, eased, t);
+}
+
+/** La vuelta al inicio muestreada cada `stepMs`, como un clip que dura LOOP_RETURN_MS. */
+export function returnPath(clip: AvatarClip, stepMs: number): AvatarClip {
+  const n = Math.max(2, Math.ceil(LOOP_RETURN_MS / stepMs) + 1);
+  const keyframes = Array.from({ length: n }, (_, i) => returnAt(clip, (LOOP_RETURN_MS * i) / (n - 1)));
+  return { ...clip, duration: LOOP_RETURN_MS, keyframes };
+}
+
+/**
  * Pose de un signo que se repite: tras cada repetición la mano se queda quieta
  * un momento y vuelve al primer keyframe con aceleración y frenada suaves, en
  * lugar de saltar.
  */
-export function sampleLoop(clip: AvatarClip, tMs: number): AvatarKeyframe {
+export function sampleLoop(clip: LoopingClip, tMs: number): AvatarKeyframe {
   const period = loopDuration(clip);
   const t = ((tMs % period) + period) % period;
   if (t <= clip.duration) return sampleClip(clip, t);
   const back = t - clip.duration - LOOP_HOLD_MS;
   if (back <= 0) return clip.keyframes[clip.keyframes.length - 1]!;
-  const p = prepare(clip);
-  const u = back / LOOP_RETURN_MS;
-  const eased = u * u * u * (u * (u * 6 - 15) + 10);
-  return blend(p, p.values[p.values.length - 1]!, p.values[0]!, eased, t);
+  if (clip.back) return { ...sampleClip(clip.back, back), t };
+  return returnAt(clip, back, t);
 }
 
 /**

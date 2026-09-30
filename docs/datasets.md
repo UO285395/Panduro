@@ -167,6 +167,14 @@ python -m venv .venv
   cabeza, los hombros y las manos durante él (medido en el propio avatar, sin la subida
   desde el reposo ni la vuelta), sin alejarse más que antes, y pasa de un encuadre a otro
   con suavidad.
+- Donde una mano pasa deprisa junto a la otra o junto a la cabeza (VIDEOLLAMADA, GRACIAS,
+  SORPRENDIDO), el avatar mira más a menudo que cada 1/60 s si se meten una en otra: si no,
+  entre dos muestras una mano atravesaba la otra sin que se viera al comprobarlo. El
+  suavizado y la elección del lado cuentan cada muestra por lo que dura, así que esas
+  muestras de más no cambian los contactos. Al repetir el signo, la vuelta al inicio también
+  se resuelve (en VIDEOLLAMADA y METRO las manos se fundían al volver). Medido cada 4 ms en
+  todos los signos: solapes entre manos de más de 0,02 brazos en 3 signos (antes 12) y con
+  la cabeza en 20 (antes 37); lo que queda dura uno o dos fotogramas.
 - La fuente y la licencia quedan en cada signo; añádelas a `CREDITS.md`.
 
 Con licencias NC (DILSE, LSE-Health) Panduro puede usarlos porque no es comercial; con SA

@@ -16,7 +16,7 @@ import {
   type FaceGrid,
 } from "./bodyPoints";
 import { HAND_OUTLINE_WIDTH } from "./handOutline";
-import { sampleClip } from "./interpolate";
+import { returnPath, sampleClip, type LoopingClip } from "./interpolate";
 import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST, Y_MOUTH, Y_PER_FACE } from "./pose";
 
 /**
@@ -129,7 +129,7 @@ export type VrmRig = {
   /** Todas las expresiones que toca el mapper, parpadeo incluido. */
   exprNames: string[];
   /** Clips con los contactos ya resueltos para este modelo. */
-  resolved: WeakMap<AvatarClip, AvatarClip>;
+  resolved: WeakMap<AvatarClip, LoopingClip>;
   /** Lo que ocupan las manos en cada clip (ver signBounds). */
   bounds: WeakMap<AvatarClip, THREE.Box3>;
   /**
@@ -660,13 +660,32 @@ function handFrame(rig: VrmRig, side: Side, toModel: THREE.Matrix4) {
 /** Entre las dos puntas que se tocan queda el grosor de los dedos (en palmas del modelo). */
 const PINCH_GAP = 0.18;
 
+const WP = new THREE.Vector3();
+const WS = new THREE.Vector3();
+
+/** Giro en el mundo a partir de la matriz ya calculada (sin subir por toda la cadena). */
+function worldQuat(n: THREE.Object3D): THREE.Quaternion {
+  const q = new THREE.Quaternion();
+  n.matrixWorld.decompose(WP, q, WS);
+  return q;
+}
+
+/** Como `fingerTipWorld`, con las matrices del mundo ya al día (se llama miles de veces). */
+function fingerTipNow(rig: VrmRig, side: Side, i: number): THREE.Vector3 {
+  const f = rig.arms[side].fingers[i]!;
+  const distal = rig.vrm.humanoid.getNormalizedBoneNode(f.bones[2]);
+  if (!distal) return new THREE.Vector3().setFromMatrixPosition(rig.vrm.humanoid.getNormalizedBoneNode(ARM[side].hand)!.matrixWorld);
+  return new THREE.Vector3().setFromMatrixPosition(distal.matrixWorld).addScaledVector(f.tipDir.clone().applyQuaternion(worldQuat(distal)), f.tipLen);
+}
+
 /**
  * Un paso de CCD: gira el hueso `n` sobre su articulación para acercar `tip()` a `want`. Con
- * `hinge` (eje en el espacio del modelo) solo gira en esa bisagra, como un dedo.
+ * `hinge` (eje en el espacio del modelo) solo gira en esa bisagra, como un dedo. Las matrices
+ * del mundo de la cadena tienen que estar al día, y así las deja.
  */
 function ccdStep(n: THREE.Object3D, tip: () => THREE.Vector3, want: THREE.Vector3, hinge?: THREE.Vector3) {
-  const pivot = n.getWorldPosition(new THREE.Vector3());
-  const parentQ = n.parent!.getWorldQuaternion(new THREE.Quaternion());
+  const pivot = new THREE.Vector3().setFromMatrixPosition(n.matrixWorld);
+  const parentQ = worldQuat(n.parent!);
   const cur = tip().sub(pivot);
   const dst = want.clone().sub(pivot);
   let delta: THREE.Quaternion;
@@ -778,11 +797,11 @@ function closePinch(rig: VrmRig, side: Side, touch: ThumbTouch | undefined) {
   hand.updateWorldMatrix(true, true);
   const palmLen = node(fingers[2]!.bones[0])!.getWorldPosition(new THREE.Vector3())
     .distanceTo(hand.getWorldPosition(new THREE.Vector3()));
-  const tip = (i: number) => () => fingerTipWorld(rig, side, i);
+  const tip = (i: number) => () => fingerTipNow(rig, side, i);
   const touched = [1, 2, 3, 4].filter((i) => touch[i - 1]! > 0.02);
   const total = touched.reduce((a, i) => a + touch[i - 1]!, 0);
   const centroid = () =>
-    touched.reduce((acc, i) => acc.addScaledVector(fingerTipWorld(rig, side, i), touch[i - 1]! / total), new THREE.Vector3());
+    touched.reduce((acc, i) => acc.addScaledVector(fingerTipNow(rig, side, i), touch[i - 1]! / total), new THREE.Vector3());
   // Hasta dónde se cierra: el grosor de los dedos entre las puntas, o solo parte del camino.
   const aim = (from: THREE.Vector3, to: THREE.Vector3, w: number) => {
     const d = from.distanceTo(to);
@@ -790,18 +809,18 @@ function closePinch(rig: VrmRig, side: Side, touch: ThumbTouch | undefined) {
     return to.clone().add(from.clone().sub(to).setLength(Math.min(d, end)));
   };
   for (let round = 0; round < 4; round++) {
-    const thumbWant = aim(fingerTipWorld(rig, side, 0), centroid(), strength);
+    const thumbWant = aim(fingerTipNow(rig, side, 0), centroid(), strength);
     for (let it = 0; it < 4; it++) {
       for (const b of [...fingers[0]!.bones].reverse()) ccdStep(node(b)!, tip(0), thumbWant);
     }
     for (const i of touched) {
       const f = fingers[i]!;
-      const want = aim(fingerTipWorld(rig, side, i), fingerTipWorld(rig, side, 0), touch[i - 1]!);
+      const want = aim(fingerTipNow(rig, side, i), fingerTipNow(rig, side, 0), touch[i - 1]!);
       for (let it = 0; it < 3; it++) {
         for (const b of [...f.bones].reverse()) ccdStep(node(b)!, tip(i), want, f.curlAxis);
       }
     }
-    if (fingerTipWorld(rig, side, 0).distanceTo(centroid()) < (PINCH_GAP + 0.03) * palmLen) break;
+    if (fingerTipNow(rig, side, 0).distanceTo(centroid()) < (PINCH_GAP + 0.03) * palmLen) break;
   }
 }
 
@@ -1311,7 +1330,7 @@ function contactOrientation(
 }
 
 /** Clip listo para `applyVrmKeyframe` en este modelo (se calcula una vez). */
-export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
+export function resolveClip(rig: VrmRig, clip: AvatarClip): LoopingClip {
   const cached = rig.resolved.get(clip);
   if (cached) return cached;
   rig.fingerMemo = new Map();
@@ -1322,7 +1341,7 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): AvatarClip {
   }
 }
 
-function resolveClipNow(rig: VrmRig, clip: AvatarClip): AvatarClip {
+function resolveClipNow(rig: VrmRig, clip: AvatarClip): LoopingClip {
   const resolved: AvatarClip = {
     ...clip,
     keyframes: centeredHands(rig, clip).map((kf) => {
@@ -1342,7 +1361,12 @@ function resolveClipNow(rig: VrmRig, clip: AvatarClip): AvatarClip {
       return { ...kf, hand, hand2 };
     }),
   };
-  const clear = keepOutOfHead(rig, keepHandsApart(rig, resolved));
+  const clear: LoopingClip = keepOutOfHead(rig, keepHandsApart(rig, resolved));
+  // Al repetirse, la vuelta al inicio tampoco puede llevar una mano a través de la otra
+  // (VIDEOLLAMADA, METRO: acaban con la dominante al otro lado de la pasiva).
+  const back = returnPath(clear, APART_STEP_MS);
+  const apart = keepHandsApart(rig, back);
+  if (apart !== back) clear.back = apart;
   rig.resolved.set(clip, clear);
   return clear;
 }
@@ -1479,7 +1503,7 @@ function handsProbe(rig: VrmRig) {
       mid.copy(cr.mid).add(shift);
       for (const cl of left.caps) {
         const room = cr.r + cl.r + slack;
-        if (room <= depth || mid.distanceTo(cl.mid) > cr.reach + cl.reach) continue;
+        if (room <= depth || mid.distanceTo(cl.mid) > cr.reach + cl.reach + slack) continue;
         depth = Math.max(depth, room - segmentDistance(cr.a, cr.b, cl.a, cl.b, shift));
         if (depth > enough) return depth;
       }
@@ -1774,54 +1798,151 @@ function shiftHands(rig: VrmRig, kf: AvatarKeyframe, shift: THREE.Vector3): Avat
   };
 }
 
-/** El clip muestreado cada APART_STEP_MS (si ya lo está, tal cual). */
+/**
+ * El clip muestreado cada APART_STEP_MS. Si ya lo está, o más a menudo (con los keyframes que
+ * añade `apartSamples`), tal cual.
+ */
 function sampleEvenly(clip: AvatarClip): AvatarKeyframe[] {
   const kfs = clip.keyframes;
   const t0 = kfs[0]!.t;
   const t1 = kfs[kfs.length - 1]!.t;
   const n = Math.max(2, Math.ceil((t1 - t0) / APART_STEP_MS) + 1);
-  if (kfs.length === n) return kfs;
+  if (kfs.every((k, i) => i === 0 || k.t - kfs[i - 1]!.t <= (t1 - t0) / (n - 1) + 1e-6)) return kfs;
   return Array.from({ length: n }, (_, i) => sampleClip(clip, t0 + ((t1 - t0) * i) / (n - 1)));
 }
 
+/** Lo más que se mueve una mano respecto a la otra (o a la cabeza) de una muestra a la siguiente (en brazos). */
+const APART_MAX_MOTION = 0.02;
+/** En cuántas se parte como mucho el tramo entre dos muestras. */
+const APART_MAX_SPLIT = 8;
+
 /**
- * Suavizado (gaussiano de una muestra) de los desplazamientos que hacen falta en cada
- * muestra: un cambio de lado dura unas pocas muestras. Lejos de un cambio de lado, sin
- * quedarse por debajo de lo que hace falta.
+ * Puntos de una mano respecto a lo que no puede atravesar (la otra mano, la cabeza) en una
+ * muestra, y si quedan al menos a `gap` de ello.
  */
-function smoothShifts(need: THREE.Vector3[]): THREE.Vector3[] {
-  const n = need.length;
-  return need.map((v, i) => {
-    const acc = new THREE.Vector3();
-    let wsum = 0;
-    for (let k = Math.max(0, i - 3); k <= Math.min(n - 1, i + 3); k++) {
-      const w = Math.exp(-0.5 * (k - i) ** 2);
-      acc.addScaledVector(need[k]!, w);
-      wsum += w;
+type Nearby = { points: THREE.Vector3[]; apart: (gap: number) => boolean };
+
+/**
+ * Las muestras `even` con más entre dos donde una mano se mueve deprisa junto a lo que no
+ * puede atravesar (`tracks`: en cada muestra, sus puntos respecto a eso, o null si está
+ * lejos): si no, entre dos muestras se metería en ello sin que se viera. Solo si le da para
+ * tocarlo: lo que se mueve es más de lo que los separa (con margen: al medirlo el pulgar no
+ * se lleva a su yema, y puede quedar más cerca).
+ */
+function splitFast(rig: VrmRig, clip: AvatarClip, even: AvatarKeyframe[], tracks: (Nearby | null)[][]): AvatarKeyframe[] {
+  const out: AvatarKeyframe[] = [];
+  even.forEach((kf, i) => {
+    out.push(kf);
+    let parts = 1;
+    for (const track of tracks) {
+      const a = track[i];
+      const b = track[i + 1];
+      if (!a || !b) continue;
+      const moved = a.points.reduce((m, p, k) => Math.max(m, p.distanceTo(b.points[k]!)), 0);
+      if (a.apart(2 * moved) && b.apart(2 * moved)) continue;
+      parts = Math.max(parts, Math.min(APART_MAX_SPLIT, Math.ceil(moved / (APART_MAX_MOTION * rig.armLen))));
     }
-    acc.multiplyScalar(1 / wsum);
-    const size = v.length();
-    if (size > 0 && need.slice(Math.max(0, i - 3), i + 4).every((u) => u.dot(v) >= 0)) {
-      const dir = v.clone().normalize();
-      const along = acc.dot(dir);
-      if (along < size) acc.addScaledVector(dir, size - along);
-    }
-    return acc;
+    const t1 = even[i + 1]?.t ?? kf.t;
+    for (let j = 1; j < parts; j++) out.push(sampleClip(clip, kf.t + ((t1 - kf.t) * j) / parts));
+  });
+  return out;
+}
+
+/**
+ * Las muestras de `keepHandsApart`: cada APART_STEP_MS y más seguidas donde una mano pasa
+ * deprisa junto a la otra (VIDEOLLAMADA: la dominante cruza en un instante por delante de
+ * la pasiva).
+ */
+function apartSamples(rig: VrmRig, clip: AvatarClip): AvatarKeyframe[] {
+  const even = sampleEvenly(clip);
+  const near = even.map((kf) => {
+    if (!kf.hand2) return false;
+    const { r0, l0 } = shiftedTargets(rig, { ...kf, hand2: kf.hand2 })(new THREE.Vector3());
+    return r0.distanceTo(l0) < 2.3 * rig.handReach;
+  });
+  // Donde están cerca o lo están en la muestra de al lado: las articulaciones de cada mano
+  // respecto a la muñeca de la otra.
+  const track = even.map((kf, i): Nearby | null => {
+    if (!kf.hand2 || !(near[i] || near[i - 1] || near[i + 1])) return null;
+    poseArm(rig, "Right", signingGoal(rig, "Right", kf.hand));
+    poseArm(rig, "Left", signingGoal(rig, "Left", kf.hand2));
+    poseFingers(rig, "Right", kf.fingers);
+    poseFingers(rig, "Left", kf.fingers2 ?? kf.fingers);
+    const r = handJointsWorld(rig, "Right");
+    const l = handJointsWorld(rig, "Left");
+    const probe = handsProbe(rig);
+    return {
+      points: [...r.map((p) => p.clone().sub(l[0]!)), ...l.map((p) => p.clone().sub(r[0]!))],
+      apart: (gap) => probe.depthAt(new THREE.Vector3(), 0, gap) === 0,
+    };
+  });
+  return splitFast(rig, clip, even, [track]);
+}
+
+/**
+ * Lo que dura cada muestra (hasta la mitad del camino a cada vecina), en muestras de
+ * `sampleEvenly`: todas 1 si están a intervalos iguales, menos donde hay más seguidas.
+ */
+function spans(times: number[]): number[] {
+  const n = times.length;
+  if (n < 2) return times.map(() => 1);
+  const even = (times[n - 1]! - times[0]!) / Math.max(1, Math.ceil((times[n - 1]! - times[0]!) / APART_STEP_MS));
+  return times.map((t, k) => {
+    const span = k === 0 ? times[1]! - t : k === n - 1 ? t - times[k - 1]! : (times[k + 1]! - times[k - 1]!) / 2;
+    return span / even;
   });
 }
 
 /**
+ * Suavizado (gaussiano de una muestra de APART_STEP_MS, contando con los tiempos: donde hay
+ * muestras más seguidas no se vuelve más brusco) de los desplazamientos que hacen falta en
+ * cada muestra: un cambio de lado dura unas pocas muestras. Lejos de un cambio de lado, sin
+ * quedarse por debajo de lo que hace falta.
+ */
+function smoothShifts(need: THREE.Vector3[], times: number[]): THREE.Vector3[] {
+  const reach = 3 * APART_STEP_MS + 1e-6;
+  const weight = spans(times);
+  const lifts: THREE.Vector3[] = [];
+  const base = need.map((v, i) => {
+    const acc = new THREE.Vector3();
+    let wsum = 0;
+    let sameWay = true;
+    const add = (k: number) => {
+      // Cada muestra pesa lo que dura: donde hay más seguidas no cuentan más.
+      const w = Math.exp(-0.5 * ((times[k]! - times[i]!) / APART_STEP_MS) ** 2) * weight[k]!;
+      acc.addScaledVector(need[k]!, w);
+      wsum += w;
+      sameWay &&= need[k]!.dot(v) >= 0;
+    };
+    for (let k = i; k >= 0 && times[i]! - times[k]! <= reach; k--) add(k);
+    for (let k = i + 1; k < need.length && times[k]! - times[i]! <= reach; k++) add(k);
+    acc.multiplyScalar(1 / wsum);
+    const size = v.length();
+    const lift = new THREE.Vector3();
+    if (size > 0 && sameWay) {
+      const dir = v.clone().normalize();
+      const along = acc.dot(dir);
+      if (along < size) lift.copy(dir).multiplyScalar(size - along);
+    }
+    lifts.push(lift);
+    return acc;
+  });
+  return base.map((acc, k) => acc.add(lifts[k]!));
+}
+
+/**
  * Lo que se apartan las manos hacia el que mira (para poner una delante de la otra en un
- * cruce), sin cambiar más de `step` de una muestra a la siguiente: empieza antes del cruce y
- * acaba después, en vez de adelantar y atrasar las manos de golpe. Solo se añade: donde hacía
+ * cruce), sin cambiar más de `step` cada APART_STEP_MS: empieza antes del cruce y acaba
+ * después, en vez de adelantar y atrasar las manos de golpe. Solo se añade: donde hacía
  * falta apartarlas, siguen apartadas lo mismo.
  */
-function rampDepth(shifts: THREE.Vector3[], view: THREE.Vector3, step: number): THREE.Vector3[] {
+function rampDepth(shifts: THREE.Vector3[], times: number[], view: THREE.Vector3, step: number): THREE.Vector3[] {
   const depth = shifts.map((v) => v.dot(view));
+  const allowed = (i: number) => (step * (times[i]! - times[i - 1]!)) / APART_STEP_MS;
   const envelope = (sign: number) => {
     const out = depth.map((d) => Math.max(0, sign * d));
-    for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i]!, out[i - 1]! - step);
-    for (let i = out.length - 2; i >= 0; i--) out[i] = Math.max(out[i]!, out[i + 1]! - step);
+    for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i]!, out[i - 1]! - allowed(i));
+    for (let i = out.length - 2; i >= 0; i--) out[i] = Math.max(out[i]!, out[i + 1]! - allowed(i + 1));
     return out;
   };
   const ahead = envelope(1);
@@ -1833,22 +1954,26 @@ function rampDepth(shifts: THREE.Vector3[], view: THREE.Vector3, step: number): 
   });
 }
 
-/** Lo más que cambia de una muestra a la siguiente lo que se apartan hacia el que mira (en brazos). */
+/** Lo más que cambia cada APART_STEP_MS lo que se apartan hacia el que mira (en brazos). */
 const DEPTH_RAMP = 0.02;
 
 /**
  * Una opción por muestra, por el camino de menor coste: lo que se apartan más lo que cambia
  * de una muestra a la siguiente (programación dinámica). Con `flipCost`, invertir el sentido
- * de una muestra a la siguiente cuesta además eso por lo que se apartan las dos.
+ * de una muestra a la siguiente cuesta además eso por lo que se apartan las dos. Lo que se
+ * apartan pesa en cada muestra lo que dura (`times`): las muestras más seguidas donde las
+ * manos van deprisa no cuentan más que las demás.
  */
-function cheapestPath(options: ApartOption[][], flipCost = 0): THREE.Vector3[] {
+function cheapestPath(options: ApartOption[][], times: number[], flipCost = 0): THREE.Vector3[] {
   const n = options.length;
+  const weight = spans(times);
   const cost: number[][] = [];
   const from: number[][] = [];
   options.forEach((opts, i) => {
     from[i] = [];
+    const own = (v: ApartOption) => (v.length() + (v.penalty ?? 0)) * weight[i]!;
     cost[i] = opts.map((v, j) => {
-      if (i === 0) return v.length() + (v.penalty ?? 0);
+      if (i === 0) return own(v);
       let best = Infinity;
       options[i - 1]!.forEach((u, k) => {
         const flip = v.dot(u) < 0 ? flipCost * (v.length() + u.length()) : 0;
@@ -1858,7 +1983,7 @@ function cheapestPath(options: ApartOption[][], flipCost = 0): THREE.Vector3[] {
           from[i]![j] = k;
         }
       });
-      return best + v.length() + (v.penalty ?? 0);
+      return best + own(v);
     });
   });
   const chosen: THREE.Vector3[] = new Array(n);
@@ -1883,7 +2008,7 @@ function keepHandsApart(rig: VrmRig, clip: AvatarClip): AvatarClip {
   const kfs = clip.keyframes;
   if (kfs.length < 2 || !kfs.some((k) => k.hand2)) return clip;
   const L = rig.armLen;
-  const samples = sampleEvenly(clip);
+  const samples = apartSamples(rig, clip);
   const n = samples.length;
   const none = (o: THREE.Vector3[]) => o.length === 1 && o[0]!.lengthSq() === 0;
   const optionsAt = (kf: AvatarKeyframe): THREE.Vector3[] => {
@@ -1916,8 +2041,9 @@ function keepHandsApart(rig: VrmRig, clip: AvatarClip): AvatarClip {
   // Como en las pasadas de después, sin invertir el sentido de una muestra a otra: al suavizar
   // se anulaba (una mano que pasa a través de la otra, los dos órdenes de un cruce).
   const view = rig.forward.clone().normalize();
-  const chosen = cheapestPath(options, RESIDUAL_FLIP_COST);
-  const shifts = rampDepth(smoothShifts(chosen), view, DEPTH_RAMP * L);
+  const times = samples.map((kf) => kf.t);
+  const chosen = cheapestPath(options, times, RESIDUAL_FLIP_COST);
+  const shifts = rampDepth(smoothShifts(chosen, times), times, view, DEPTH_RAMP * L);
   const apart = samples.map((kf, i) => shiftHands(rig, kf, shifts[i]!));
   // Al cambiar de lado el suavizado las deja metidas un momento: lo que siga dentro, fuera
   // con lo mínimo que haga falta en esa muestra (es poco y dura dos o tres muestras), también
@@ -1931,10 +2057,11 @@ function keepHandsApart(rig: VrmRig, clip: AvatarClip): AvatarClip {
     // anula. Aquí invertir el sentido cuesta mucho más: la mano rodea a la otra.
     const rest = cheapestPath(
       keyframes.map((kf, i) => ((none(options[i]!) && !moved[i]) || !kf.hand2 ? [new THREE.Vector3()] : optionsAt(kf))),
+      times,
       RESIDUAL_FLIP_COST,
     );
     if (rest.every((v) => v.lengthSq() === 0)) break;
-    const extra = smoothShifts(rest);
+    const extra = smoothShifts(rest, times);
     extra.forEach((s, i) => (moved[i] ||= s.lengthSq() > 0));
     keyframes = keyframes.map((kf, i) => shiftHands(rig, kf, extra[i]!));
   }
@@ -1998,6 +2125,44 @@ function headPush(rig: VrmRig, side: Side, head: Vec3 | undefined): THREE.Vector
 }
 
 /**
+ * Las muestras de `keepOutOfHead`: cada APART_STEP_MS y más seguidas donde una mano pasa
+ * deprisa junto a la cabeza (SORPRENDIDO: de delante de la cara a la frente).
+ */
+function headSamples(rig: VrmRig, clip: AvatarClip, nearHead: (target: THREE.Vector3) => boolean): AvatarKeyframe[] {
+  const even = sampleEvenly(clip);
+  const root = rig.vrm.humanoid.normalizedHumanBonesRoot;
+  const [, cu, cf] = headCenter(rig.face);
+  const tracks = (["Right", "Left"] as const).map((side) => {
+    const handOf = (kf: AvatarKeyframe) => (side === "Right" ? kf.hand : kf.hand2);
+    const near = even.map((kf) => {
+      const hand = handOf(kf);
+      return !!hand && nearHead(reachable(rig, side, signingGoal(rig, side, hand).target.clone()));
+    });
+    // Donde está cerca o lo está en la muestra de al lado: la mano respecto al centro de la
+    // cabeza, y si queda a más de una distancia hacia él.
+    return even.map((kf, i): Nearby | null => {
+      const hand = handOf(kf);
+      if (!hand || !(near[i] || near[i - 1] || near[i + 1])) return null;
+      poseHead(rig, kf.head);
+      poseArm(rig, side, signingGoal(rig, side, hand));
+      poseFingers(rig, side, side === "Right" || !kf.fingers2 ? kf.fingers : kf.fingers2);
+      const depthAt = headProbe(rig, side);
+      const joints = handJointsWorld(rig, side);
+      root.updateWorldMatrix(true, false);
+      const center = moveWithHead(rig, headRotation(rig, kf.head), rig.eyes.clone().addScaledVector(rig.up, cu).addScaledVector(rig.forward, cf))
+        .applyMatrix4(root.matrixWorld);
+      const toHead = joints.reduce((acc, p) => acc.add(p), new THREE.Vector3()).multiplyScalar(-1 / joints.length).add(center).normalize();
+      const tol = HEAD_OVERLAP_TOL * rig.armLen;
+      return {
+        points: joints.map((p) => p.clone().sub(center)),
+        apart: (gap) => depthAt(toHead.clone().multiplyScalar(gap), tol) <= tol,
+      };
+    });
+  });
+  return splitFast(rig, clip, even, tracks);
+}
+
+/**
  * Las manos fuera de la cabeza también de camino entre keyframes (de una mejilla a la otra,
  * al subir a la frente). Los keyframes ya están fuera (`outOfHead`); aquí se muestrea el
  * clip, se ve cuánto hay que sacar cada mano en cada muestra y se suaviza. Si no hace falta
@@ -2044,10 +2209,11 @@ function keepOutOfHead(rig: VrmRig, clip: AvatarClip): AvatarClip {
       hand: moved("Right", kf.hand, right[i]!),
       ...(kf.hand2 && { hand2: moved("Left", kf.hand2, left[i]!) }),
     }));
-  let samples = sampleEvenly(clip);
+  let samples = headSamples(rig, clip, nearHead);
   const first = pushesOf(samples);
   if (!first) return clip;
-  const smoothed = { Right: smoothShifts(first.Right), Left: smoothShifts(first.Left) };
+  const times = samples.map((kf) => kf.t);
+  const smoothed = { Right: smoothShifts(first.Right, times), Left: smoothShifts(first.Left, times) };
   samples = apply(samples, smoothed.Right, smoothed.Left);
   // El suavizado puede quedarse corto donde la dirección cambia de una muestra a otra: lo
   // que siga dentro, fuera sin suavizar (es poco). Solo hace falta mirar lo que se movió.

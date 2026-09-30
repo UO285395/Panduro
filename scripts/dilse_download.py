@@ -153,12 +153,22 @@ def variants(translation: str) -> list[str]:
     return seen
 
 
+# La web a veces contesta vacío a una búsqueda que sí tiene resultados: se repite antes de
+# darla por no encontrada.
+EMPTY_RETRIES = 3
+
+
 def autocomplete(prefix: str) -> list[dict]:
-    raw = get(f"{BASE}php/buscador-autocompletar_nuevo.php?buscar={urllib.parse.quote(prefix)}")
-    try:
-        return json.loads(decode(raw))
-    except json.JSONDecodeError:
-        return []
+    for attempt in range(EMPTY_RETRIES):
+        raw = get(f"{BASE}php/buscador-autocompletar_nuevo.php?buscar={urllib.parse.quote(prefix)}")
+        try:
+            found = json.loads(decode(raw))
+        except json.JSONDecodeError:
+            found = []
+        if found:
+            return found
+        time.sleep(2 * (attempt + 1))
+    return []
 
 
 _pages: dict[str, list[dict]] = {}
@@ -169,7 +179,11 @@ def senses(parametros: str) -> list[dict]:
     query = parametros.split("buscar=", 1)[-1]
     if query in _pages:
         return _pages[query]
-    page = decode(get(f"{BASE}?buscar={urllib.parse.quote(query)}"))
+    for attempt in range(EMPTY_RETRIES):
+        page = decode(get(f"{BASE}?buscar={urllib.parse.quote(query)}"))
+        if '<article class="content__item">' in page:
+            break
+        time.sleep(2 * (attempt + 1))
     out = []
     clean = lambda s: html.unescape(re.sub(r"<[^>]+>|\s+", " ", s)).replace("\ufffd", " ").strip()
     for article in re.findall(r'<article class="content__item">(.*?)</article>', page, flags=re.S):
@@ -204,6 +218,7 @@ def stems(text: str) -> set[str]:
 # (signo del curso → nombre del vídeo del DILSE; None: ninguna acepción es la del curso).
 CHOSEN: dict[str, str | None] = {
     "ACENTO": "acento-entonacion-signado",  # el acento al signar, no la tilde
+    "ACUERDO_C1": "acuerdo",  # llegar a un acuerdo, no «de acuerdo»
     "ALTO": "alto-estatura",  # descripción física, no «¡alto!»
     "BIEN": "bien_c",  # «¿cómo estás? — bien»: con buena salud, no «el bien»
     "INTERPRETAR": None,  # interpretar resultados: el DILSE solo tiene «actuar» y «traducir»
@@ -216,6 +231,17 @@ CHOSEN: dict[str, str | None] = {
     "PAN": "pan",  # el alimento, no «pan comido»
     "PARQUE": "parque",  # el de la ciudad (unidad de lugares)
     "VOLVER": "volver_B",  # regresar, no «traducir» ni «vomitar»
+}
+
+
+# Signos del curso cuya traducción no es la entrada del DILSE: la expresión o palabra que
+# sí lo es («No entiendo» es el sublema «no entender» de ENTENDER; «Más despacio» se signa
+# DESPACIO).
+QUERIES: dict[str, str] = {
+    "NO_ENTIENDO": "no entender",
+    "MAS_DESPACIO": "despacio",
+    "EN_DESACUERDO": "desacuerdo",
+    "ACUERDO_C1": "acuerdo",
 }
 
 
@@ -255,6 +281,8 @@ def lookup(sign: dict) -> tuple[dict, dict, str] | None:
     if sign["id"] in CHOSEN and CHOSEN[sign["id"]] is None:
         return None
     queries = variants(sign["translation"])
+    if sign["id"] in QUERIES:
+        queries = [QUERIES[sign["id"]], *queries]
     for query in queries:
         match = entry(query)
         if not match:
@@ -284,6 +312,12 @@ def lookup(sign: dict) -> tuple[dict, dict, str] | None:
                     return match, best, ("sublema; " + note).strip("; ")
                 break
     return None
+
+
+def whole(video: bytes) -> bool:
+    """Si el vídeo (QuickTime/MP4) está entero: la web a veces corta la descarga y sin el índice
+    (el átomo «moov») no se puede abrir."""
+    return b"moov" in video
 
 
 def curriculum_signs() -> list[dict]:
@@ -336,9 +370,12 @@ def main() -> None:
                 match, best, note = found
                 target = videos / f"{sign['id']}{Path(best['video']).suffix.lower()}"
                 before = previous.get(sign["id"])
-                if not target.exists() or not before or before["video_url"] != best["video"]:
+                if not target.exists() or not before or before["video_url"] != best["video"] or not whole(target.read_bytes()):
+                    data = get(best["video"])
+                    if not whole(data):
+                        raise ValueError(f"vídeo incompleto ({len(data)} bytes)")
                     partial = target.with_suffix(".part")
-                    partial.write_bytes(get(best["video"]))
+                    partial.write_bytes(data)
                     partial.replace(target)  # nunca queda un vídeo a medias con el nombre bueno
                 row.update(dilse_word=best["word"] or match["label"], page_url=f"{BASE}{match['parametros']}",
                            video_url=best["video"], status="ambiguo" if "acepciones" in note and "revisada" not in note else "ok",

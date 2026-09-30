@@ -35,8 +35,12 @@ pnpm tsx scripts/landmarks-to-captured.ts data/dilse/landmarks.json --merge
   acepción se elige por el nombre del vídeo (`rosa-color`, `metro-tren`) y la definición frente a
   las etiquetas y la descripción del signo; las que no quedan claras se fijan a mano en `CHOSEN`
   (también `None` si ninguna es la del curso) y se rehacen con `--only ID…`. Lo que no encuentra
-  no lo adivina: esos signos siguen con su animación generada.
-- Va a una petición por segundo como mucho. Si se corta, se vuelve a lanzar y sigue.
+  no lo adivina: esos signos siguen con su animación generada. Si la traducción del curso no
+  es la entrada del diccionario, `QUERIES` dice cuál buscar («No entiendo» es el sublema «no
+  entender» de ENTENDER; «Más despacio» se signa DESPACIO).
+- Va a una petición por segundo como mucho. Si se corta, se vuelve a lanzar y sigue. La web a
+  veces contesta vacío a una búsqueda que sí tiene resultados: se repite hasta tres veces
+  antes de darla por no encontrada (así salían como no encontrados signos que sí están).
 - `videos_to_signs.py` también sigue donde lo dejó si `--out` ya existe (vuelve a procesar un
   vídeo si ha cambiado y quita los que ya no están), y guarda en cada muestra el enlace a su
   entrada del diccionario (lo lee de `manifest.csv`), que la app muestra junto a la animación.

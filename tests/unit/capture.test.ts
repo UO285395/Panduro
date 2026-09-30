@@ -313,6 +313,9 @@ describe("capture: landmarks → clip", () => {
     const k = res.clip.keyframes[0]!;
     expect(k.hand2).toBeDefined();
     expect(getFingerFlex(k.fingers2![1]!)).toBeGreaterThan(getFingerFlex(k.fingers[1]!) + 0.3);
+    // Tapada (sin detectar) casi siempre, pero con la muñeca levantada: también.
+    const hidden = framesToClip(frames.map((f, i) => (i % 4 === 0 ? f : { ...f, hands: { right: f.hands.right } })));
+    expect(hidden.ok && hidden.clip.handedness).toBe("two");
   });
 
   describe("contactos detectados en la grabación", () => {

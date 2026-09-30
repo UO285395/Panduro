@@ -235,6 +235,8 @@ CHOSEN: dict[str, str | None] = {
     "INTERPRETAR": "interpretar-traducir",  # de una lengua a otra, no actuar
     "INTERPRETE_LS": "interprete",  # el de lenguas (orales o signadas), no el actor
     "PODER": "poder-capacidad",  # ser capaz (en «¿puede repetir?»), no «el poder»
+    "PRIVACIDAD": "privado",  # lo particular y personal de cada uno
+    "REDES_SOCIALES": "red_social",
     "TELEVISION": "television",
     "VER": "ver_aa",  # percibir con los ojos (en «ver la televisión»)
     "VOLVER": "volver_B",  # regresar, no «traducir» ni «vomitar»
@@ -253,6 +255,8 @@ QUERIES: dict[str, str] = {
     "GLOSADO": "glosa",
     "INFERIR": "deducir",
     "INTERPRETE_LS": "intérprete",
+    "PRIVACIDAD": "privado",
+    "REDES_SOCIALES": "red social",
     "REGISTRO_C2": "registro",
     "SINTETIZAR": "síntesis",
 }
@@ -310,7 +314,12 @@ def lookup(sign: dict) -> tuple[dict, dict, str] | None:
     def expresses(o: dict, q: str) -> bool:
         stem = set(norm(Path(o["video"]).stem.replace("_", " ").replace("-", " ")).split())
         # «a veces» es «a la de veces, o a las de veces…» pero su vídeo se llama veces_a.mov
-        return any(alt in phrases for alt in o["sublemma"]) or (bool(o["sublemma"]) and set(norm(q).split()) <= stem)
+        return (
+            any(alt in phrases for alt in o["sublemma"])
+            or (bool(o["sublemma"]) and set(norm(q).split()) <= stem)
+            # La acepción titulada con la expresión, sin paréntesis: «red social» en RED.
+            or squash(o["word"]) in phrases
+        )
 
     for q in [q for q in queries if " " in q]:
         words = sorted({w for w in q.split() if len(w) >= 3}, key=len, reverse=True)

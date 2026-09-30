@@ -16,6 +16,7 @@ import {
 } from "@/lib/avatar/capture";
 import type { Point3 } from "@/lib/mediapipe/types";
 import { sampleClip } from "@/lib/avatar/interpolate";
+import { getFingerFlex } from "@/lib/avatar/pose";
 
 // Ejes de cámara de MediaPipe: x a la derecha de la imagen, y hacia abajo,
 // z alejándose de la cámara. Un signante de frente y sin espejo tiene su
@@ -289,6 +290,29 @@ describe("capture: landmarks → clip", () => {
     expect(k.hand.x).toBeGreaterThan(0.1);
     expect(k.hand.pointDir![0]).toBeGreaterThan(0.2);
     expect(k.hand.palmDir![2]).toBeGreaterThan(0.95);
+  });
+
+  it("la mano pasiva cuenta aunque MediaPipe la dé reflejada casi siempre (plana y de canto)", () => {
+    const fist = makeHand("left", U, F, true);
+    const reflected = fist.map((p) => ({ ...p, z: -p.z }));
+    expect(mirroredHand(reflected, "left")).toBe(true);
+    // Solo uno de cada cuatro fotogramas sirve para la forma: antes no llegaba a contar como levantada.
+    const frames: CaptureFrame[] = Array.from({ length: 30 }, (_, i) => {
+      const left = i % 4 === 0 ? fist : reflected;
+      return {
+        t: i * 33,
+        poseWorld: pose(RAISED_RIGHT, RAISED_LEFT),
+        hands: { right: { world: HOLA_HAND, image: image(HOLA_HAND) }, left: { world: left, image: image(left) } },
+      };
+    });
+    const res = framesToClip(frames);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.clip.handedness).toBe("two");
+    // La forma, de los fotogramas que sirven: el puño (la dominante está abierta).
+    const k = res.clip.keyframes[0]!;
+    expect(k.hand2).toBeDefined();
+    expect(getFingerFlex(k.fingers2![1]!)).toBeGreaterThan(getFingerFlex(k.fingers[1]!) + 0.3);
   });
 
   describe("contactos detectados en la grabación", () => {

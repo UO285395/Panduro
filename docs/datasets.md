@@ -98,6 +98,12 @@ python -m venv .venv
   más separados que una persona (0,42 brazos frente a 0,35): dos manos que se juntaban o se
   cruzaban delante del pecho le quedaban a casi una palma. Ahora, junto al centro del cuerpo
   se conserva lo que distaba de él, y a la altura del hombro y más afuera, del hombro.
+- La mano pasiva entra en el signo si se ve levantada al menos un 30 % del tiempo, aunque su
+  forma no sirva en muchos fotogramas: plana y de canto a la cámara, MediaPipe la da
+  reflejada en profundidad casi siempre (la pasiva de CARNE, LEER, LEVANTARSE o ACENTO), y
+  esos signos salían a una mano. La forma y la orientación salen solo de los fotogramas en
+  que sí sirve: darle la vuelta a la profundidad no la arregla en general (en el DILSE deja
+  la palma más lejos de la de los fotogramas vecinos, 103° frente a 64°).
 - El DILSE graba de tres cuartos los signos que van hacia delante o hacia un lado (IRONÍA,
   MUCHO, SILLA, FIEBRE), con la cara hacia la cámara. Las posiciones se miden respecto al
   cuerpo del signante, así que con el avatar siempre de frente lo que en el vídeo va hacia

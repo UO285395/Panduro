@@ -347,6 +347,8 @@ type Sample = {
   hand?: { fingers: number[]; joints: number[]; touch: number[]; tip: Vec; palm: Vec; point: Vec; image: Point3[] };
   /** Hacia dónde sale el codo de la línea hombro→muñeca (sin él, el brazo está casi recto). */
   elbow?: Vec;
+  /** La mano se ve aunque su forma no sirva (reflejada: ver mirroredHand). */
+  seen?: boolean;
   /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
   touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number; face?: FaceCoords; hand?: HandAnchor };
 };
@@ -1072,7 +1074,7 @@ export function framesToClip(
       (dot(rel, F) / armLen - 0.55) / 0.9,
     ];
     const h = f.hands[side];
-    if (!h || mirroredHand(h.world, side)) return { t: f.t, pos, elbow };
+    if (!h || mirroredHand(h.world, side)) return { t: f.t, pos, elbow, seen: !!h };
     // A qué lado de la cara está el centro de la palma, si está a su altura (HandSpec.faceH).
     const palmImg = [0, 5, 9, 13, 17].reduce((a, i) => ({ x: a.x + h.image[i]!.x / 5, y: a.y + h.image[i]!.y / 5 }), { x: 0, y: 0 });
     const pf = f.poseImage ? faceCoords(f.poseImage, f.aspect ?? 1, palmImg) : null;
@@ -1109,7 +1111,8 @@ export function framesToClip(
     return ys.length ? ys[Math.floor(ys.length * 0.05)]! : 0;
   };
   const raisedBy = (0.1 * 0.35) / (mouthUp - chestUp);
-  const activeAbove = (rest: number) => (s: Sample | null) => !!s?.hand && (s.pos[1] > 0 || s.pos[1] > rest + raisedBy);
+  const activeAbove = (rest: number, seen = false) => (s: Sample | null) =>
+    !!s && (!!s.hand || (seen && !!s.seen)) && (s.pos[1] > 0 || s.pos[1] > rest + raisedBy);
   const isActive = activeAbove(restY(dom));
   const first = dom.findIndex(isActive);
   if (first === -1) {
@@ -1185,7 +1188,10 @@ export function framesToClip(
   const main = build(domRange);
   const otherAll = frames.map((f, i) => sampleSide(f, other, i));
   const otherRange = range(otherAll);
-  const otherActive = otherRange.filter(activeAbove(restY(otherAll))).length / otherRange.length;
+  // La otra mano cuenta aunque su forma no sirva en muchos fotogramas: plana y de canto a la
+  // cámara, MediaPipe la da reflejada casi siempre (la pasiva de CARNE, LEER o LEVANTARSE), y
+  // el signo salía a una mano. La forma sale de los fotogramas en que sí sirve.
+  const otherActive = otherRange.filter(activeAbove(restY(otherAll), true)).length / otherRange.length;
   const second = otherActive >= 0.3 ? build(otherRange) : null;
 
   const handSpec = (d: ReturnType<typeof build>, i: number): AvatarKeyframe["hand"] => ({

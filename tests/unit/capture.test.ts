@@ -318,6 +318,26 @@ describe("capture: landmarks → clip", () => {
     expect(hidden.ok && hidden.clip.handedness).toBe("two");
   });
 
+  it("el signo empieza donde empieza aunque MediaPipe dé la mano dominante reflejada un buen rato", () => {
+    const fist = makeHand("right", U, F, true);
+    const reflected = fist.map((p) => ({ ...p, z: -p.z }));
+    const clip = (bad: number) =>
+      framesToClip(
+        Array.from({ length: 30 }, (_, i): CaptureFrame => {
+          if (i < 2) return { t: i * 33, poseWorld: pose(DOWN_RIGHT, DOWN_LEFT), hands: {} };
+          const hand = i < 2 + bad ? reflected : fist;
+          return { t: i * 33, poseWorld: pose(RAISED_RIGHT, DOWN_LEFT), hands: { right: { world: hand, image: image(hand) } } };
+        }),
+      );
+    const long = clip(8);
+    const brief = clip(2);
+    expect(long.ok && brief.ok).toBe(true);
+    if (!long.ok || !brief.ok) return;
+    // Ocho fotogramas reflejados con la mano arriba son del signo; dos, no mueven el principio.
+    expect(long.stats.startMs).toBe(0);
+    expect(brief.stats.startMs).toBe(2 * 33);
+  });
+
   describe("contactos detectados en la grabación", () => {
     // Cara del signante: nariz algo por encima y delante de la boca, ojos, orejas.
     const withFace = (p: Landmark[]) => {

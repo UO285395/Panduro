@@ -94,6 +94,8 @@ const SIMPLIFY_TOL = { pos: 0.015, dir: 0.09, finger: 0.12, elbow: 0.2, head: 0.
 const FACE_H_BELOW = -3;
 /** Separación mínima del codo respecto a la línea hombro→muñeca (en brazos) para fiarse de ella. */
 const ELBOW_MIN = 0.06;
+/** Fotogramas con la mano dominante reflejada al principio o al final a partir de los que son parte del signo. */
+const LONG_REFLECTED = 4;
 /**
  * Desde cuánto giro del cuerpo (radianes, 10°) lo hace también el avatar. El DILSE graba de
  * tres cuartos los signos que van hacia delante o hacia un lado (IRONÍA, MUCHO, SILLA), y con
@@ -1112,12 +1114,29 @@ export function framesToClip(
   const activeAbove = (rest: number, handless = false) => (s: Sample | null) =>
     !!s && (!!s.hand || handless) && (s.pos[1] > 0 || s.pos[1] > rest + raisedBy);
   const isActive = activeAbove(restY(dom));
-  const first = dom.findIndex(isActive);
+  let first = dom.findIndex(isActive);
   if (first === -1) {
     return { ok: false, error: "No se ve la mano dominante levantada. Signa a la altura del pecho o la cara, sin tapar la cámara." };
   }
   let last = first;
   dom.forEach((s, i) => { if (isActive(s)) last = i; });
+  // Antes y después, la mano levantada que MediaPipe da reflejada un buen rato también es del
+  // signo: en FORMAL_C2 lo está en lo más alto y en MIERCOLES al final, y el clip se quedaba
+  // sin esa parte. Uno o dos fotogramas así al subir o bajar la mano no mueven el principio ni
+  // el final.
+  const raised = activeAbove(restY(dom), true);
+  const reflected = (i: number) => !!frames[i]!.hands[dominant] && !dom[i]?.hand;
+  const widen = (from: number, step: 1 | -1) => {
+    let end = from;
+    let seen = 0;
+    for (let i = from + step; i >= 0 && i < dom.length && raised(dom[i]!); i += step) {
+      end = i;
+      if (reflected(i)) seen++;
+    }
+    return seen >= LONG_REFLECTED ? end : from;
+  };
+  first = widen(first, -1);
+  last = widen(last, 1);
   const lo = Math.max(0, first - 2);
   const hi = Math.min(frames.length - 1, last + 2);
   const range = (xs: (Sample | null)[]) => xs.slice(lo, hi + 1);

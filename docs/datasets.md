@@ -106,6 +106,11 @@ python -m venv .venv
   sí sirve (sin ninguno, relajada): darle la vuelta a la profundidad no la arregla en
   general (en el DILSE deja la palma más lejos de la de los fotogramas vecinos, 103° frente
   a 64°).
+- El signo va de la primera a la última vez que se ve la mano dominante levantada, contando
+  también los tramos de cuatro fotogramas o más en que MediaPipe la da reflejada: en
+  FORMAL_C2 lo está en lo más alto del signo y en MIÉRCOLES al final, y el clip se quedaba
+  sin esa parte. Uno o dos fotogramas así al subir o bajar la mano no mueven el principio
+  ni el final.
 - El DILSE graba de tres cuartos los signos que van hacia delante o hacia un lado (IRONÍA,
   MUCHO, SILLA, FIEBRE), con la cara hacia la cámara. Las posiciones se miden respecto al
   cuerpo del signante, así que con el avatar siempre de frente lo que en el vídeo va hacia

@@ -1252,8 +1252,21 @@ function placeTouching(
   const goal = signingGoal(rig, side, oriented);
   const free = goal.target.clone();
   const reached = reachContact(rig, side, goal, fingers, contact, other, head, thumb);
-  return { ...oriented, ...toSigningSpace(rig, side, free.lerp(reached, contact.weight ?? 1)) };
+  const w = contact.weight ?? 1;
+  const off = free.sub(reached).multiplyScalar(1 - w);
+  // Con la otra mano, el peso dice a cuánto de ella se quedó en la grabación: no más lejos.
+  // La mano libre puede quedar a medio brazo (la profundidad de cada brazo se rehace por
+  // separado), y a una fracción de eso las dos manos que casi se tocaban (POESÍA, EUFEMISMO,
+  // PARA) quedaban a un palmo.
+  if (isOtherHand(contact.at)) off.clampLength(0, (1 - w) * OTHER_NEAR_GAP * rig.armLen);
+  return { ...oriented, ...toSigningSpace(rig, side, reached.add(off)) };
 }
+
+/**
+ * Hueco (en brazos) que deja entre las manos un contacto de peso 0: lo que va de TOUCH_NEAR
+ * a TOUCH_FAR en la captura, 3,5 cm, en un brazo de 55.
+ */
+const OTHER_NEAR_GAP = 0.064;
 
 /**
  * La mano cerca de la cara, al mismo lado de ella que en la grabación (`faceH`: dónde tenía

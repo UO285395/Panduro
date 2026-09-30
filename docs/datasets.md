@@ -171,6 +171,10 @@ python -m venv .venv
   Solo con la mano por debajo de la barbilla: a la altura de la cara la altura ya sale de la
   imagen, y la cabeza del avatar, más grande, apartaba las manos. Los contactos se siguen
   detectando con la pose tal cual.
+- Un contacto parcial con la otra mano (las manos casi se tocan) deja entre ellas lo que
+  dejaban en la grabación y no una fracción del camino desde donde estaría la mano sin
+  contacto: como la profundidad de cada brazo se rehace por separado, ese camino podía ser
+  de medio brazo, y en POESÍA, EUFEMISMO o PARA las manos quedaban a un palmo.
 - Las trayectorias se suavizan más con la mano casi quieta (donde se nota el temblor) que en
   los movimientos rápidos (para no perder un saludo o un golpe doble), y se quitan los
   keyframes que se pueden sacar interpolando. La posición, la orientación de la mano y los

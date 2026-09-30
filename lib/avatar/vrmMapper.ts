@@ -824,6 +824,13 @@ function closePinch(rig: VrmRig, side: Side, touch: ThumbTouch | undefined) {
   }
 }
 
+/**
+ * Cuánto más se separan los dedos del corazón que en la grabación. Los de este modelo son más
+ * gruesos y cortos que los de una persona: con la misma separación no queda hueco entre ellos
+ * y un 4 o un 3 se veían como una mano plana. Juntos (o cruzados) quedan como están.
+ */
+const SPREAD_GAIN = 1.3;
+
 /** Reparto de la flexión medida entre la falange media y la distal (el pulgar, a partes iguales). */
 const MEASURED_SPLIT = { finger: [1, 0.65], thumb: [0.5, 0.5] } as const;
 
@@ -845,13 +852,19 @@ function poseFingers(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb) {
 function poseFingersNow(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb) {
   const arm = rig.arms[side];
   const abdSign = side === "Right" ? 1 : -1;
+  const middle = fingers[2]!;
   arm.fingers.forEach((finger, i) => {
     const value = fingers[i]!;
     const curlAbout = (angle: number) => new THREE.Quaternion().setFromAxisAngle(finger.curlAxis, angle);
     if (isMeasured(value)) {
       // Medido: el primer hueso gira hasta el azimut y la elevación grabados (en el marco de
       // esta mano) y los otros dos doblan lo que dobló el dedo.
-      const [az, el, bend] = value;
+      const [az0, el, bend] = value;
+      let az = az0;
+      // Separados del corazón hacia su lado, algo más que el signante (ver SPREAD_GAIN).
+      if (i !== 0 && i !== 2 && isMeasured(middle) && (az0 - middle[0]) * (i === 1 ? 1 : -1) > 0) {
+        az = middle[0] + (az0 - middle[0]) * SPREAD_GAIN;
+      }
       const [m, d] = i === 0 ? MEASURED_SPLIT.thumb : MEASURED_SPLIT.finger;
       const spread = new THREE.Quaternion().setFromAxisAngle(arm.palmRest, (az - finger.restAz) * arm.azSign);
       setNorm(rig.vrm, finger.bones[0], spread.multiply(curlAbout(el - finger.restEl)));

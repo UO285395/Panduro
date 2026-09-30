@@ -116,7 +116,12 @@ python -m venv .venv
   lo que siga metido se saca.
 - Cada dedo se guarda como `[azimut, elevación, flexión]`: nudillo y falanges por separado
   (B doblada frente a garra), separación de los dedos y posición del pulgar. MediaPipe dobla
-  de más los dedos estirados; la calibración sale de los propios vídeos del DILSE.
+  de más los dedos estirados; la calibración sale de los propios vídeos del DILSE. Con la
+  palma de frente (o de espaldas) a la cámara, la separación de los dedos se mide en la
+  imagen: en 3D la profundidad juntaba los dedos de la mano derecha y abría los de la
+  izquierda, y en los números a dos manos (18, 19) la derecha salía plana. El avatar los
+  separa del corazón un 30 % más que el signante: sus dedos son más gruesos y cortos, y con
+  la misma separación no quedaba hueco entre ellos.
 - Las pinzas (la O, la F, el «pico», el pulgar sobre una yema) se guardan como cuánto toca
   el pulgar cada yema, y el avatar junta las puntas en su propia mano aunque sus dedos
   tengan otras proporciones: el pulgar va hacia las yemas y los dedos se doblan hacia él.

@@ -468,7 +468,7 @@ describe("capture: forma de cada dedo", () => {
     const r = (deg * Math.PI) / 180;
     return add(mul(v, Math.cos(r)), mul(toward, Math.sin(r)));
   };
-  const shaped = (mcp: number, pip: number, az = 0) => {
+  const handShaped = (mcp: number, pip: number, az = 0) => {
     const h = makeHand("right", P, N);
     for (const base of [5, 9, 13, 17]) {
       const m: Vec = [h[base]!.x, h[base]!.y, h[base]!.z];
@@ -479,8 +479,9 @@ describe("capture: forma de cada dedo", () => {
       const pts = [add(m, mul(d1, 0.04)), add(m, mul(d1, 0.04), mul(d2, 0.025)), add(m, mul(d1, 0.04), mul(d2, 0.045))];
       pts.forEach((q, k) => (h[base + 1 + k] = { x: q[0], y: q[1], z: q[2] }));
     }
-    return fingerPose(h, "right");
+    return h;
   };
+  const shaped = (mcp: number, pip: number, az = 0) => fingerPose(handShaped(mcp, pip, az), "right");
   const deg = (r: number) => (r * 180) / Math.PI;
 
   it("distingue la B doblada (solo el nudillo) de la garra (solo las falanges)", () => {
@@ -492,6 +493,16 @@ describe("capture: forma de cada dedo", () => {
       expect(Math.abs(deg(claw[i]![1]))).toBeLessThan(15);
       expect(deg(claw[i]![2])).toBeGreaterThan(80);
     }
+  });
+
+  it("con la palma de frente a la cámara, la separación de los dedos sale de la imagen", () => {
+    // En 3D juntos (la profundidad engaña); en la imagen, abiertos 20°.
+    const flat = (h: Point3[]) => ({ points: h.map((q) => ({ x: 0.5 + q.x, y: 0.5 + q.y, z: 0 })), aspect: 1 });
+    const together = shaped(0, 0, 0);
+    const seen = fingerPose(handShaped(0, 0, 0), "right", flat(handShaped(0, 0, 20)));
+    for (let i = 1; i < 5; i++) expect(deg(seen[i]![0] - together[i]![0])).toBeCloseTo(20, 0);
+    // El pulgar no está en el plano de la palma: sigue en 3D.
+    expect(seen[0]![0]).toBeCloseTo(together[0]![0], 5);
   });
 
   it("mide la separación de los dedos estirados", () => {

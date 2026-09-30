@@ -197,6 +197,9 @@ const MCP_CLOSED = 67 * DEG;
 const PIP_OPEN = 3 * DEG;
 const PIP_CLOSED = 80 * DEG;
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
+/** Desde cuánto de frente a la cámara (|normal de la palma · z|) cuenta la imagen para el azimut, y desde cuánto solo ella. */
+const IMAGE_AZ_FROM = 0.7;
+const IMAGE_AZ_FULL = 0.85;
 const perpUnit = (a: Vec, axis: Vec): Vec => unit(sub(a, scale(axis, dot(a, axis))));
 
 /**
@@ -206,12 +209,23 @@ const perpUnit = (a: Vec, axis: Vec): Vec => unit(sub(a, scale(axis, dot(a, axis
  * juntos de separados, y dónde está el pulgar (junto al índice, cruzado, fuera).
  * Nudillo y falange media, calibrados con el DILSE (MediaPipe los da doblados de más con
  * la mano estirada); el azimut de un dedo muy doblado no se ve bien y tiende al de reposo.
+ * Con `image` y la palma de frente (o de espaldas) a la cámara, el azimut de los dedos se
+ * mide en la imagen: en 3D la profundidad junta los dedos de una mano y abre los de la otra
+ * (en los números a dos manos, la derecha salía con los dedos juntos y no se contaban).
  */
-export function fingerPose(world: Point3[], side: Side): MeasuredFinger[] {
+export function fingerPose(world: Point3[], side: Side, image?: { points: Point3[]; aspect: number }): MeasuredFinger[] {
   const at = (i: number) => v(world[i]!);
   const P = unit(sub(at(9), at(0)));
   const N = perpUnit(handOrientation(world, side).palm, P);
   const A = perpUnit(perpUnit(sub(at(5), at(17)), P), N);
+  const facing = image ? clamp((Math.abs(N[2]) - IMAGE_AZ_FROM) / (IMAGE_AZ_FULL - IMAGE_AZ_FROM), 0, 1) : 0;
+  const img = (i: number): Vec => [image!.points[i]!.x * image!.aspect, image!.points[i]!.y, 0];
+  const azInImage = (c: number[]) => {
+    const Pi = unit(sub(img(9), img(0)));
+    const Ai = perpUnit(sub(img(5), img(17)), Pi);
+    const d = unit(sub(img(c[1]!), img(c[0]!)));
+    return Math.atan2(dot(d, Ai), dot(d, Pi));
+  };
   const chains = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]];
   return chains.map((c, i) => {
     const s1 = unit(sub(at(c[1]!), at(c[0]!)));
@@ -232,7 +246,10 @@ export function fingerPose(world: Point3[], side: Side): MeasuredFinger[] {
     const mcp = clamp(((el - MCP_OPEN) / (MCP_CLOSED - MCP_OPEN)) * MCP_MAX, -10 * DEG, MCP_MAX + 10 * DEG);
     const pip = clamp(((bendOf(s1, s2) - PIP_OPEN) / (PIP_CLOSED - PIP_OPEN)) * PIP_MAX, -10 * DEG, PIP_MAX + 10 * DEG);
     const seen = clamp((70 * DEG - mcp) / (40 * DEG), 0, 1);
-    return [seen * az + (1 - seen) * REST_AZIMUTH[i]!, mcp, pip];
+    // La falange tiene que verse en la imagen: si apunta hacia la cámara, su dirección ahí es ruido.
+    const w = facing * clamp((Math.hypot(s1[0], s1[1]) - IMAGE_AZ_FROM) / (IMAGE_AZ_FULL - IMAGE_AZ_FROM), 0, 1);
+    const inPlane = w > 0 ? w * azInImage(c) + (1 - w) * az : az;
+    return [seen * inPlane + (1 - seen) * REST_AZIMUTH[i]!, mcp, pip];
   });
 }
 
@@ -973,7 +990,7 @@ export function framesToClip(
       elbow,
       hand: {
         fingers,
-        joints: fingerPose(h.world, side).flat(),
+        joints: fingerPose(h.world, side, { points: h.image, aspect: f.aspect ?? 1 }).flat(),
         touch: thumbTouch(h.world),
         tip: thumbTip(h.world, side),
         palm: toSigner(o.palm),

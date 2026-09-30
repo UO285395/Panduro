@@ -1790,28 +1790,44 @@ function outOfHead(
   const n = onFace ? touchedSurface(rig, side, contact, RELAXED, head).n.normalize() : null;
 
   // Girar sobre el contacto, hacia un lado o hacia el otro (con el contacto a media mano, lo
-  // que sale por un lado entra por el otro): la orientación que menos se mete.
+  // que sale por un lado entra por el otro): lo menos posible y, entre los giros de ese
+  // ángulo que la sacan, el que menos cambia la mano vista de frente. Además de inclinarla
+  // respecto a la cara, girándola sobre la vertical o de lado: hacia la cámara apenas se
+  // nota, y solo con lo primero MADRE o TÍMIDO acababan con la mano en horizontal junto a la
+  // mejilla (en el vídeo va vertical).
   let base = hand;
   let baseDepth = depthAt(new THREE.Vector3());
   if (onFace && n && hand.palmDir && hand.pointDir) {
+    const { palmDir, pointDir } = hand;
     const at = contactPoint(rig, side, contact, RELAXED, head);
-    const axis = new THREE.Vector3().crossVectors(wristOf(hand).sub(at), n);
-    if (axis.lengthSq() > 1e-10 * L * L) {
-      axis.normalize();
-      const local = new THREE.Vector3(axis.dot(rig.right), axis.dot(rig.up), axis.dot(rig.forward));
-      const turn = (v: [number, number, number], q: THREE.Quaternion) =>
-        new THREE.Vector3(...v).applyQuaternion(q).toArray() as [number, number, number];
-      for (const deg of [15, -15, 30, -30, 45, -45, 60, -60]) {
-        const q = new THREE.Quaternion().setFromAxisAngle(local, THREE.MathUtils.degToRad(deg));
-        const oriented = { ...hand, palmDir: turn(hand.palmDir, q), pointDir: turn(hand.pointDir, q) };
-        const placed = placeTouching(rig, side, oriented, contact, fingers, other ?? RELAXED, head, thumb);
-        const dd = inside(placed)(new THREE.Vector3());
-        if (dd <= tol) return placed;
-        if (dd < baseDepth) {
-          base = placed;
-          baseDepth = dd;
+    const tilt = new THREE.Vector3().crossVectors(wristOf(hand).sub(at), n);
+    const axes = [new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0)];
+    if (tilt.lengthSq() > 1e-10 * L * L) {
+      tilt.normalize();
+      axes.unshift(new THREE.Vector3(tilt.dot(rig.right), tilt.dot(rig.up), tilt.dot(rig.forward)));
+    }
+    const turn = (v: [number, number, number], q: THREE.Quaternion) =>
+      new THREE.Vector3(...v).applyQuaternion(q).toArray() as [number, number, number];
+    // Lo que se nota de frente: cuánto se mueven en la imagen los dedos y, menos, la palma.
+    const seen = (a: [number, number, number], b: [number, number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    for (const deg of [15, 30, 45, 60]) {
+      let best: { placed: HandSpec; change: number } | null = null;
+      for (const axis of axes) {
+        for (const sign of [1, -1]) {
+          const q = new THREE.Quaternion().setFromAxisAngle(axis, THREE.MathUtils.degToRad(sign * deg));
+          const oriented = { ...hand, palmDir: turn(palmDir, q), pointDir: turn(pointDir, q) };
+          const placed = placeTouching(rig, side, oriented, contact, fingers, other ?? RELAXED, head, thumb);
+          const dd = inside(placed)(new THREE.Vector3());
+          if (dd <= tol) {
+            const change = seen(pointDir, oriented.pointDir) + 0.5 * seen(palmDir, oriented.palmDir);
+            if (!best || change < best.change) best = { placed, change };
+          } else if (dd < baseDepth) {
+            base = placed;
+            baseDepth = dd;
+          }
         }
       }
+      if (best) return best.placed;
     }
     inside(base);
   }

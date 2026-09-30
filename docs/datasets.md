@@ -152,7 +152,9 @@ python -m venv .venv
 - Tampoco se meten en la cabeza, que en un modelo anime es casi el doble de grande que la de
   una persona en proporción al brazo: con los nudillos en la mejilla o el pulgar en la
   frente, el resto de la mano quedaba dentro. La mano gira sobre el punto de contacto hasta
-  quedar fuera (el contacto se mantiene) y, si no basta, se aparta de la cabeza lo justo;
+  quedar fuera (el contacto se mantiene): lo menos posible y, entre los giros que la sacan, el
+  que menos se nota de frente (hacia la cámara o desde ella, mejor que en el plano de la
+  imagen); si no basta, se aparta de la cabeza lo justo;
   también de camino entre keyframes. La cabeza se mide en la malla del modelo, triángulo a
   triángulo (con solo los vértices, en las mejillas quedaban huecos y un contacto acababa
   dentro), sin contar los mechones sueltos. Lo que se mete una mano es lo mínimo para salir

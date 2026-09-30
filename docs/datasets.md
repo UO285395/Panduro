@@ -169,6 +169,11 @@ python -m venv .venv
   izquierda, y en los números a dos manos (18, 19) la derecha salía plana. El avatar los
   separa del corazón un 30 % más que el signante: sus dedos son más gruesos y cortos, y con
   la misma separación no quedaba hueco entre ellos.
+- Corazón, anular y meñique comparten el flexor profundo: con uno cerrado, el de al lado no
+  puede quedarse con el nudillo doblado y la falange recta. MediaPipe los da así cuando no
+  los ve (un puño de lado, con el anular y el meñique tapados), y el avatar los sacaba de
+  canto (PRIVACIDAD, INVIERNO, ROSA, SEMANA, DINERO). Se cierran como el vecino; el índice,
+  que se mueve por su cuenta, no. De 582 dedos así en todo el curso quedan 82.
 - Las pinzas (la O, la F, el «pico», el pulgar sobre una yema) se guardan como cuánto toca
   el pulgar cada yema, y el avatar junta las puntas en su propia mano aunque sus dedos
   tengan otras proporciones: el pulgar va hacia las yemas y los dedos se doblan hacia él.

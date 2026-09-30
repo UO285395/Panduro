@@ -239,7 +239,7 @@ export function fingerPose(world: Point3[], side: Side, image?: { points: Point3
     return Math.atan2(dot(d, Ai), dot(d, Pi));
   };
   const chains = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]];
-  return chains.map((c, i) => {
+  const pose = chains.map((c, i): MeasuredFinger => {
     const s1 = unit(sub(at(c[1]!), at(c[0]!)));
     const s2 = unit(sub(at(c[2]!), at(c[1]!)));
     const s3 = unit(sub(at(c[3]!), at(c[2]!)));
@@ -263,6 +263,35 @@ export function fingerPose(world: Point3[], side: Side, image?: { points: Point3
     const inPlane = w > 0 ? w * azInImage(c) + (1 - w) * az : az;
     return [seen * inPlane + (1 - seen) * REST_AZIMUTH[i]!, mcp, pip];
   });
+  return coupledFingers(pose);
+}
+
+/** Dedo «de mesa»: doblado en el nudillo y con la falange recta. */
+const TABLE_MCP = 60 * DEG;
+const TABLE_PIP = 30 * DEG;
+/** Dedo cerrado: doblado en el nudillo y en la falange. */
+const CURLED_PIP = 80 * DEG;
+
+/**
+ * Corazón, anular y meñique comparten el flexor profundo: con uno cerrado, el de al lado no
+ * puede quedarse con la falange recta y el nudillo doblado. MediaPipe lo da así cuando no
+ * los ve (el puño de lado de PRIVACIDAD o INVIERNO, con el anular y el meñique tapados por el
+ * índice): el avatar sacaba esos dedos de canto. Se cierran como su vecino, y el de al lado
+ * de ese también si estaba igual (DINERO: anular y meñique). El índice, que se mueve por su
+ * cuenta, se deja.
+ */
+export function coupledFingers(input: MeasuredFinger[]): MeasuredFinger[] {
+  let pose = input;
+  for (let pass = 0; pass < 2; pass++) {
+    const prev = pose;
+    const curled = (i: number) => i >= 2 && i <= 4 && prev[i]![1] >= TABLE_MCP && prev[i]![2] >= CURLED_PIP;
+    pose = prev.map((f, i): MeasuredFinger => {
+      if (i < 2 || f[1] < TABLE_MCP || f[2] > TABLE_PIP) return f;
+      const next = [i - 1, i + 1].filter(curled).map((j) => prev[j]![2]);
+      return next.length ? [f[0], f[1], next.reduce((a, b) => a + b, 0) / next.length] : f;
+    });
+  }
+  return pose;
 }
 
 /** Pinza: a esta distancia (en palmas: muñeca→nudillo del corazón) o menos, las yemas se tocan; a PINCH_FAR, nada. */

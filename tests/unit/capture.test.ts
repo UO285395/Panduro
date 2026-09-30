@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assignHands,
+  coupledFingers,
   FACE_BLENDSHAPES,
   faceCoords,
   fingerFlex,
@@ -789,5 +790,27 @@ describe("capture: profundidad del brazo desde la imagen", () => {
   it("sin los brazos en la imagen, la pose tal cual", () => {
     const noArms = [...rest, up].map((f) => ({ ...f, poseImage: f.poseImage!.map((q, i) => (i >= 11 ? { ...q, visibility: 0 } : q)) }));
     expect(withArmDepth(noArms)).toEqual(noArms);
+  });
+});
+
+describe("coupledFingers: corazón, anular y meñique van juntos", () => {
+  const D = Math.PI / 180;
+  const f = (az: number, mcp: number, pip: number): [number, number, number] => [az * D, mcp * D, pip * D];
+
+  it("cierra el anular y el meñique de mesa junto al corazón cerrado (puño de lado)", () => {
+    const pose = [f(30, 20, 10), f(5, 90, 0), f(0, 95, 100), f(-3, 95, 0), f(-13, 90, 5)];
+    const out = coupledFingers(pose);
+    expect(out[3]![2]).toBeCloseTo(100 * D, 5);
+    expect(out[4]![2]).toBeGreaterThan(80 * D);
+    // El índice va por su cuenta, y el pulgar no entra.
+    expect(out[1]).toEqual(pose[1]);
+    expect(out[0]).toEqual(pose[0]);
+  });
+
+  it("deja la B doblada (todos de mesa) y la Y (meñique estirado)", () => {
+    const bent = [f(30, 20, 10), f(5, 90, 0), f(0, 90, 5), f(-3, 90, 0), f(-13, 90, 5)];
+    expect(coupledFingers(bent)).toEqual(bent);
+    const y = [f(40, 10, 0), f(5, 95, 100), f(0, 95, 105), f(-3, 95, 100), f(-20, 5, 0)];
+    expect(coupledFingers(y)).toEqual(y);
   });
 });

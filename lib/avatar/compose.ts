@@ -8,6 +8,7 @@ export const PHRASES: Record<string, string[]> = {
   GRACIAS_MUCHO: ["GRACIAS", "MUCHO"],
   PUEDE_REPETIR: ["PODER", "REPETIR"],
   VER_TV: ["VER", "TELEVISION"],
+  CULTURA_SORDA: ["CULTURA", "SORDO"],
 };
 
 /** Pausa entre un signo y el siguiente de una frase (ms de clip). */

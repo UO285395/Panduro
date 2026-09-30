@@ -230,6 +230,10 @@ CHOSEN: dict[str, str | None] = {
     "MIGRACION": "migracion-persona",  # de personas, no de animales ni de datos
     "PAN": "pan",  # el alimento, no «pan comido»
     "PARQUE": "parque",  # el de la ciudad (unidad de lugares)
+    "CULTURA": "cultura-costumbres",  # la de una comunidad (en «cultura sorda»), no «ser culto»
+    "GLOSADO": "glosa_b",  # la escritura de las lenguas de signos, no la nota al margen
+    "INTERPRETAR": "interpretar-traducir",  # de una lengua a otra, no actuar
+    "INTERPRETE_LS": "interprete",  # el de lenguas (orales o signadas), no el actor
     "PODER": "poder-capacidad",  # ser capaz (en «¿puede repetir?»), no «el poder»
     "TELEVISION": "television",
     "VER": "ver_aa",  # percibir con los ojos (en «ver la televisión»)
@@ -239,12 +243,18 @@ CHOSEN: dict[str, str | None] = {
 
 # Signos del curso cuya traducción no es la entrada del DILSE: la expresión o palabra que
 # sí lo es («No entiendo» es el sublema «no entender» de ENTENDER; «Más despacio» se signa
-# DESPACIO).
+# DESPACIO), o la de un sinónimo con la misma definición («inferir» es sacar una conclusión,
+# como DEDUCIR).
 QUERIES: dict[str, str] = {
     "NO_ENTIENDO": "no entender",
     "MAS_DESPACIO": "despacio",
     "EN_DESACUERDO": "desacuerdo",
     "ACUERDO_C1": "acuerdo",
+    "GLOSADO": "glosa",
+    "INFERIR": "deducir",
+    "INTERPRETE_LS": "intérprete",
+    "REGISTRO_C2": "registro",
+    "SINTETIZAR": "síntesis",
 }
 
 
@@ -325,7 +335,13 @@ def whole(video: bytes) -> bool:
 
 # Signos que no son del curso pero forman parte de sus frases (lib/avatar/compose.ts: «¿Puede
 # repetir?» es PODER + REPETIR): se descargan igual, con la acepción fijada en CHOSEN.
-PARTS: dict[str, str] = {"PODER": "poder", "VER": "ver", "TELEVISION": "televisión"}
+PARTS: dict[str, str] = {
+    "PODER": "poder",
+    "VER": "ver",
+    "TELEVISION": "televisión",
+    "CULTURA": "cultura",
+    "SORDO": "sordo",
+}
 
 
 def curriculum_signs() -> list[dict]:

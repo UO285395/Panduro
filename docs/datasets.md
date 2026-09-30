@@ -37,17 +37,21 @@ pnpm tsx scripts/landmarks-to-captured.ts data/dilse/landmarks.json --merge
   (también `None` si ninguna es la del curso) y se rehacen con `--only ID…`. Lo que no encuentra
   no lo adivina: esos signos siguen con su animación generada. Si la traducción del curso no
   es la entrada del diccionario, `QUERIES` dice cuál buscar («No entiendo» es el sublema «no
-  entender» de ENTENDER; «Más despacio» se signa DESPACIO).
+  entender» de ENTENDER; «Más despacio» se signa DESPACIO), también un sinónimo con la misma
+  definición («inferir», sacar una conclusión, es DEDUCIR; «sintetizar», SÍNTESIS).
 - Va a una petición por segundo como mucho. Si se corta, se vuelve a lanzar y sigue. La web a
   veces contesta vacío a una búsqueda que sí tiene resultados: se repite hasta tres veces
-  antes de darla por no encontrada (así salían como no encontrados signos que sí están). Con
-  los vídeos pasa algo parecido (llegan cortados, sin el índice `moov`): también se repiten.
+  antes de darla por no encontrada (así salían como no encontrados signos que sí están), y aun
+  así alguna se escapa: vale la pena relanzar `--only` con los no encontrados (INTERPRETAR
+  apareció así). Con los vídeos pasa algo parecido (llegan cortados, sin el índice `moov`):
+  también se repiten.
 - Las frases del curso que el diccionario no tiene como entrada («¿Puede repetir?», «Muchas
-  gracias», «Ver la tele») salen de sus signos grabados seguidos (`PHRASES` en
+  gracias», «Ver la tele», «Cultura sorda») salen de sus signos grabados seguidos (`PHRASES` en
   `lib/avatar/compose.ts`): sin volver al reposo entre uno y otro, con una pausa corta, y con
   la mano pasiva abajo en los signos a una mano. Los signos que solo están para eso (PODER,
-  VER, TELEVISION) se descargan (`PARTS` en `dilse_download.py`) y se convierten, pero no se
-  guardan; la frase se queda con las plantillas de reconocimiento generadas.
+  VER, TELEVISION, CULTURA, SORDO) se descargan (`PARTS` en `dilse_download.py`) y se
+  convierten, pero no se guardan; la frase se queda con las plantillas de reconocimiento
+  generadas.
 - `videos_to_signs.py` también sigue donde lo dejó si `--out` ya existe (vuelve a procesar un
   vídeo si ha cambiado y quita los que ya no están), y guarda en cada muestra el enlace a su
   entrada del diccionario (lo lee de `manifest.csv`), que la app muestra junto a la animación.

@@ -31,8 +31,11 @@ export type CaptureFrame = {
   t: number;
   /** worldLandmarks de PoseLandmarker (33 puntos, metros). */
   poseWorld: Landmark[] | null;
-  /** landmarks de PoseLandmarker en la imagen (al menos la cara, 0-10) y ancho/alto del vídeo. */
-  poseImage?: Point3[] | null;
+  /**
+   * landmarks de PoseLandmarker en la imagen (al menos la cara, 0-10; y si están, hombros,
+   * codos y muñecas, 11-16) y ancho/alto del vídeo.
+   */
+  poseImage?: Landmark[] | null;
   aspect?: number;
   /**
    * FaceLandmarker: blendshapes en el orden de FACE_BLENDSHAPES y giro de la cabeza respecto
@@ -880,8 +883,91 @@ function faceTrack(
   return { head: moves ? head : null, expr };
 }
 
+/** Con menos visibilidad que esto, un punto del brazo no se ha visto en la imagen. */
+const ARM_SEEN = 0.5;
+/** Desde qué altura de la muñeca bajo los ojos (en distancias ojos→boca) se rehace el brazo, y en cuánto más abajo del todo. */
+const ARM_DEPTH_FACE_V = -1.5;
+const ARM_DEPTH_FACE_BAND = 1.5;
+/** Qué fracción de su largo llega a verse en la imagen, como mucho, un segmento del brazo (ver withArmDepth). */
+const ARM_SCALE_QUANTILE = 0.95;
+
+/**
+ * El codo y la muñeca con la profundidad rehecha desde la imagen. La pose en 3D de MediaPipe
+ * falla sobre todo en la profundidad: un antebrazo vertical delante del pecho (FRÍO) le sale
+ * casi horizontal hacia la cámara, con la muñeca el doble de adelantada, y con el brazo
+ * levantado baja la muñeca. En la imagen el brazo se ve bien y sus largos son fiables: lo que
+ * no se ve de cada segmento en la imagen es lo que va hacia la cámara o se aleja (hacia
+ * dónde, lo dice la pose). La escala de la imagen es la del segmento que más se ve de su
+ * largo en todo el vídeo (con los brazos caídos, en reposo, quedan en el plano de la imagen).
+ * Solo por debajo de la barbilla: a la altura de la cara la altura ya sale de la imagen, y
+ * con la mano a la profundidad de una persona la cabeza del avatar, más grande, la aparta
+ * (CENA: las puntas ya no se juntaban delante de la boca).
+ */
+export function withArmDepth(frames: CaptureFrame[]): CaptureFrame[] {
+  const arms = [
+    [P.lShoulder, P.lElbow, P.lWrist],
+    [P.rShoulder, P.rElbow, P.rWrist],
+  ] as const;
+  const segments = arms.flatMap(([s, e, w]) => [
+    [s, e],
+    [e, w],
+  ]);
+  const seen = (f: CaptureFrame) =>
+    !!f.poseWorld &&
+    f.poseWorld.length > P.rWrist &&
+    arms.every((arm) => arm.every((i) => (f.poseImage?.[i]?.visibility ?? 0) >= ARM_SEEN));
+  const usable = frames.filter(seen);
+  if (usable.length < 5) return frames;
+  const world = (f: CaptureFrame, i: number) => v(f.poseWorld![i]!);
+  const image = (f: CaptureFrame, i: number): [number, number] => [f.poseImage![i]!.x * (f.aspect ?? 1), f.poseImage![i]!.y];
+  const long = segments.map(([a, b]) => median(usable.map((f) => len(sub(world(f, b), world(f, a))))));
+  const shown = usable.flatMap((f) =>
+    segments.map(([a, b], k) => {
+      const [x0, y0] = image(f, a);
+      const [x1, y1] = image(f, b);
+      return Math.hypot(x1 - x0, y1 - y0) / long[k]!;
+    }),
+  );
+  shown.sort((x, y) => x - y);
+  const perMetre = shown[Math.floor(ARM_SCALE_QUANTILE * (shown.length - 1))]!;
+  return frames.map((f) => {
+    if (!seen(f)) return f;
+    const pose = f.poseWorld!.map((q) => ({ ...q }));
+    for (const arm of arms) {
+      // Cuánto se rehace: del todo con la muñeca bajo la barbilla, nada a la altura de la boca.
+      const face = f.poseImage && faceCoords(f.poseImage, f.aspect ?? 1, f.poseImage[arm[2]]!);
+      const w = face ? Math.max(0, Math.min(1, (ARM_DEPTH_FACE_V - face[1]) / ARM_DEPTH_FACE_BAND)) : 1;
+      if (w === 0) continue;
+      let from = world(f, arm[0]);
+      for (const [a, b] of [
+        [arm[0], arm[1]],
+        [arm[1], arm[2]],
+      ] as const) {
+        const k = segments.findIndex(([x, y]) => x === a && y === b);
+        const [x0, y0] = image(f, a);
+        const [x1, y1] = image(f, b);
+        let dx = (x1 - x0) / perMetre;
+        let dy = (y1 - y0) / perMetre;
+        const inPlane = Math.hypot(dx, dy);
+        const L = long[k]!;
+        if (inPlane > L) {
+          dx *= L / inPlane;
+          dy *= L / inPlane;
+        }
+        const depth = Math.sqrt(Math.max(0, L * L - Math.min(inPlane, L) ** 2));
+        const toward = f.poseWorld![b]!.z - f.poseWorld![a]!.z < 0 ? -1 : 1;
+        const to: Vec = [from[0] + dx, from[1] + dy, from[2] + toward * depth];
+        const was = world(f, b);
+        pose[b] = { ...pose[b]!, x: was[0] + w * (to[0] - was[0]), y: was[1] + w * (to[1] - was[1]), z: was[2] + w * (to[2] - was[2]) };
+        from = to;
+      }
+    }
+    return { ...f, poseWorld: pose };
+  });
+}
+
 export function framesToClip(
-  frames: CaptureFrame[],
+  input: CaptureFrame[],
   opts: {
     leftHanded?: boolean;
     /** Para comparar ajustes: false deja todos los keyframes; smoothing cambia el suavizado. */
@@ -889,6 +975,7 @@ export function framesToClip(
     smoothing?: number | Partial<typeof SMOOTH>;
   } = {},
 ): CaptureResult {
+  const frames = withArmDepth(input);
   const withPose = frames.filter((f) => f.poseWorld && f.poseWorld.length > P.rWrist);
   if (withPose.length < 5) {
     return { ok: false, error: "No se detecta el cuerpo. Encuadra de cintura para arriba, de frente y con buena luz." };
@@ -960,7 +1047,7 @@ export function framesToClip(
     return len(off) < ELBOW_MIN * armLen ? undefined : toSigner(unit(off));
   };
 
-  const sampleSide = (f: CaptureFrame, side: Side): Sample | null => {
+  const sampleSide = (f: CaptureFrame, side: Side, i: number): Sample | null => {
     const p = f.poseWorld;
     if (!p || p.length <= P.rWrist) return null;
     const [si, ei, wi] = side === "right" ? [P.rShoulder, P.rElbow, P.rWrist] : [P.lShoulder, P.lElbow, P.lWrist];
@@ -997,13 +1084,15 @@ export function framesToClip(
         point: toSigner(o.point),
         image: h.image,
       },
-      touch: detectTouch(f, side, fingers),
+      // Con la pose tal cual: los contactos se ajustaron con ella, y al rehacer cada brazo por
+      // su cuenta las dos manos que se tocaban podían quedar separadas.
+      touch: detectTouch(input[i]!, side, fingers),
     };
   };
 
   const dominant: Side = opts.leftHanded ? "left" : "right";
   const other: Side = opts.leftHanded ? "right" : "left";
-  const dom = frames.map((f) => sampleSide(f, dominant));
+  const dom = frames.map((f, i) => sampleSide(f, dominant, i));
   // Mano activa: se ve y está levantada, sobre el pecho o al menos ~10 cm por encima de
   // donde descansa en esta grabación (hay signos a la altura de la cintura, como HIJO).
   const restY = (samples: (Sample | null)[]) => {
@@ -1085,7 +1174,7 @@ export function framesToClip(
 
   const domRange = range(dom);
   const main = build(domRange);
-  const otherAll = frames.map((f) => sampleSide(f, other));
+  const otherAll = frames.map((f, i) => sampleSide(f, other, i));
   const otherRange = range(otherAll);
   const otherActive = otherRange.filter(activeAbove(restY(otherAll))).length / otherRange.length;
   const second = otherActive >= 0.3 ? build(otherRange) : null;

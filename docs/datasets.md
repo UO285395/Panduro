@@ -163,6 +163,14 @@ python -m venv .venv
   usa para doblar el brazo como en el vídeo.
 - Si el vídeo ya se había procesado con una versión anterior del script, se vuelve a procesar
   (cada muestra guarda su `format`).
+- La profundidad del brazo se rehace con la imagen: la pose en 3D de MediaPipe falla sobre
+  todo en ella (un antebrazo vertical delante del pecho, como en FRÍO, le sale casi
+  horizontal hacia la cámara y con la muñeca más baja). Con hombros, codos y muñecas en la
+  imagen (`arms`, desde el formato 4 de `videos_to_signs.py`) y el largo de brazo y
+  antebrazo, lo que no se ve de cada segmento en la imagen es lo que va hacia la cámara.
+  Solo con la mano por debajo de la barbilla: a la altura de la cara la altura ya sale de la
+  imagen, y la cabeza del avatar, más grande, apartaba las manos. Los contactos se siguen
+  detectando con la pose tal cual.
 - Las trayectorias se suavizan más con la mano casi quieta (donde se nota el temblor) que en
   los movimientos rápidos (para no perder un saludo o un golpe doble), y se quitan los
   keyframes que se pueden sacar interpolando. La posición, la orientación de la mano y los

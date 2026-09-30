@@ -1,5 +1,5 @@
 import type { Point3 } from "@/lib/mediapipe/types";
-import { assignHands, framesToClip, type CaptureFrame, type CaptureResult } from "./capture";
+import { assignHands, framesToClip, type CaptureFrame, type CaptureResult, type Landmark } from "./capture";
 
 /** Formato que escriben scripts/swl_lse_export.py y scripts/videos_to_signs.py. */
 type Triple = [number, number, number];
@@ -10,6 +10,8 @@ export type SwlFrame = {
   hands: { image: Triple[]; world: Triple[] }[];
   /** Pose 0-10 (nariz, ojos, orejas, boca) en la imagen. */
   face?: Triple[];
+  /** Pose 11-16 (hombros, codos y muñecas) en la imagen, con su visibilidad. */
+  arms?: [number, number, number, number][];
   /** FaceLandmarker: blendshapes (en el orden de FACE_BLENDSHAPES) y giro de la cabeza. */
   faceBs?: number[];
   headR?: number[];
@@ -31,10 +33,11 @@ const toPoint = (a: readonly number[]): Point3 => ({ x: a[0]!, y: a[1]!, z: a[2]
 
 export function toCaptureFrames(frames: SwlFrame[], fps: number, aspect?: number): CaptureFrame[] {
   return frames.map((f, i) => {
-    const poseImage: Point3[] = (f.face ?? []).map(toPoint);
+    const poseImage: Landmark[] = (f.face ?? []).map(toPoint);
+    f.arms?.forEach((a, k) => (poseImage[11 + k] = { ...toPoint(a), visibility: a[3] }));
     if (f.wrists) {
-      poseImage[15] = toPoint(f.wrists[0]);
-      poseImage[16] = toPoint(f.wrists[1]);
+      poseImage[15] = { ...toPoint(f.wrists[0]), visibility: f.arms?.[4]?.[3] };
+      poseImage[16] = { ...toPoint(f.wrists[1]), visibility: f.arms?.[5]?.[3] };
     }
     const hands = f.hands.map((h) => ({ image: h.image.map(toPoint), world: h.world.map(toPoint) }));
     return {

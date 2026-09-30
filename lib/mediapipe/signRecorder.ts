@@ -59,7 +59,7 @@ export class SignRecorder {
     const p = this.pose.detectForVideo(video, ts);
     const h = this.hands.detectForVideo(video, ts);
 
-    const poseImage = p.landmarks?.[0]?.map(toPoint) ?? null;
+    const poseImage = p.landmarks?.[0]?.map((l) => ({ ...toPoint(l), visibility: l.visibility })) ?? null;
     const poseWorld =
       p.worldLandmarks?.[0]?.map((l) => ({ ...toPoint(l), visibility: l.visibility })) ?? null;
     const samples: HandSample[] = (h.landmarks ?? [])

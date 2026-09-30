@@ -35,7 +35,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from swl_lse_export import POSE_POINTS, WRISTS, curriculum_ids, gloss_key  # noqa: E402
+from swl_lse_export import ARMS, POSE_POINTS, WRISTS, curriculum_ids, gloss_key  # noqa: E402
 
 FACE_POINTS = 11  # pose 0-10: nariz, ojos (interior, centro, exterior), orejas, comisuras
 VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"}
@@ -52,7 +52,7 @@ BLENDSHAPES = (
     "mouthFunnel", "mouthPucker", "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft",
     "mouthStretchRight", "mouthFrownLeft", "mouthFrownRight", "cheekPuff",
 )
-FORMAT = 3  # 3: con la cara (blendshapes y giro de la cabeza)
+FORMAT = 4  # 3: con la cara (blendshapes y giro de la cabeza); 4: con los brazos en la imagen
 
 
 def model_path(kind: str, cache: Path) -> str:
@@ -115,6 +115,9 @@ def extract(video: Path, pose_model: str, hand_model: str, face_model: str) -> t
                 # Cara en la imagen (nariz, ojos, orejas, boca): dónde toca la mano, sin la
                 # profundidad, que con el brazo levantado es poco fiable.
                 entry["face"] = [point(p.pose_landmarks[0][i]) for i in range(FACE_POINTS)]
+                # Hombros, codos y muñecas en la imagen: la profundidad del brazo en 3D no es
+                # fiable (un antebrazo vertical sale hacia delante) y se rehace con ellos.
+                entry["arms"] = [point(p.pose_landmarks[0][i], visibility=True) for i in ARMS]
             for img, wld in zip(h.hand_landmarks or [], h.hand_world_landmarks or []):
                 if len(img) == 21 and len(wld) == 21:
                     entry["hands"].append({"image": [point(q) for q in img], "world": [point(q) for q in wld]})

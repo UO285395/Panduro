@@ -34,6 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 POSE_POINTS = 17  # nariz … muñecas: lo que usa lib/avatar/capture.ts
 WRISTS = (15, 16)
+ARMS = range(11, 17)  # hombros, codos y muñecas: en la imagen, la profundidad del brazo
 
 
 def install_protobuf_stub() -> None:
@@ -130,6 +131,7 @@ def export_frames(pickled: list) -> list[dict]:
         if world and image:
             entry["poseWorld"] = [point(p, visibility=True) for p in world[0][:POSE_POINTS]]
             entry["wrists"] = [point(image[0][i]) for i in WRISTS]
+            entry["arms"] = [point(image[0][i], visibility=True) for i in ARMS]
         hand_image = getattr(hands, "hand_landmarks", None) or []
         hand_world = getattr(hands, "hand_world_landmarks", None) or []
         for img, wld in zip(hand_image, hand_world):

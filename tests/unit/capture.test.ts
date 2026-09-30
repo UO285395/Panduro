@@ -10,6 +10,7 @@ import {
   mirroredHand,
   thumbTip,
   thumbTouch,
+  withArmDepth,
   type CaptureFrame,
   type Landmark,
 } from "@/lib/avatar/capture";
@@ -669,5 +670,46 @@ describe("capture: yema del pulgar", () => {
     // No depende de lo grande que se vea la mano.
     const big = thumbTip(hand.map((p) => ({ x: 2 * p.x, y: 2 * p.y, z: 2 * p.z })), "right");
     big.forEach((x, k) => expect(x).toBeCloseTo(tip[k]!, 6));
+  });
+});
+
+describe("capture: profundidad del brazo desde la imagen", () => {
+  // Pose de MediaPipe (x a la derecha de la imagen, y abajo, z hacia dentro): hombros,
+  // codos y muñecas; en la imagen, lo mismo sin la profundidad (1 unidad = 1 m).
+  const at = (x: number, y: number, z: number): Landmark => ({ x, y, z, visibility: 1 });
+  const frame = (t: number, rightWrist: [number, number, number], rightWristImg: [number, number]): CaptureFrame => {
+    const world: Landmark[] = Array.from({ length: 17 }, () => at(0, 0, 0));
+    const image: Landmark[] = [];
+    const put = (i: number, w: [number, number, number], img: [number, number] = [w[0], w[1]]) => {
+      world[i] = at(...w);
+      image[i] = at(0.5 + img[0], 0.3 + img[1], 0);
+    };
+    put(11, [0.18, 0, 0]);
+    put(12, [-0.18, 0, 0]);
+    put(13, [0.18, 0.26, 0]);
+    put(14, [-0.18, 0.26, 0]);
+    put(15, [0.18, 0.49, 0]);
+    put(16, rightWrist, rightWristImg);
+    return { t, poseWorld: world, poseImage: image, aspect: 1, hands: {} };
+  };
+  // En reposo, los brazos caídos (en el plano de la imagen); luego el antebrazo derecho
+  // vertical en la imagen y, en 3D, casi horizontal hacia la cámara.
+  const rest = Array.from({ length: 6 }, (_, i) => frame(i * 33, [-0.18, 0.49, 0], [-0.18, 0.49]));
+  const up = frame(300, [-0.18, 0.21, -0.22], [-0.18, 0.09]);
+
+  it("rehace la profundidad con lo que el antebrazo se ve en la imagen", () => {
+    const out = withArmDepth([...rest, up]);
+    const wrist = out[out.length - 1]!.poseWorld![16]!;
+    // Sube 0,17 m (lo que se ve) y se adelanta lo que le falta para medir 0,23 m.
+    expect(wrist.y).toBeCloseTo(0.09, 2);
+    expect(wrist.z).toBeCloseTo(-Math.sqrt(0.23 ** 2 - 0.17 ** 2), 2);
+    // El hombro y el brazo que no cambia, igual.
+    expect(out[out.length - 1]!.poseWorld![12]).toEqual(up.poseWorld![12]);
+    expect(out[out.length - 1]!.poseWorld![15]!.z).toBeCloseTo(0, 5);
+  });
+
+  it("sin los brazos en la imagen, la pose tal cual", () => {
+    const noArms = [...rest, up].map((f) => ({ ...f, poseImage: f.poseImage!.map((q, i) => (i >= 11 ? { ...q, visibility: 0 } : q)) }));
+    expect(withArmDepth(noArms)).toEqual(noArms);
   });
 });

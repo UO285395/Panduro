@@ -1801,15 +1801,19 @@ function outOfHead(
     const { palmDir, pointDir } = hand;
     const at = contactPoint(rig, side, contact, RELAXED, head);
     const tilt = new THREE.Vector3().crossVectors(wristOf(hand).sub(at), n);
-    const axes = [new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0)];
-    if (tilt.lengthSq() > 1e-10 * L * L) {
-      tilt.normalize();
-      axes.unshift(new THREE.Vector3(tilt.dot(rig.right), tilt.dot(rig.up), tilt.dot(rig.forward)));
-    }
+    const tiltAxis =
+      tilt.lengthSq() > 1e-10 * L * L
+        ? new THREE.Vector3(tilt.dot(rig.right), tilt.dot(rig.up), tilt.dot(rig.forward)).normalize()
+        : null;
+    const axes = [...(tiltAxis ? [tiltAxis] : []), new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0)];
     const turn = (v: [number, number, number], q: THREE.Quaternion) =>
       new THREE.Vector3(...v).applyQuaternion(q).toArray() as [number, number, number];
-    // Lo que se nota de frente: cuánto se mueven en la imagen los dedos y, menos, la palma.
+    // Lo que se nota de frente: cuánto se mueven en la imagen los dedos y cuánto se ve la palma
+    // (de canto o de frente a la cámara: la mano plana bajo la barbilla de ENFADADO, vuelta
+    // hacia la cámara, parecía tapar la boca); lo que gira la palma de lado, menos.
     const seen = (a: [number, number, number], b: [number, number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    const change = (p: [number, number, number], d: [number, number, number]) =>
+      seen(pointDir, d) + Math.abs(Math.abs(palmDir[2]) - Math.abs(p[2])) + 0.5 * seen(palmDir, p);
     for (const deg of [15, 30, 45, 60]) {
       let best: { placed: HandSpec; change: number } | null = null;
       for (const axis of axes) {
@@ -1819,9 +1823,11 @@ function outOfHead(
           const placed = placeTouching(rig, side, oriented, contact, fingers, other ?? RELAXED, head, thumb);
           const dd = inside(placed)(new THREE.Vector3());
           if (dd <= tol) {
-            const change = seen(pointDir, oriented.pointDir) + 0.5 * seen(palmDir, oriented.palmDir);
-            if (!best || change < best.change) best = { placed, change };
-          } else if (dd < baseDepth) {
+            const c = change(oriented.palmDir, oriented.pointDir);
+            if (!best || c < best.change) best = { placed, change: c };
+          } else if (axis === tiltAxis && dd < baseDepth) {
+            // Si ninguno la saca, se aparta la que menos se mete de las inclinadas: girada de
+            // otro modo la palma podía acabar de frente a la cámara (ENFADADO).
             base = placed;
             baseDepth = dd;
           }

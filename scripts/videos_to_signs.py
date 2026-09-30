@@ -186,7 +186,8 @@ def main() -> None:
         with open(manifest, encoding="utf-8") as handle:
             pages = {r["signId"]: r["page_url"] for r in csv.DictReader(handle) if r.get("page_url")}
 
-    wanted = curriculum_ids()
+    # Los del currículo y los que el manifest trae aunque no lo sean (las piezas de sus frases).
+    wanted = curriculum_ids() | set(pages)
     videos = sorted(p for p in args.videos.rglob("*") if p.suffix.lower() in VIDEO_EXTENSIONS)
     if not videos:
         sys.exit(f"No hay vídeos en {args.videos}")

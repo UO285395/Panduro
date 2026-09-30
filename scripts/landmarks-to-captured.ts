@@ -9,12 +9,18 @@
  * otra mano), se queda con la mejor y descarta las que no pasan un mínimo de calidad.
  * Con --merge las añade a content/signs/captured.json; si no, escribe --out (por defecto
  * signos-convertidos.json) para revisarlas antes con /dev/grabar o add-captured.mjs.
+ *
+ * Las frases del curso sin entrada en el diccionario (PHRASES en lib/avatar/compose) salen de
+ * sus signos seguidos; los signos que solo están para eso (PODER en «¿Puede repetir?») no se
+ * guardan.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
+import { composeClips, PHRASES } from "@/lib/avatar/compose";
 import { convertSample, type SwlExport } from "@/lib/avatar/importSwl";
 import { CapturedSignsSchema, type CapturedSigns } from "@/lib/curriculum/schema";
+import { parseLevels } from "@/lib/curriculum/structure";
 
 /**
  * Fotogramas con la mano dominante detectada. Algo menos de dos tercios basta: en los signos a
@@ -81,9 +87,29 @@ for (const file of inputs) {
   }
 }
 
+const curriculum = new Set(parseLevels().flatMap((level) => level.signs.map((s) => s.id)));
+const phrases: string[] = [];
+for (const [phraseId, partIds] of Object.entries(PHRASES)) {
+  const parts = partIds.map((id) => result.signs[id]);
+  if (!curriculum.has(phraseId) || parts.some((p) => !p)) continue;
+  const [first] = parts as NonNullable<(typeof parts)[number]>[];
+  result.signs[phraseId] = {
+    avatarClip: composeClips(parts.map((p) => p!.avatarClip)),
+    // Sin plantillas propias: el reconocedor se queda con las generadas de la frase.
+    templates: [],
+    recordedAt: new Date().toISOString(),
+    source: `${first!.source.split(" · signante zurdo")[0]} · ${partIds.join(" + ")}`,
+    license: first!.license,
+    ...(first!.url ? { url: first!.url } : {}),
+  };
+  phrases.push(phraseId);
+}
+for (const id of Object.keys(result.signs)) if (!curriculum.has(id)) delete result.signs[id];
+
 const valid = CapturedSignsSchema.parse(result);
 const converted = Object.keys(valid.signs).length;
 console.log(`${converted} signos convertidos (${contacts} con contacto detectado).`);
+if (phrases.length) console.log(`Frases compuestas con signos grabados: ${phrases.join(", ")}`);
 if (rejected.length) console.log(`Sin muestra válida (${rejected.length}): ${rejected.join(", ")}`);
 
 if (merge) {

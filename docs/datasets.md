@@ -40,7 +40,14 @@ pnpm tsx scripts/landmarks-to-captured.ts data/dilse/landmarks.json --merge
   entender» de ENTENDER; «Más despacio» se signa DESPACIO).
 - Va a una petición por segundo como mucho. Si se corta, se vuelve a lanzar y sigue. La web a
   veces contesta vacío a una búsqueda que sí tiene resultados: se repite hasta tres veces
-  antes de darla por no encontrada (así salían como no encontrados signos que sí están).
+  antes de darla por no encontrada (así salían como no encontrados signos que sí están). Con
+  los vídeos pasa algo parecido (llegan cortados, sin el índice `moov`): también se repiten.
+- Las frases del curso que el diccionario no tiene como entrada («¿Puede repetir?», «Muchas
+  gracias», «Ver la tele») salen de sus signos grabados seguidos (`PHRASES` en
+  `lib/avatar/compose.ts`): sin volver al reposo entre uno y otro, con una pausa corta, y con
+  la mano pasiva abajo en los signos a una mano. Los signos que solo están para eso (PODER,
+  VER, TELEVISION) se descargan (`PARTS` en `dilse_download.py`) y se convierten, pero no se
+  guardan; la frase se queda con las plantillas de reconocimiento generadas.
 - `videos_to_signs.py` también sigue donde lo dejó si `--out` ya existe (vuelve a procesar un
   vídeo si ha cambiado y quita los que ya no están), y guarda en cada muestra el enlace a su
   entrada del diccionario (lo lee de `manifest.csv`), que la app muestra junto a la animación.

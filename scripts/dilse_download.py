@@ -230,6 +230,9 @@ CHOSEN: dict[str, str | None] = {
     "MIGRACION": "migracion-persona",  # de personas, no de animales ni de datos
     "PAN": "pan",  # el alimento, no «pan comido»
     "PARQUE": "parque",  # el de la ciudad (unidad de lugares)
+    "PODER": "poder-capacidad",  # ser capaz (en «¿puede repetir?»), no «el poder»
+    "TELEVISION": "television",
+    "VER": "ver_aa",  # percibir con los ojos (en «ver la televisión»)
     "VOLVER": "volver_B",  # regresar, no «traducir» ni «vomitar»
 }
 
@@ -320,11 +323,18 @@ def whole(video: bytes) -> bool:
     return b"moov" in video
 
 
+# Signos que no son del curso pero forman parte de sus frases (lib/avatar/compose.ts: «¿Puede
+# repetir?» es PODER + REPETIR): se descargan igual, con la acepción fijada en CHOSEN.
+PARTS: dict[str, str] = {"PODER": "poder", "VER": "ver", "TELEVISION": "televisión"}
+
+
 def curriculum_signs() -> list[dict]:
     seen: dict[str, dict] = {}
     for path in sorted((ROOT / "content" / "curriculum").glob("*.json")):
         for sign in json.loads(path.read_text(encoding="utf-8")).get("signs", []):
             seen.setdefault(sign["id"], sign)
+    for part, word in PARTS.items():
+        seen.setdefault(part, {"id": part, "translation": word, "tags": []})
     return list(seen.values())
 
 
@@ -372,6 +382,11 @@ def main() -> None:
                 before = previous.get(sign["id"])
                 if not target.exists() or not before or before["video_url"] != best["video"] or not whole(target.read_bytes()):
                     data = get(best["video"])
+                    for attempt in range(EMPTY_RETRIES):
+                        if whole(data):
+                            break
+                        time.sleep(5 * (attempt + 1))
+                        data = get(best["video"])
                     if not whole(data):
                         raise ValueError(f"vídeo incompleto ({len(data)} bytes)")
                     partial = target.with_suffix(".part")

@@ -636,9 +636,11 @@ function touchRuns(samples: (Sample | null)[], twoHands: boolean): TouchRun[] {
         const handPath = same
           .filter((s) => s.touch!.hand)
           .map((s) => ({ t: s.t, hand: s.touch!.hand!, at: s.touch!.at }));
+        // Desde y hasta donde toca ahí: si antes o después la mano pasa rozando el otro sitio
+        // (BUENAS NOCHES: las puntas junto a la cara y luego sobre la otra mano), eso no cuenta.
         out.push({
-          t0: touching[0]!.t,
-          t1: touching[touching.length - 1]!.t,
+          t0: same[0]!.t,
+          t1: same[same.length - 1]!.t,
           contact: {
             at: mode(same.map((s) => s.touch!.at)),
             with: mode(same.map((s) => s.touch!.with)),

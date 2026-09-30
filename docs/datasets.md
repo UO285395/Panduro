@@ -68,7 +68,10 @@ python -m venv .venv
   queda, en el marco de esa mano (hacia los dedos, hacia el índice, hacia la palma). El
   avatar pone la parte que toca sobre la superficie de su propia mano en ese punto: las
   yemas de CASA juntas en el vértice, el puño de ESPERAR sobre el otro, los dedos de MÉDICO
-  en el dorso de la muñeca.
+  en el dorso de la muñeca. Si la mano pasa sin soltarse de la cara a la otra mano (o al
+  revés), el contacto dura solo lo que toca lo que se queda: en BUENAS NOCHES y CENA las
+  puntas rozan la cara antes de juntarse, y el avatar juntaba las manos delante de ella
+  antes de tiempo.
 - Las manos no se atraviesan: el avatar mira su propia mano como cápsulas (palma y falanges,
   con el grosor medido en su malla) y, si en un instante del signo una se mete en la otra
   (la profundidad de la cámara no es fiable: en los números cruzados en X o con un puño

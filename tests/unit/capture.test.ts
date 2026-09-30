@@ -404,6 +404,25 @@ describe("capture: landmarks → clip", () => {
       expect(palm!.hand![3]).toBeGreaterThan(0);
       expect(back!.hand![3]).toBeLessThan(0);
     });
+
+    it("si antes de tocar la otra mano pasa por la cara, el contacto empieza al tocarla", () => {
+      const baseWrist = add(L_SH, signer(0.1, -0.1, 0.3));
+      const base = makeHand("left", unit(add(F, mul(R, 0.5))), U);
+      const baseCenter = add(baseWrist, mul([0, 5, 17].reduce<Vec>((a, i) => add(a, [base[i]!.x - base[0]!.x, base[i]!.y - base[0]!.y, base[i]!.z - base[0]!.z]), [0, 0, 0]), 1 / 3));
+      const onPalm = (i: number): CaptureFrame => {
+        const wrist = add(baseCenter, mul(indexOffset, -1), signer(0, 0.01, 0));
+        const p = pose({ elbow: add(R_SH, signer(0.05, -0.2, 0.2)), wrist }, { elbow: add(L_SH, signer(-0.05, -0.25, 0.15)), wrist: baseWrist });
+        return { t: i * 33, poseWorld: p, hands: { right: { world: hand, image: imageAt(hand, wrist) }, left: { world: base, image: imageAt(base, baseWrist) } } };
+      };
+      // Seis fotogramas con el índice en la barbilla y, sin soltar, sobre la palma de la otra.
+      const chin = touching(0);
+      const res = framesToClip(Array.from({ length: 20 }, (_, i) => (i < 6 ? chin[i]! : onPalm(i))));
+      if (!res.ok) throw new Error(res.error);
+      const at = (t: number) => res.clip.keyframes.find((k) => k.t === t)?.hand.contact?.at;
+      expect(at(0)).toBeUndefined();
+      expect(at(100)).toBeUndefined();
+      expect(at(300)).toBe("otherPalm");
+    });
   });
 
   it("asigna cada mano al lado anatómico por cercanía a las muñecas de la pose", () => {

@@ -321,6 +321,9 @@ export function signBounds(rig: VrmRig, clip: AvatarClip): THREE.Box3 {
   const t0 = kfs[0]!.t;
   const t1 = kfs[kfs.length - 1]!.t;
   const box = new THREE.Box3();
+  // Con el cuerpo como se va a ver.
+  const was = rig.vrm.scene.rotation.y;
+  turnBody(rig, clip.bodyYaw ?? 0);
   for (let k = 0; k <= BOUNDS_SAMPLES; k++) {
     const t = t0 + (t1 - t0) * (BOUNDS_TRIM + ((1 - 2 * BOUNDS_TRIM) * k) / BOUNDS_SAMPLES);
     const kf = sampleClip(r, t);
@@ -329,6 +332,8 @@ export function signBounds(rig: VrmRig, clip: AvatarClip): THREE.Box3 {
       for (const j of handJointsWorld(rig, side)) box.expandByPoint(j);
     }
   }
+  rig.vrm.scene.rotation.y = was;
+  rig.vrm.scene.updateMatrixWorld(true);
   rig.bounds.set(clip, box);
   return box.clone();
 }
@@ -1382,7 +1387,8 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): LoopingClip {
   }
 }
 
-function resolveClipNow(rig: VrmRig, clip: AvatarClip): LoopingClip {
+function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
+  const clip = facingCamera(input);
   const resolved: AvatarClip = {
     ...clip,
     keyframes: centeredHands(rig, clip).map((kf) => {
@@ -1408,8 +1414,32 @@ function resolveClipNow(rig: VrmRig, clip: AvatarClip): LoopingClip {
   const back = returnPath(clear, APART_STEP_MS);
   const apart = keepHandsApart(rig, back);
   if (apart !== back) clear.back = apart;
-  rig.resolved.set(clip, clear);
+  rig.resolved.set(input, clear);
   return clear;
+}
+
+/**
+ * Con el cuerpo girado (`bodyYaw`, ver turnBody), la cabeza gira lo mismo al revés: el
+ * signante de las grabaciones de tres cuartos sigue mirando a la cámara, y su giro de cabeza
+ * se mide respecto a como la tiene en reposo, ya de cara a ella.
+ */
+function facingCamera(clip: AvatarClip): AvatarClip {
+  const yaw = clip.bodyYaw;
+  if (!yaw) return clip;
+  return {
+    ...clip,
+    keyframes: clip.keyframes.map((kf) => ({ ...kf, head: [(kf.head?.[0] ?? 0) - yaw, kf.head?.[1] ?? 0, kf.head?.[2] ?? 0] })),
+  };
+}
+
+/**
+ * El cuerpo girado `yaw` radianes hacia su derecha respecto a la cámara, como el signante en
+ * las grabaciones de tres cuartos (AvatarClip.bodyYaw). Gira el modelo entero: todo lo de
+ * aquí va en su espacio y gira con él.
+ */
+export function turnBody(rig: VrmRig, yaw: number) {
+  rig.vrm.scene.rotation.y = rig.facingY - yaw;
+  rig.vrm.scene.updateMatrixWorld(true);
 }
 
 /**

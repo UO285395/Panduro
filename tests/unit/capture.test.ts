@@ -194,6 +194,37 @@ describe("capture: landmarks → clip", () => {
     expect(res.clip.shoulderX).toBeCloseTo(0.18 / ARM, 2);
   });
 
+  it("con el cuerpo girado respecto a la cámara lo guarda (bodyYaw) y mide las manos respecto al cuerpo", () => {
+    // Todo girado `a` hacia la derecha del signante alrededor de la vertical.
+    const turned = (a: number) => {
+      const r2 = add(mul(R, Math.cos(a)), mul(F, -Math.sin(a)));
+      const f2 = add(mul(F, Math.cos(a)), mul(R, Math.sin(a)));
+      const turn = (p: { x: number; y: number; z: number }) => {
+        const q: Vec = [p.x, p.y, p.z];
+        const v = add(mul(r2, dot3(q, R)), mul(U, dot3(q, U)), mul(f2, dot3(q, F)));
+        return { ...p, x: v[0], y: v[1], z: v[2] };
+      };
+      return framesToClip(
+        Array.from({ length: 30 }, (_, i) => {
+          const f = frame(i * 33, true, HOLA_HAND);
+          return { ...f, poseWorld: f.poseWorld!.map(turn), hands: { right: { world: HOLA_HAND.map(turn), image: image(HOLA_HAND) } } };
+        }),
+      );
+    };
+    const front = turned(0);
+    const side = turned(0.4);
+    expect(front.ok && side.ok).toBe(true);
+    if (!front.ok || !side.ok) return;
+    expect(front.clip.bodyYaw).toBeUndefined();
+    expect(side.clip.bodyYaw).toBeCloseTo(0.4, 2);
+    const [a, b] = [front.clip.keyframes[0]!.hand, side.clip.keyframes[0]!.hand];
+    expect(b.x).toBeCloseTo(a.x, 2);
+    expect(b.z).toBeCloseTo(a.z, 2);
+    // Un poco de giro (la mitad de los signantes, menos de 4°) no cuenta.
+    const slight = turned(0.1);
+    expect(slight.ok && slight.clip.bodyYaw).toBeUndefined();
+  });
+
   it("por encima de la boca la altura se cuenta en la cara: la muñeca a la altura de los ojos es 0.85", () => {
     const frames: CaptureFrame[] = Array.from({ length: 20 }, (_, i) => {
       const p = pose({ elbow: add(R_SH, signer(0.08, 0.02, 0.25)), wrist: add(R_SH, signer(0.1, 0.28, 0.31)) }, DOWN_LEFT);

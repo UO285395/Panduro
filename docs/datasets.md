@@ -98,6 +98,14 @@ python -m venv .venv
   más separados que una persona (0,42 brazos frente a 0,35): dos manos que se juntaban o se
   cruzaban delante del pecho le quedaban a casi una palma. Ahora, junto al centro del cuerpo
   se conserva lo que distaba de él, y a la altura del hombro y más afuera, del hombro.
+- El DILSE graba de tres cuartos los signos que van hacia delante o hacia un lado (IRONÍA,
+  MUCHO, SILLA, FIEBRE), con la cara hacia la cámara. Las posiciones se miden respecto al
+  cuerpo del signante, así que con el avatar siempre de frente lo que en el vídeo va hacia
+  un lado le quedaba delante del cuerpo. Si el cuerpo está girado 10° o más (51 de los 305
+  signos; la mitad de los signantes están de frente con menos de 4°) se guarda el giro
+  (`bodyYaw`) y el avatar gira igual, con la cabeza al revés para seguir mirando a la
+  cámara. En esos signos el ángulo del brazo en la imagen se desvía de mediana 5,4° en vez
+  de 9,5°, y el del antebrazo 7,4° en vez de 9,6°.
 - La altura de la mano se guarda respecto a la cara del signante (del pecho a la boca, y por
   encima de la boca en distancias boca→ojos) y el avatar la pone igual respecto a la suya.
   Por debajo del pecho se cuenta en brazos: el modelo tiene el cuello y la cabeza más

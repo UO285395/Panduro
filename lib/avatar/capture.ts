@@ -94,6 +94,13 @@ const SIMPLIFY_TOL = { pos: 0.015, dir: 0.09, finger: 0.12, elbow: 0.2, head: 0.
 const FACE_H_BELOW = -3;
 /** Separación mínima del codo respecto a la línea hombro→muñeca (en brazos) para fiarse de ella. */
 const ELBOW_MIN = 0.06;
+/**
+ * Desde cuánto giro del cuerpo (radianes, 10°) lo hace también el avatar. El DILSE graba de
+ * tres cuartos los signos que van hacia delante o hacia un lado (IRONÍA, MUCHO, SILLA), y con
+ * el avatar siempre de frente lo que en el vídeo va hacia un lado le quedaba delante del
+ * cuerpo. La mitad de los signantes están de frente con menos de 4°.
+ */
+const BODY_YAW_MIN = 0.17;
 const FULL = distributeFlex(1);
 const FINGER_MAX = FULL.proximal + FULL.middle + FULL.distal;
 /** Igual que THUMB_FLEX_SCALE del mapper: el pulgar dobla menos. */
@@ -986,6 +993,8 @@ export function framesToClip(
     median(withPose.map((f) => sub(v(f.poseWorld![P.rShoulder]!), v(f.poseWorld![P.lShoulder]!))[k]!)),
   ) as Vec;
   const R = unit(shoulderLine);
+  // Hacia dónde tiene girado el cuerpo: con el hombro derecho hacia atrás, a su derecha.
+  const bodyYaw = Math.atan2(shoulderLine[2], -shoulderLine[0]);
   const imageUp: Vec = [0, -1, 0];
   const U = unit(sub(imageUp, scale(R, dot(imageUp, R))));
   const F = cross(U, R);
@@ -1237,6 +1246,7 @@ export function framesToClip(
       duration: Math.max(200, Math.min(6000, durationMs)),
       keyframes: kept,
       shoulderX: round2(len(shoulderLine) / 2 / armLen),
+      ...(Math.abs(bodyYaw) >= BODY_YAW_MIN ? { bodyYaw: round2(opts.leftHanded ? -bodyYaw : bodyYaw) } : {}),
     },
     templates: pickTemplates(domRange, opts.leftHanded ?? false),
     stats: {

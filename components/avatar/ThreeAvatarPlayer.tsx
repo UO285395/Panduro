@@ -14,6 +14,7 @@ import {
   resolveClip,
   signBounds,
   snapshotPose,
+  turnBody,
 } from "@/lib/avatar/vrmMapper";
 import { addHandOutline, HAND_OUTLINE_WIDTH } from "@/lib/avatar/handOutline";
 import {
@@ -334,6 +335,9 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
         // con la nueva en lugar de saltar.
         let shown: typeof clipRef.current.clip | undefined;
         let fade: { from: ReturnType<typeof snapshotPose>; at: number } | null = null;
+        // El giro del cuerpo (signos grabados de tres cuartos), fundido igual que la pose.
+        let yawFrom = 0;
+        let yaw = 0;
 
         const loop = () => {
           if (disposed) return;
@@ -341,6 +345,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           const now = performance.now();
           if (active !== shown) {
             if (shown !== undefined) fade = { from: snapshotPose(rig), at: now };
+            yawFrom = yaw;
             shown = active;
           }
           // Después de guardar la pose para el fundido: medir el signo la cambia.
@@ -364,11 +369,18 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           } else {
             applyVrmIdle(rig, dt);
           }
+          const yawTo = active?.bodyYaw ?? 0;
+          yaw = yawTo;
           if (fade) {
             const u = (now - fade.at) / CLIP_FADE_MS;
             if (u >= 1) fade = null;
-            else blendFromSnapshot(rig, fade.from, u * u * (3 - 2 * u));
+            else {
+              const s = u * u * (3 - 2 * u);
+              blendFromSnapshot(rig, fade.from, s);
+              yaw = yawFrom + (yawTo - yawFrom) * s;
+            }
           }
+          turnBody(rig, yaw);
           vrm.update(delta);
           renderer.render(scene, camera);
           raf = requestAnimationFrame(loop);

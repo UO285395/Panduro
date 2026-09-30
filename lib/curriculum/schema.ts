@@ -113,6 +113,9 @@ const AvatarClipSchema = z.object({
   // el hombro de cada mano; con esto el avatar sabe dónde está el centro del cuerpo y junta
   // las manos donde se juntaban, aunque sus hombros estén más separados.
   shoulderX: z.number().optional(),
+  // Grabaciones: cuánto tiene girado el cuerpo el signante respecto a la cámara (radianes,
+  // hacia su derecha), si se nota. El avatar gira igual y deja la cara hacia la cámara.
+  bodyYaw: z.number().optional(),
 });
 export type AvatarClip = z.infer<typeof AvatarClipSchema>;
 

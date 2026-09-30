@@ -966,16 +966,31 @@ function toSigningSpace(rig: VrmRig, side: Side, target: THREE.Vector3): Pick<Ha
   };
 }
 
-/** Altura del currículo → altura en el modelo (ver Y_PER_FACE: por encima de la boca, en su cara). */
+/**
+ * Altura del currículo → altura en el modelo: por encima de la boca, en su cara (ver
+ * Y_PER_FACE); entre el pecho y la boca, a la misma fracción de ese tramo; y por debajo del
+ * pecho, en brazos, con lo que mide ese tramo en una persona (CHEST_TO_MOUTH).
+ */
 function heightToModel(rig: VrmRig, y: number): number {
-  if (y <= Y_MOUTH) return rig.chestY + ((y - Y_CHEST) / (Y_MOUTH - Y_CHEST)) * (rig.mouthY - rig.chestY);
+  const per = (y - Y_CHEST) / (Y_MOUTH - Y_CHEST);
+  if (y <= Y_CHEST) return rig.chestY + per * CHEST_TO_MOUTH * rig.armLen;
+  if (y <= Y_MOUTH) return rig.chestY + per * (rig.mouthY - rig.chestY);
   return rig.mouthY + ((y - Y_MOUTH) / Y_PER_FACE) * Math.max(1e-3, rig.eyes.y - rig.mouthY);
 }
 
 function heightFromModel(rig: VrmRig, h: number): number {
+  if (h <= rig.chestY) return Y_CHEST + ((Y_MOUTH - Y_CHEST) * (h - rig.chestY)) / (CHEST_TO_MOUTH * rig.armLen);
   if (h <= rig.mouthY) return Y_CHEST + ((Y_MOUTH - Y_CHEST) * (h - rig.chestY)) / (rig.mouthY - rig.chestY);
   return Y_MOUTH + (Y_PER_FACE * (h - rig.mouthY)) / Math.max(1e-3, rig.eyes.y - rig.mouthY);
 }
+
+/**
+ * Del pecho a la boca en una persona, en brazos (mediana de los signantes del DILSE; del 10 al
+ * 90 %, de 0,41 a 0,46). El modelo tiene el cuello y la cabeza más largos (0,66): medidas en
+ * ese tramo, las manos a la altura de la cintura le quedaban un palmo más bajas que en el
+ * vídeo (TIENDA, BAJO, SILLA), con el brazo casi estirado hacia abajo.
+ */
+const CHEST_TO_MOUTH = 0.435;
 
 // --- Cabeza y cara ---------------------------------------------------------
 

@@ -98,6 +98,15 @@ python -m venv .venv
   más separados que una persona (0,42 brazos frente a 0,35): dos manos que se juntaban o se
   cruzaban delante del pecho le quedaban a casi una palma. Ahora, junto al centro del cuerpo
   se conserva lo que distaba de él, y a la altura del hombro y más afuera, del hombro.
+- La altura de la mano se guarda respecto a la cara del signante (del pecho a la boca, y por
+  encima de la boca en distancias boca→ojos) y el avatar la pone igual respecto a la suya.
+  Por debajo del pecho se cuenta en brazos: el modelo tiene el cuello y la cabeza más
+  largos (del pecho a la boca, 0,66 brazos frente a 0,44 en los signantes del DILSE), y
+  medida en ese tramo una mano a la cintura (BAJO, TIENDA, SILLA) le quedaba un palmo más
+  baja que en el vídeo, con el brazo casi estirado. Frente al vídeo, entre el pecho y la
+  cintura la muñeca baja ahora lo mismo (mediana de -0,02 brazos, antes +0,05 a +0,13) y
+  el ángulo del antebrazo en la imagen se desvía la mitad (mediana por signo de 4,4°, antes
+  8,8°).
 - La mano dominante se toma de la derecha salvo que la izquierda signe mucho más (2,5 veces
   el tiempo levantada). En los signos a dos manos la pasiva suele estar levantada más rato
   que la que se mueve, y con poco margen 20 signos del DILSE (PROGRAMA, NOMBRE, SÍMBOLO,

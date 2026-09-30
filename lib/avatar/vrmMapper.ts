@@ -1746,6 +1746,13 @@ function headProbe(rig: VrmRig, side: Side) {
   };
 }
 
+/**
+ * Hasta cuánto (grados) se gira la mano hacia la cámara o desde ella para sacarla de la cabeza:
+ * a 30° se ve un 13 % más corta; a 60°, la mitad, y el índice de AHORA acababa apuntando a
+ * la cámara en vez de hacia arriba junto a la barbilla.
+ */
+const OUT_OF_HEAD_FRONT_TURN = 30;
+
 /** Lo que una mano puede meterse en la cabeza sin que se note, y lo más que se aparta de ella (en brazos). */
 const HEAD_OVERLAP_TOL = 0.004;
 const HEAD_MAX_PUSH = 0.6;
@@ -1792,9 +1799,9 @@ function outOfHead(
   // Girar sobre el contacto, hacia un lado o hacia el otro (con el contacto a media mano, lo
   // que sale por un lado entra por el otro): lo menos posible y, entre los giros de ese
   // ángulo que la sacan, el que menos cambia la mano vista de frente. Además de inclinarla
-  // respecto a la cara, girándola sobre la vertical o de lado: hacia la cámara apenas se
-  // nota, y solo con lo primero MADRE o TÍMIDO acababan con la mano en horizontal junto a la
-  // mejilla (en el vídeo va vertical).
+  // respecto a la cara, girándola sobre la vertical o de lado, hasta OUT_OF_HEAD_FRONT_TURN:
+  // hacia la cámara apenas se nota, y solo con lo primero MADRE o TÍMIDO acababan con la mano
+  // en horizontal junto a la mejilla (en el vídeo va vertical).
   let base = hand;
   let baseDepth = depthAt(new THREE.Vector3());
   if (onFace && n && hand.palmDir && hand.pointDir) {
@@ -1816,7 +1823,7 @@ function outOfHead(
       seen(pointDir, d) + Math.abs(Math.abs(palmDir[2]) - Math.abs(p[2])) + 0.5 * seen(palmDir, p);
     for (const deg of [15, 30, 45, 60]) {
       let best: { placed: HandSpec; change: number } | null = null;
-      for (const axis of axes) {
+      for (const axis of deg <= OUT_OF_HEAD_FRONT_TURN ? axes : axes.filter((a) => a === tiltAxis)) {
         for (const sign of [1, -1]) {
           const q = new THREE.Quaternion().setFromAxisAngle(axis, THREE.MathUtils.degToRad(sign * deg));
           const oriented = { ...hand, palmDir: turn(palmDir, q), pointDir: turn(pointDir, q) };

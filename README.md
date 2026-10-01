@@ -128,6 +128,11 @@ la orientación de las manos y los contactos, y el avatar los reproduce
 (`content/signs/captured.json`). Cada animación cita su fuente y enlaza la entrada del
 diccionario. El proceso completo está en [`docs/datasets.md`](./docs/datasets.md).
 
+Las grabaciones solo se leen en el servidor (`lib/curriculum/loader.ts`; el build falla si un
+componente cliente lo importa): las páginas reciben por props los signos que pintan, y el
+navegador pide los demás de uno en uno a `/api/clips/<ID>`, un JSON estático por signo con su
+animación y su crédito que se genera al hacer el build.
+
 ## Corpus semilla del clasificador
 
 El clasificador k-NN reconoce desde el minuto uno con **plantillas sintéticas plausibles** para las **12 letras más distintivas** (A, B, C, F, I, L, O, P, U, V, W, Y) y **6 signos léxicos** (HOLA, ADIOS, GRACIAS, SI, NO, BIEN), tres muestras por cada uno. Las plantillas viven en `content/signs/fingerspelling.json` y `content/signs/lexicon.json`, marcadas con `templateSource: "synthetic"`.

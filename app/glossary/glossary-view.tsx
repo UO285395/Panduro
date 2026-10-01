@@ -1,16 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
-import type { AvatarClip } from "@/lib/curriculum/schema";
+import { useSignClip } from "@/lib/avatar/useSignClip";
 
 type SignEntry = {
   id: string;
   gloss: string;
   translation: string;
   description: string | null;
-  avatarClip: AvatarClip | null;
 };
 
 type LevelGroup = {
@@ -135,9 +134,7 @@ function SignCard({
       href={`/glossary/${sign.id}`}
       className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 hover:border-brand-400 hover:shadow-md transition dark:border-slate-800 dark:bg-slate-900"
     >
-      <div className="w-full overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-800">
-        <AvatarPlayer clip={sign.avatarClip} size={140} />
-      </div>
+      <CardAvatar signId={sign.id} />
       <div className="w-full text-center">
         <p className="font-semibold text-sm">{sign.translation}</p>
         <p className="text-xs text-slate-500 dark:text-slate-400">{sign.gloss}</p>
@@ -151,5 +148,34 @@ function SignCard({
         {levelId}
       </span>
     </Link>
+  );
+}
+
+/** El avatar de una tarjeta: pide la animación cuando la tarjeta está a punto de verse. */
+function CardAvatar({ signId }: { signId: string }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || near) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setNear(true);
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [near]);
+  const clip = useSignClip(near ? signId : null);
+
+  return (
+    <div ref={ref} className="w-full overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-800">
+      <AvatarPlayer clip={clip} size={140} />
+    </div>
   );
 }

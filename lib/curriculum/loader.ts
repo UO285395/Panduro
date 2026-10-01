@@ -1,11 +1,14 @@
+import "server-only";
 import capturedRaw from "@/content/signs/captured.json";
 import { CapturedSignsSchema, type Level } from "./schema";
 import { curriculumQueries, parseLevels } from "./structure";
 
 /**
  * El currículo con las animaciones definitivas: las grabaciones reales sustituyen al clip
- * generado. Pesa lo que pesan todas las grabaciones; en el navegador, si no hace falta
- * animar signos, mejor `@/lib/curriculum/structure`.
+ * generado. Pesa lo que pesan todas las grabaciones, así que solo se usa en el servidor (el
+ * build falla si un componente cliente lo importa): las páginas pasan por props los signos
+ * que pintan, y el navegador pide el resto a /api/clips/[id] o usa
+ * `@/lib/curriculum/structure` si no anima signos.
  */
 
 let cachedLevels: Level[] | null = null;

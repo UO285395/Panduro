@@ -16,6 +16,16 @@ const withPWA = withPWAInit({
         expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 30 },
       },
     },
+    {
+      // Animaciones de los signos (un JSON por signo): las ya vistas salen al momento y
+      // sin conexión, y se renuevan por detrás si el despliegue las cambia.
+      urlPattern: /\/api\/clips\/[^/]+$/,
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "sign-clips",
+        expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
+      },
+    },
   ],
 });
 

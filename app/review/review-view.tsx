@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+import { AnimationCredit } from "@/components/avatar/AnimationCredit";
+import { useSignAnimation } from "@/lib/avatar/useSignClip";
 import { QUALITY_LABELS, type Quality } from "@/lib/srs/sm2";
 import { labelForCard } from "@/lib/srs/scheduler";
 import { getSign } from "@/lib/curriculum/structure";
 import { getLetterMeta } from "@/lib/recognition/letters";
 import type { PendingReview } from "@/lib/progress/queries";
+
+const AvatarPlayer = dynamic(
+  () => import("@/components/avatar/AvatarPlayer").then((m) => m.AvatarPlayer),
+  { ssr: false, loading: () => null },
+);
 
 type Props = {
   cards: PendingReview[];
@@ -67,6 +75,7 @@ export function ReviewView({ cards, onAnswer, nextReviewDueAt }: Props) {
         {meta.hint && (
           <p className="text-sm text-slate-600 dark:text-slate-400">{meta.hint}</p>
         )}
+        {meta.kind === "sign" && <SignReveal key={current.cardId} signId={meta.signId} label={meta.title} />}
       </section>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -84,11 +93,11 @@ export function ReviewView({ cards, onAnswer, nextReviewDueAt }: Props) {
   );
 }
 
-function describeCard(cardId: string): {
-  kind: "sign" | "letter";
-  title: string;
-  hint: string | null;
-} {
+type CardMeta =
+  | { kind: "letter"; title: string; hint: string | null }
+  | { kind: "sign"; signId: string; title: string; hint: string | null };
+
+function describeCard(cardId: string): CardMeta {
   if (cardId.startsWith("letter:")) {
     const letter = labelForCard(cardId);
     const meta = getLetterMeta(letter);
@@ -98,9 +107,39 @@ function describeCard(cardId: string): {
   const sign = getSign(signId);
   return {
     kind: "sign",
+    signId,
     title: sign?.gloss ?? signId,
     hint: sign?.translation ?? null,
   };
+}
+
+/**
+ * Cómo se hace el signo, tapado hasta que se pide para no destripar la tarjeta. La animación
+ * (con su crédito) se pide entonces, solo la de este signo.
+ */
+function SignReveal({ signId, label }: { signId: string; label: string }) {
+  const [shown, setShown] = useState(false);
+  const animation = useSignAnimation(shown ? signId : null);
+
+  if (!shown) {
+    return (
+      <button
+        type="button"
+        onClick={() => setShown(true)}
+        className="mt-6 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-400 dark:border-slate-700 dark:text-slate-200"
+      >
+        Ver el signo
+      </button>
+    );
+  }
+  return (
+    <div className="mt-6 flex flex-col items-center gap-2">
+      <div className="overflow-hidden rounded-2xl bg-brand-100 dark:bg-brand-900/40">
+        <AvatarPlayer clip={animation?.avatarClip ?? null} label={label} size={240} />
+      </div>
+      <AnimationCredit credit={animation?.animationCredit} />
+    </div>
+  );
 }
 
 function EmptyState({ nextReviewDueAt }: { nextReviewDueAt: number | null }) {

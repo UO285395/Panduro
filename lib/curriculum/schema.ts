@@ -156,6 +156,12 @@ export const SignSchema = z.object({
 });
 export type Sign = z.infer<typeof SignSchema>;
 
+/** La animación de un signo con su crédito, tal como la sirve /api/clips/[id]. */
+export type SignAnimation = {
+  avatarClip: AvatarClip;
+  animationCredit: Sign["animationCredit"] | null;
+};
+
 // ---------------------------------------------------------------------------
 // Ejercicios
 // ---------------------------------------------------------------------------

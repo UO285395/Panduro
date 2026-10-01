@@ -118,8 +118,8 @@ Los signos reconocidos se guardan opcionalmente en la nueva tabla `translations`
 
 Los signos se representan con un avatar 3D construido sobre **Three.js**. Cada `Sign` puede llevar un campo `avatarClip` con keyframes (posición y flexión de dedos) que se interpolan y se aplican a un **rig humanoide procedimental** (torso + cabeza + brazo con IK 2-bone + mano articulada con 5 dedos). Cadena de fallback:
 
-1. **Rig procedimental Three.js** (por defecto, sin dependencias externas).
-2. **VRM externo** cuando pongas un `.vrm` compatible en `public/avatars/panduro.vrm` (queda como TODO integrar el mapa de bones VRM ↔ pose interna; el binario está gitignored).
+1. **Modelo VRM**: `public/avatars/panduro.vrm` (no se versiona) o, si no está, Seed-san desde la CDN. Qué tiene que tener el modelo y cómo hacerlo en VRoid Studio: [`docs/avatar.md`](./docs/avatar.md).
+2. **Rig procedimental Three.js** si no carga ningún VRM.
 3. **Fallback SVG animado** si Three.js no arranca (WebGL desactivado o navegador antiguo).
 
 La mayoría de los signos del curso se animan a partir de los vídeos del **DILSE** (Diccionario

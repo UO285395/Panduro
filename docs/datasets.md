@@ -38,7 +38,9 @@ pnpm tsx scripts/landmarks-to-captured.ts data/dilse/landmarks.json --merge
   no lo adivina: esos signos siguen con su animación generada. Si la traducción del curso no
   es la entrada del diccionario, `QUERIES` dice cuál buscar («No entiendo» es el sublema «no
   entender» de ENTENDER; «Más despacio» se signa DESPACIO), también un sinónimo con la misma
-  definición («inferir», sacar una conclusión, es DEDUCIR; «sintetizar», SÍNTESIS).
+  definición («inferir», sacar una conclusión, es DEDUCIR; «sintetizar», SÍNTESIS; una
+  hipótesis, una SUPOSICIÓN) o la palabra de la que sale el nombre (COMPLEJIDAD es COMPLICADO;
+  RIQUEZA, RICO; PRIVACIDAD, PRIVADO).
 - Va a una petición por segundo como mucho. Si se corta, se vuelve a lanzar y sigue. La web a
   veces contesta vacío a una búsqueda que sí tiene resultados: se repite hasta tres veces
   antes de darla por no encontrada (así salían como no encontrados signos que sí están), y aun

@@ -230,6 +230,7 @@ CHOSEN: dict[str, str | None] = {
     "MIGRACION": "migracion-persona",  # de personas, no de animales ni de datos
     "PAN": "pan",  # el alimento, no «pan comido»
     "PARQUE": "parque",  # el de la ciudad (unidad de lugares)
+    "COMPLEJIDAD": "complicado-lio",  # enmarañado; «complicado-dificil» es DIFÍCIL
     "CULTURA": "cultura-costumbres",  # la de una comunidad (en «cultura sorda»), no «ser culto»
     "GLOSADO": "glosa_b",  # la escritura de las lenguas de signos, no la nota al margen
     "INTERPRETAR": "interpretar-traducir",  # de una lengua a otra, no actuar
@@ -237,6 +238,7 @@ CHOSEN: dict[str, str | None] = {
     "PODER": "poder-capacidad",  # ser capaz (en «¿puede repetir?»), no «el poder»
     "PRIVACIDAD": "privado",  # lo particular y personal de cada uno
     "REDES_SOCIALES": "red_social",
+    "RIQUEZA": "rico_a",  # adinerado, no sabroso ni «qué niño más rico»
     "TELEVISION": "television",
     "VER": "ver_aa",  # percibir con los ojos (en «ver la televisión»)
     "VOLVER": "volver_B",  # regresar, no «traducir» ni «vomitar»
@@ -246,18 +248,22 @@ CHOSEN: dict[str, str | None] = {
 # Signos del curso cuya traducción no es la entrada del DILSE: la expresión o palabra que
 # sí lo es («No entiendo» es el sublema «no entender» de ENTENDER; «Más despacio» se signa
 # DESPACIO), o la de un sinónimo con la misma definición («inferir» es sacar una conclusión,
-# como DEDUCIR).
+# como DEDUCIR; una hipótesis, una suposición) o la palabra de la que sale el nombre
+# (COMPLEJIDAD es COMPLICADO; RIQUEZA, RICO, como PRIVACIDAD es PRIVADO).
 QUERIES: dict[str, str] = {
     "NO_ENTIENDO": "no entender",
     "MAS_DESPACIO": "despacio",
     "EN_DESACUERDO": "desacuerdo",
     "ACUERDO_C1": "acuerdo",
+    "COMPLEJIDAD": "complicado",
     "GLOSADO": "glosa",
+    "HIPOTESIS": "suposición",
     "INFERIR": "deducir",
     "INTERPRETE_LS": "intérprete",
     "PRIVACIDAD": "privado",
     "REDES_SOCIALES": "red social",
     "REGISTRO_C2": "registro",
+    "RIQUEZA": "rico",
     "SINTETIZAR": "síntesis",
 }
 

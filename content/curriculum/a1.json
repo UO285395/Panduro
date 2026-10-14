@@ -6,7 +6,7 @@
       "id": "HOLA",
       "gloss": "HOLA",
       "translation": "Hola",
-      "description": "Mano dominante abierta, palma hacia delante a la altura de la sien; movimiento breve de saludo.",
+      "description": "La mano derecha abierta, con la palma hacia delante, se levanta junto a la cabeza y se mueve de lado a lado.",
       "handedness": "one",
       "tags": [
         "saludo",
@@ -218,7 +218,7 @@
       "id": "ADIOS",
       "gloss": "ADIÓS",
       "translation": "Adiós",
-      "description": "Mano abierta, palma hacia delante, se agita ligeramente como despedida.",
+      "description": "La mano derecha abierta, con la palma hacia delante, a la altura de la cara, se agita a un lado y a otro.",
       "handedness": "one",
       "tags": [
         "saludo",
@@ -424,7 +424,7 @@
       "id": "BUENOS_DIAS",
       "gloss": "BUENOS-DÍAS",
       "translation": "Buenos días",
-      "description": "Mano abierta que se mueve hacia arriba (saludo matinal); en LSE formal se combina BIEN + DÍA.",
+      "description": "BIEN + DÍA: las yemas de la mano derecha, juntas, en los labios, y la mano se separa abriéndose; después el antebrazo derecho se levanta en vertical, con la mano abierta, apoyado en la mano izquierda, plana delante del cuerpo, como el sol que sale.",
       "handedness": "one",
       "tags": [
         "saludo",
@@ -546,7 +546,7 @@
       "id": "BUENAS_TARDES",
       "gloss": "BUENAS-TARDES",
       "translation": "Buenas tardes",
-      "description": "Signo compuesto: BIEN + TARDE (mano baja hacia el horizonte).",
+      "description": "BIEN + TARDE: las yemas de la mano derecha, juntas, en los labios, y la mano se separa abriéndose; después la mano abierta, con los dedos separados y algo doblados, sube dos veces desde el pecho hasta la nariz.",
       "handedness": "one",
       "tags": [
         "saludo",
@@ -689,7 +689,7 @@
       "id": "BUENAS_NOCHES",
       "gloss": "BUENAS-NOCHES",
       "translation": "Buenas noches",
-      "description": "Signo compuesto: BIEN + NOCHE (mano describe curva descendente).",
+      "description": "BIEN + NOCHE: las yemas de la mano derecha, juntas, en los labios, y la mano se separa abriéndose; después las dos manos abiertas, con las palmas hacia delante, se cruzan delante de la cara y bajan cruzadas hasta la cintura.",
       "handedness": "one",
       "tags": [
         "saludo",
@@ -832,7 +832,7 @@
       "id": "GRACIAS",
       "gloss": "GRACIAS",
       "translation": "Gracias",
-      "description": "Yemas de los dedos tocan la barbilla y se proyectan hacia delante.",
+      "description": "Las dos manos abiertas, con las yemas bajo la barbilla, bajan y se separan hacia delante con las palmas hacia arriba.",
       "handedness": "one",
       "tags": [
         "cortesia",
@@ -955,7 +955,7 @@
       "id": "POR_FAVOR",
       "gloss": "POR-FAVOR",
       "translation": "Por favor",
-      "description": "Mano plana sobre el pecho con un movimiento circular corto.",
+      "description": "La mano derecha abierta, con los dedos separados y doblados, delante del lado derecho del pecho, se mueve un poco arriba y abajo, con gesto de súplica.",
       "handedness": "one",
       "tags": [
         "cortesia",
@@ -1224,7 +1224,7 @@
       "id": "PERDON",
       "gloss": "PERDÓN",
       "translation": "Perdón",
-      "description": "Puño con pulgar extendido roza el pecho en un círculo pequeño.",
+      "description": "La mano derecha abierta se apoya en el pecho, sube hacia el hombro y se abre hacia delante y a la derecha con la palma hacia arriba.",
       "handedness": "one",
       "tags": [
         "cortesia",
@@ -1493,7 +1493,7 @@
       "id": "SI",
       "gloss": "SÍ",
       "translation": "Sí",
-      "description": "Puño cerrado que asiente con el nudillo del índice arriba y abajo.",
+      "description": "La mano derecha delante del hombro, con la palma hacia delante y los demás dedos extendidos, dobla el dedo corazón hacia la palma una y otra vez, como si asintiera.",
       "handedness": "one",
       "tags": [
         "respuesta",
@@ -1636,7 +1636,7 @@
       "id": "NO",
       "gloss": "NO",
       "translation": "No",
-      "description": "Índice extendido que oscila lateralmente.",
+      "description": "El índice derecho, extendido hacia arriba con la palma hacia delante, se mueve de un lado a otro delante del hombro.",
       "handedness": "one",
       "tags": [
         "respuesta",
@@ -1779,7 +1779,7 @@
       "id": "YO",
       "gloss": "YO",
       "translation": "Yo",
-      "description": "Índice extendido señalando el propio pecho.",
+      "description": "El índice derecho señala el propio pecho.",
       "handedness": "one",
       "tags": [
         "pronombre",
@@ -1894,7 +1894,7 @@
       "id": "TU",
       "gloss": "TÚ",
       "translation": "Tú",
-      "description": "Índice extendido señalando a la persona interlocutora.",
+      "description": "El índice derecho señala hacia delante, a la persona con la que se habla.",
       "handedness": "one",
       "tags": [
         "pronombre",
@@ -2016,7 +2016,7 @@
       "id": "NOMBRE",
       "gloss": "NOMBRE",
       "translation": "Nombre / Me llamo",
-      "description": "Índice y medio extendidos golpean dos veces sobre la palma opuesta.",
+      "description": "La mano derecha, con el índice y el corazón extendidos y juntos, sale de la barbilla y baja a apoyarse cruzada sobre el índice y el corazón de la mano izquierda, horizontales delante del cuerpo.",
       "handedness": "two",
       "tags": [
         "presentacion",
@@ -2291,7 +2291,7 @@
       "id": "BIEN",
       "gloss": "BIEN",
       "translation": "Bien",
-      "description": "Pulgar hacia arriba con puño cerrado.",
+      "description": "Las yemas de la mano derecha, juntas, en los labios; la mano se separa hacia delante abriéndose.",
       "handedness": "one",
       "tags": [
         "estado",
@@ -2413,7 +2413,7 @@
       "id": "MAL",
       "gloss": "MAL",
       "translation": "Mal",
-      "description": "Puño cerrado con pulgar extendido apuntando hacia abajo.",
+      "description": "La mano derecha, con el índice y el meñique extendidos, sale de la barbilla y baja cruzando delante del pecho hacia la izquierda, con gesto de desagrado.",
       "handedness": "one",
       "tags": [
         "estado",
@@ -2747,7 +2747,7 @@
       "id": "NUM_1",
       "gloss": "1",
       "translation": "Uno",
-      "description": "Índice extendido hacia arriba, resto cerrados.",
+      "description": "El índice derecho extendido hacia arriba, con los demás dedos cerrados y la palma hacia quien signa, delante del hombro.",
       "handedness": "one",
       "tags": [
         "numero",
@@ -2848,7 +2848,7 @@
       "id": "NUM_2",
       "gloss": "2",
       "translation": "Dos",
-      "description": "Índice y corazón extendidos en V.",
+      "description": "La mano derecha delante del hombro, con la palma hacia quien signa: el índice y el corazón extendidos y separados en V, y el pulgar sujeta el anular y el meñique.",
       "handedness": "one",
       "tags": [
         "numero",
@@ -2949,7 +2949,7 @@
       "id": "NUM_3",
       "gloss": "3",
       "translation": "Tres",
-      "description": "Pulgar, índice y corazón extendidos.",
+      "description": "La mano derecha delante del hombro, con la palma hacia quien signa: el índice, el corazón y el anular extendidos, y el pulgar sujeta el meñique.",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3050,7 +3050,7 @@
       "id": "NUM_4",
       "gloss": "4",
       "translation": "Cuatro",
-      "description": "Cuatro dedos extendidos (sin pulgar).",
+      "description": "La mano derecha delante del hombro, con la palma hacia quien signa: los cuatro dedos extendidos y el pulgar doblado sobre la palma.",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3151,7 +3151,7 @@
       "id": "NUM_5",
       "gloss": "5",
       "translation": "Cinco",
-      "description": "Mano abierta con los cinco dedos extendidos.",
+      "description": "La mano derecha delante del hombro, con la palma hacia quien signa y los cinco dedos extendidos y separados.",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3252,7 +3252,7 @@
       "id": "NUM_6",
       "gloss": "6",
       "translation": "Seis",
-      "description": "Pulgar y meñique extendidos, otros cerrados.",
+      "description": "Las dos manos delante de los hombros, con las palmas hacia quien signa: la izquierda con los cinco dedos extendidos (5) y la derecha con el índice extendido (1).",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3374,7 +3374,7 @@
       "id": "NUM_7",
       "gloss": "7",
       "translation": "Siete",
-      "description": "Pulgar, índice y meñique extendidos.",
+      "description": "Las dos manos delante de los hombros, con las palmas hacia quien signa: la izquierda con los cinco dedos extendidos (5) y la derecha con el índice y el corazón en V (2).",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3475,7 +3475,7 @@
       "id": "NUM_8",
       "gloss": "8",
       "translation": "Ocho",
-      "description": "Pulgar, índice, corazón y meñique extendidos.",
+      "description": "Las dos manos delante de los hombros, con las palmas hacia quien signa: la izquierda con los cinco dedos extendidos (5) y la derecha con el índice, el corazón y el anular extendidos (3).",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3576,7 +3576,7 @@
       "id": "NUM_9",
       "gloss": "9",
       "translation": "Nueve",
-      "description": "Cuatro dedos extendidos y pulgar apoyado.",
+      "description": "Las dos manos delante de los hombros, con las palmas hacia quien signa: la izquierda con los cinco dedos extendidos (5) y la derecha con los cuatro dedos extendidos y el pulgar doblado (4).",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3677,7 +3677,7 @@
       "id": "NUM_10",
       "gloss": "10",
       "translation": "Diez",
-      "description": "Puño cerrado con leve rotación, o pulgar hacia el lateral (LSE variante).",
+      "description": "Las dos manos delante de los hombros, con las palmas hacia quien signa y los cinco dedos de cada una extendidos y separados.",
       "handedness": "one",
       "tags": [
         "numero",
@@ -3799,7 +3799,7 @@
       "id": "PADRE",
       "gloss": "PADRE",
       "translation": "Padre",
-      "description": "Mano con pulgar extendido tocando la sien dos veces.",
+      "description": "La mano derecha plana, horizontal y con la palma hacia abajo, baja desde la frente hasta debajo de la barbilla.",
       "handedness": "one",
       "tags": [
         "familia",
@@ -3939,7 +3939,7 @@
       "id": "MADRE",
       "gloss": "MADRE",
       "translation": "Madre",
-      "description": "Mano con índice y corazón tocando la mejilla dos veces.",
+      "description": "La mano derecha plana, con los dedos hacia arriba, pasa por delante de la boca y se apoya en la mejilla izquierda.",
       "handedness": "one",
       "tags": [
         "familia",
@@ -4079,7 +4079,7 @@
       "id": "HERMANO",
       "gloss": "HERMANO",
       "translation": "Hermano",
-      "description": "Índices juntos apuntando al frente y separándose ligeramente.",
+      "description": "La mano derecha delante de la cintura, con el dorso hacia arriba, el índice extendido hacia la izquierda y el corazón doblado hacia abajo; el índice baja hacia el corazón y vuelve a subir.",
       "handedness": "two",
       "tags": [
         "familia",
@@ -4291,7 +4291,7 @@
       "id": "HERMANA",
       "gloss": "HERMANA",
       "translation": "Hermana",
-      "description": "Como HERMANO pero con matiz femenino (movimiento suave).",
+      "description": "El mismo signo que HERMANO: la mano derecha delante de la cintura, con el dorso hacia arriba, el índice extendido hacia la izquierda y el corazón doblado hacia abajo; el índice baja hacia el corazón y vuelve a subir.",
       "handedness": "two",
       "tags": [
         "familia",
@@ -4503,7 +4503,7 @@
       "id": "HIJO",
       "gloss": "HIJO",
       "translation": "Hijo",
-      "description": "Mano acuna al frente indicando cría/pequeño.",
+      "description": "Las dos manos planas, con los dedos hacia abajo y las palmas hacia el cuerpo, a los lados del vientre, se acercan un poco y bajan.",
       "handedness": "two",
       "tags": [
         "familia",
@@ -4715,7 +4715,7 @@
       "id": "HIJA",
       "gloss": "HIJA",
       "translation": "Hija",
-      "description": "Variante femenina de HIJO.",
+      "description": "El mismo signo que HIJO: las dos manos planas, con los dedos hacia abajo y las palmas hacia el cuerpo, a los lados del vientre, se acercan un poco y bajan.",
       "handedness": "two",
       "tags": [
         "familia",
@@ -4927,7 +4927,7 @@
       "id": "AMIGO",
       "gloss": "AMIGO",
       "translation": "Amigo",
-      "description": "Índices enganchados en cruz alternando.",
+      "description": "La mano derecha agarra el dorso de la izquierda delante de la cintura, y las dos se mueven un poco arriba y abajo.",
       "handedness": "two",
       "tags": [
         "familia",
@@ -5049,7 +5049,7 @@
       "id": "AGUA",
       "gloss": "AGUA",
       "translation": "Agua",
-      "description": "Mano en 'A' que toca dos veces la barbilla.",
+      "description": "La mano derecha en puño, con el pulgar extendido, toca con la yema del pulgar la comisura de los labios.",
       "handedness": "one",
       "tags": [
         "comida",
@@ -5189,7 +5189,7 @@
       "id": "PAN",
       "gloss": "PAN",
       "translation": "Pan",
-      "description": "Manos abiertas simulando cortar una barra.",
+      "description": "La mano derecha en puño, con la punta del pulgar asomando entre el índice y el corazón, se sostiene a la derecha del pecho, a la altura del hombro.",
       "handedness": "two",
       "tags": [
         "comida",
@@ -5311,7 +5311,7 @@
       "id": "LECHE",
       "gloss": "LECHE",
       "translation": "Leche",
-      "description": "Puño cerrado que abre y cierra como ordeñando.",
+      "description": "Las dos manos, delante del pecho, se cierran en puño y bajan alternándose, como al ordeñar.",
       "handedness": "one",
       "tags": [
         "comida",
@@ -5433,7 +5433,7 @@
       "id": "CAFE",
       "gloss": "CAFÉ",
       "translation": "Café",
-      "description": "Puño encima del otro simulando molinillo giratorio.",
+      "description": "La mano derecha, con los dedos curvados, hace pequeños círculos sobre la izquierda, plana y con la palma hacia abajo, delante de la cintura, como moliendo café.",
       "handedness": "two",
       "tags": [
         "comida",
@@ -5555,7 +5555,7 @@
       "id": "FRUTA",
       "gloss": "FRUTA",
       "translation": "Fruta",
-      "description": "Mano cerrada gira frente al pecho.",
+      "description": "La mano derecha en puño toca dos veces la mejilla derecha con los nudillos.",
       "handedness": "one",
       "tags": [
         "comida",
@@ -5677,7 +5677,7 @@
       "id": "CARNE",
       "gloss": "CARNE",
       "translation": "Carne",
-      "description": "Índice y pulgar pellizcan la palma opuesta.",
+      "description": "La mano derecha en puño con el pulgar hacia arriba sube y baja delante del pecho, sobre la izquierda abierta con la palma hacia arriba.",
       "handedness": "two",
       "tags": [
         "comida",
@@ -5904,7 +5904,7 @@
       "id": "PESCADO",
       "gloss": "PESCADO",
       "translation": "Pescado",
-      "description": "Mano plana ondulando en horizontal como pez nadando.",
+      "description": "La mano derecha, con el índice y el corazón extendidos y juntos en horizontal, se desplaza de derecha a izquierda delante del pecho.",
       "handedness": "one",
       "tags": [
         "comida",
@@ -6026,7 +6026,7 @@
       "id": "DULCE",
       "gloss": "DULCE",
       "translation": "Dulce",
-      "description": "Yema del índice toca la barbilla con giro.",
+      "description": "El índice derecho, horizontal, roza la barbilla de derecha a izquierda dos veces.",
       "handedness": "one",
       "tags": [
         "comida",
@@ -6170,7 +6170,7 @@
       "id": "DESAYUNO",
       "gloss": "DESAYUNO",
       "translation": "Desayuno",
-      "description": "Compuesto: SOL + COMER (aproximación).",
+      "description": "Las dos manos, con los dedos separados y curvados, salen juntas de la barbilla y se abren hacia los lados de la cara.",
       "handedness": "two",
       "tags": [
         "comida",
@@ -6292,7 +6292,7 @@
       "id": "COMIDA",
       "gloss": "COMIDA",
       "translation": "Comida",
-      "description": "Mano cerrada acerca a la boca varias veces.",
+      "description": "Las yemas de la mano derecha, juntas, se acercan a la boca varias veces.",
       "handedness": "one",
       "tags": [
         "comida",
@@ -6432,7 +6432,7 @@
       "id": "CENA",
       "gloss": "CENA",
       "translation": "Cena",
-      "description": "Compuesto: NOCHE + COMER (aproximación).",
+      "description": "COMER + NOCHE: las yemas de la mano derecha, juntas, junto a la boca; después las dos manos abiertas, con las palmas hacia delante a los lados de la cabeza, bajan y se cruzan delante del pecho.",
       "handedness": "two",
       "tags": [
         "comida",
@@ -6554,7 +6554,7 @@
       "id": "CASA",
       "gloss": "CASA",
       "translation": "Casa",
-      "description": "Manos forman un tejado sobre la frente.",
+      "description": "Las dos manos planas juntan las puntas de los dedos delante del pecho, formando un tejado.",
       "handedness": "two",
       "tags": [
         "comida",
@@ -6796,7 +6796,7 @@
       "id": "ESCUELA",
       "gloss": "ESCUELA",
       "translation": "Escuela",
-      "description": "Palmas juntas que aplauden dos veces frente al pecho.",
+      "description": "La mano derecha abierta, con la palma hacia la cara y el pulgar separado, sube y baja rozando con los dedos la boca y la barbilla.",
       "handedness": "two",
       "tags": [
         "familia",
@@ -7071,7 +7071,7 @@
       "id": "ROJO",
       "gloss": "ROJO",
       "translation": "Rojo",
-      "description": "Índice roza la barbilla hacia afuera.",
+      "description": "La yema del índice derecho roza el labio inferior y baja por la barbilla.",
       "handedness": "one",
       "tags": [
         "color",
@@ -7241,7 +7241,7 @@
       "id": "AZUL",
       "gloss": "AZUL",
       "translation": "Azul",
-      "description": "Mano A a la altura del pecho.",
+      "description": "La mano derecha plana bajo la barbilla, con la palma hacia abajo; después sube a un lado de la cara con el índice extendido hacia arriba.",
       "handedness": "one",
       "tags": [
         "color",
@@ -7363,7 +7363,7 @@
       "id": "VERDE",
       "gloss": "VERDE",
       "translation": "Verde",
-      "description": "Mano V frente al pecho.",
+      "description": "La mano derecha, con el índice hacia arriba y el pulgar extendido hacia la izquierda, delante de la barbilla, baja un poco hacia el cuello.",
       "handedness": "one",
       "tags": [
         "color",
@@ -7485,7 +7485,7 @@
       "id": "AMARILLO",
       "gloss": "AMARILLO",
       "translation": "Amarillo",
-      "description": "Mano Y sacude hacia el lado.",
+      "description": "La mano derecha abierta, con los dedos separados, junto a la barbilla, gira la muñeca a un lado y a otro.",
       "handedness": "one",
       "tags": [
         "color",
@@ -7607,7 +7607,7 @@
       "id": "NARANJA",
       "gloss": "NARANJA",
       "translation": "Naranja",
-      "description": "Mano C abre y cierra.",
+      "description": "Las dos manos curvadas, enfrentadas delante del pecho como si sujetaran una naranja.",
       "handedness": "one",
       "tags": [
         "color",
@@ -7729,7 +7729,7 @@
       "id": "MORADO",
       "gloss": "MORADO",
       "translation": "Morado",
-      "description": "Mano M frente al pecho.",
+      "description": "La mano derecha abierta, con los dedos separados, toca la barbilla con el índice y baja hacia el pecho.",
       "handedness": "one",
       "tags": [
         "color",
@@ -7851,7 +7851,7 @@
       "id": "BLANCO",
       "gloss": "BLANCO",
       "translation": "Blanco",
-      "description": "Mano abierta sobre el pecho hacia afuera.",
+      "description": "La mano derecha, con los dedos separados y la palma hacia abajo, delante del pecho, baja hacia la cintura abriéndose.",
       "handedness": "one",
       "tags": [
         "color",
@@ -7974,7 +7974,7 @@
       "id": "NEGRO",
       "gloss": "NEGRO",
       "translation": "Negro",
-      "description": "Índice roza la frente hacia el lado.",
+      "description": "Los dos índices extendidos, horizontales delante de la cintura; el derecho roza el izquierdo.",
       "handedness": "one",
       "tags": [
         "color",
@@ -8144,7 +8144,7 @@
       "id": "ROSA",
       "gloss": "ROSA",
       "translation": "Rosa",
-      "description": "Letra R frente al pecho.",
+      "description": "El índice derecho, vertical, se apoya en la punta de la nariz y baja por los labios hasta la barbilla.",
       "handedness": "one",
       "tags": [
         "color",
@@ -8266,7 +8266,7 @@
       "id": "GRIS",
       "gloss": "GRIS",
       "translation": "Gris",
-      "description": "Dedos entrelazados frente al pecho.",
+      "description": "La mano derecha, con el índice y el corazón doblados, frota la palma de la izquierda, abierta hacia arriba delante de la cintura.",
       "handedness": "one",
       "tags": [
         "color",
@@ -8388,7 +8388,7 @@
       "id": "FELIZ",
       "gloss": "FELIZ",
       "translation": "Feliz",
-      "description": "Manos planas ascienden por el pecho.",
+      "description": "Los dos índices, extendidos hacia arriba, se cruzan delante del pecho y se separan hacia los hombros; después las manos, en puño, bajan a los lados de la cintura.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -8519,7 +8519,7 @@
       "id": "TRISTE",
       "gloss": "TRISTE",
       "translation": "Triste",
-      "description": "Manos bajan por las mejillas.",
+      "description": "La mano derecha, con los dedos separados y curvados, baja dos veces por delante de la cara, de la nariz a la barbilla, con gesto triste.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -8649,7 +8649,7 @@
       "id": "ENFADADO",
       "gloss": "ENFADADO",
       "translation": "Enfadado",
-      "description": "Puños frente al pecho, ceño fruncido.",
+      "description": "La mano derecha plana, con la palma hacia abajo, se apoya bajo la barbilla, con el ceño fruncido.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -8771,7 +8771,7 @@
       "id": "CANSADO",
       "gloss": "CANSADO",
       "translation": "Cansado",
-      "description": "Manos caen frente al pecho.",
+      "description": "La mano derecha, con el pulgar y el meñique extendidos, baja desde la altura del hombro hasta la cintura, con gesto de cansancio.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -8893,7 +8893,7 @@
       "id": "NERVIOSO",
       "gloss": "NERVIOSO",
       "translation": "Nervioso",
-      "description": "Dedos agitan sobre el pecho.",
+      "description": "Los dos índices extendidos se cruzan delante del pecho y se frotan uno contra otro.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -9035,7 +9035,7 @@
       "id": "SORPRENDIDO",
       "gloss": "SORPRENDIDO",
       "translation": "Sorprendido",
-      "description": "Manos abiertas a los lados del rostro.",
+      "description": "La mano derecha abierta, con los dedos separados y la palma hacia delante, junto a la frente, con cara de sorpresa: cejas levantadas y boca abierta.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -9178,7 +9178,7 @@
       "id": "ALEGRE",
       "gloss": "ALEGRE",
       "translation": "Alegre",
-      "description": "Manos circulan hacia arriba en el pecho.",
+      "description": "Las dos manos abiertas, con los dedos separados y las palmas hacia el pecho, lo rozan hacia arriba alternándose, con una sonrisa.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -9447,7 +9447,7 @@
       "id": "ABURRIDO",
       "gloss": "ABURRIDO",
       "translation": "Aburrido",
-      "description": "Índice roza la mejilla descendiendo.",
+      "description": "La mano derecha abierta, con los dedos hacia la izquierda y el pulgar hacia arriba, se apoya bajo la barbilla y baja hasta la cintura, con gesto de aburrimiento.",
       "handedness": "one",
       "tags": [
         "emocion",
@@ -9577,7 +9577,7 @@
       "id": "HABLAR",
       "gloss": "HABLAR",
       "translation": "Hablar",
-      "description": "Índice frente a la boca, movimiento.",
+      "description": "La mano derecha bajo la barbilla, con el índice y el corazón extendidos hacia la izquierda, los abre y cierra varias veces.",
       "handedness": "one",
       "tags": [
         "conversacion",
@@ -9694,7 +9694,7 @@
       "id": "ENTENDER",
       "gloss": "ENTENDER",
       "translation": "Entender",
-      "description": "Índice toca la sien.",
+      "description": "La mano derecha, con los dedos juntos y doblados, toca con las yemas la sien derecha.",
       "handedness": "one",
       "tags": [
         "conversacion",
@@ -9809,7 +9809,7 @@
       "id": "REPETIR",
       "gloss": "REPETIR",
       "translation": "Repetir",
-      "description": "Mano R hace círculo frente al pecho.",
+      "description": "La mano derecha, con el índice y el corazón cruzados (la R), delante del hombro, se inclina hacia delante y vuelve, varias veces.",
       "handedness": "one",
       "tags": [
         "conversacion",
@@ -10015,7 +10015,7 @@
       "id": "MAS_DESPACIO",
       "gloss": "MÁS-DESPACIO",
       "translation": "Más despacio",
-      "description": "Manos abiertas descienden lentamente.",
+      "description": "Las dos manos planas, con las palmas hacia delante y los dedos hacia arriba, delante de la cintura, bajan despacio dos veces.",
       "handedness": "one",
       "tags": [
         "conversacion",
@@ -10137,7 +10137,7 @@
       "id": "NO_ENTIENDO",
       "gloss": "NO-ENTIENDO",
       "translation": "No entiendo",
-      "description": "Mano niega + toca sien.",
+      "description": "ENTENDER + NO: la mano derecha, con los dedos juntos y doblados, a un lado de la cabeza; después el índice, extendido hacia arriba, se mueve de un lado a otro delante del pecho, con gesto de negación.",
       "handedness": "one",
       "tags": [
         "conversacion",
@@ -10289,7 +10289,7 @@
       "id": "PUEDE_REPETIR",
       "gloss": "PUEDE-REPETIR",
       "translation": "¿Puede repetir?",
-      "description": "Mano abierta + mano R circulando.",
+      "description": "PODER + REPETIR: la mano derecha abierta, apoyada en el pecho, baja y se cierra; después, con el índice y el corazón cruzados (la R), delante del hombro, se inclina hacia delante y vuelve varias veces.",
       "handedness": "one",
       "tags": [
         "conversacion",
@@ -10411,7 +10411,7 @@
       "id": "GRACIAS_MUCHO",
       "gloss": "GRACIAS-MUCHO",
       "translation": "Muchas gracias",
-      "description": "Mano desde barbilla proyecta hacia afuera.",
+      "description": "GRACIAS + MUCHO: las dos manos abiertas, con las yemas bajo la barbilla, bajan y se separan hacia delante con las palmas hacia arriba; después, con las yemas juntas hacia arriba, se abren y se vuelven a cerrar delante de la cintura.",
       "handedness": "one",
       "tags": [
         "conversacion",
@@ -10534,7 +10534,7 @@
       "id": "LUNES",
       "gloss": "LUNES",
       "translation": "Lunes",
-      "description": "Dedo índice extendido trazando la letra L en el aire.",
+      "description": "El índice derecho toca dos veces el dorso del puño izquierdo, delante de la cintura.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -10656,7 +10656,7 @@
       "id": "MARTES",
       "gloss": "MARTES",
       "translation": "Martes",
-      "description": "Dedo índice y medio extendidos formando la letra M inicial.",
+      "description": "La mano derecha, con los dedos extendidos y separados, se apoya en el dorso de la izquierda, delante de la cintura.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -10778,7 +10778,7 @@
       "id": "MIERCOLES",
       "gloss": "MIERCOLES",
       "translation": "Miércoles",
-      "description": "Mano en forma de M con los tres primeros dedos.",
+      "description": "Las dos manos planas, con las palmas hacia abajo y los dedos enfrentados, delante de la cintura, suben y bajan a la vez.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -10900,7 +10900,7 @@
       "id": "JUEVES",
       "gloss": "JUEVES",
       "translation": "Jueves",
-      "description": "Dedo índice hacia arriba, mano ligeramente girada.",
+      "description": "Las dos manos planas, con los dedos enfrentados y los pulgares hacia arriba, delante del pecho, suben un poco.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11022,7 +11022,7 @@
       "id": "VIERNES",
       "gloss": "VIERNES",
       "translation": "Viernes",
-      "description": "Mano abierta con movimiento de vibración lateral.",
+      "description": "El codo derecho se apoya en la mano izquierda; la mano derecha, en alto junto a la cabeza, con el índice doblado hacia el pulgar.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11144,7 +11144,7 @@
       "id": "SABADO",
       "gloss": "SABADO",
       "translation": "Sábado",
-      "description": "Mano en puño, pulgar extendido hacia el lado.",
+      "description": "La mano derecha en puño, con el pulgar extendido hacia arriba, toca con el pulgar la barbilla y la mejilla derecha.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11266,7 +11266,7 @@
       "id": "DOMINGO",
       "gloss": "DOMINGO",
       "translation": "Domingo",
-      "description": "Mano abierta, palma hacia fuera, movimiento circular.",
+      "description": "La mano derecha en la frente, con el índice apoyado de lado y los demás dedos extendidos y separados hacia arriba.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11472,7 +11472,7 @@
       "id": "HOY",
       "gloss": "HOY",
       "translation": "Hoy",
-      "description": "Índice señala hacia abajo (presente).",
+      "description": "El índice derecho, apuntando hacia abajo, baja desde el pecho hasta la cintura.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11573,7 +11573,7 @@
       "id": "AYER",
       "gloss": "AYER",
       "translation": "Ayer",
-      "description": "Pulgar apunta hacia atrás sobre el hombro.",
+      "description": "La mano derecha, con los dedos juntos y doblados, toca el hombro derecho con las yemas, señalando hacia atrás.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11695,7 +11695,7 @@
       "id": "MANANA_DIA",
       "gloss": "MANANA",
       "translation": "Mañana",
-      "description": "Mano abierta hacia delante, movimiento adelante.",
+      "description": "La mano derecha plana sube hasta el pecho y se apoya en él, con los dedos hacia la izquierda.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11817,7 +11817,7 @@
       "id": "AHORA",
       "gloss": "AHORA",
       "translation": "Ahora",
-      "description": "Ambas manos planas hacia abajo, moviéndose hacia el suelo.",
+      "description": "La mano derecha abierta, con los dedos separados y la palma hacia la cara, junto a la barbilla.",
       "handedness": "one",
       "tags": [
         "tiempo",
@@ -11918,7 +11918,7 @@
       "id": "SEMANA",
       "gloss": "SEMANA",
       "translation": "Semana",
-      "description": "Índice extendido deslizándose sobre la palma opuesta.",
+      "description": "La mano derecha en puño, con el pulgar extendido hacia la izquierda, se desplaza de izquierda a derecha delante del pecho.",
       "handedness": "two",
       "tags": [
         "tiempo",
@@ -12156,7 +12156,7 @@
       "id": "MES",
       "gloss": "MES",
       "translation": "Mes",
-      "description": "Índice curvado deslizándose hacia abajo.",
+      "description": "El índice derecho, extendido hacia arriba junto al hombro, baja trazando un arco hasta señalar hacia abajo, a la derecha de la cintura.",
       "handedness": "one",
       "tags": [
         "tiempo",

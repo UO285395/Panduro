@@ -2535,8 +2535,8 @@
       "id": "COMO_ESTAS",
       "gloss": "CÓMO-ESTAR",
       "translation": "¿Cómo estás?",
-      "description": "Manos con palmas hacia arriba oscilando ligeramente, con cejas levantadas (pregunta).",
-      "handedness": "two",
+      "description": "CÓMO, con cara de pregunta y mirando a la otra persona: la mano derecha, con el índice doblado en gancho y los demás dedos cerrados, apoya el índice bajo la barbilla, con las cejas fruncidas.",
+      "handedness": "one",
       "tags": [
         "pregunta",
         "u1"

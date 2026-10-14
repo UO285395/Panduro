@@ -13,6 +13,10 @@ Panduro combina código propio con recursos abiertos de la comunidad LSE. Este a
   app cita la fuente y enlaza la entrada del diccionario junto a cada animación. Los vídeos no se
   incluyen en el repositorio.
 - **Spreadthesign** — diccionario internacional gratuito de lenguas de signos. <https://www.spreadthesign.com>. Uso educativo.
+  Las descripciones de los signos que el DILSE no tiene (ARTISTA, COCINERO, CREATIVIDAD,
+  CLASIFICAR, AMBIGÜEDAD, NORMALIZACIÓN…) están escritas mirando sus vídeos de LSE; para algunos,
+  los de una palabra de la misma familia (innovar, coherente, sutil, espontaneidad, fluido, cómo).
+  Los vídeos no se guardan en el repositorio ni se usan para las animaciones.
 - **ARASAAC** — Portal Aragonés de la Comunicación Aumentativa y Alternativa. Pictogramas y recursos LSE bajo **CC BY-NC-SA 4.0**. <https://arasaac.org>.
 
 ## Marcos normativos y curriculares

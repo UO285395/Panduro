@@ -40,7 +40,11 @@ pnpm tsx scripts/landmarks-to-captured.ts data/dilse/landmarks.json --merge
   entender» de ENTENDER; «Más despacio» se signa DESPACIO), también un sinónimo con la misma
   definición («inferir», sacar una conclusión, es DEDUCIR; «sintetizar», SÍNTESIS; una
   hipótesis, una SUPOSICIÓN) o la palabra de la que sale el nombre (COMPLEJIDAD es COMPLICADO;
-  RIQUEZA, RICO; PRIVACIDAD, PRIVADO).
+  RIQUEZA, RICO; PRIVACIDAD, PRIVADO; el ARGUMENTO de un discurso, ARGUMENTAR).
+- Algunas entradas del DILSE comparten el mismo archivo de vídeo aunque tengan nombres distintos
+  (CALOR y VERANO; COMPARAR, EVALUAR, JUSTICIA y METÁFORA…): en el curso se ven iguales. Si una
+  tiene otra acepción con un signo propio, se fija en `CHOSEN` (el archivo de «democracia_a» es
+  el de LIBERTAD; DEMOCRACIA usa «democracia_b»).
 - Va a una petición por segundo como mucho. Si se corta, se vuelve a lanzar y sigue. La web a
   veces contesta vacío a una búsqueda que sí tiene resultados: se repite hasta tres veces
   antes de darla por no encontrada (así salían como no encontrados signos que sí están), y aun

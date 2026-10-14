@@ -219,6 +219,7 @@ def stems(text: str) -> set[str]:
 CHOSEN: dict[str, str | None] = {
     "ACENTO": "acento-entonacion-signado",  # el acento al signar, no la tilde
     "ACUERDO_C1": "acuerdo",  # llegar a un acuerdo, no «de acuerdo»
+    "ARGUMENTO": "argumentar-demostrar",  # el del discurso; el ARGUMENTO del DILSE es el de una novela
     "ALTO": "alto-estatura",  # descripción física, no «¡alto!»
     "BIEN": "bien_c",  # «¿cómo estás? — bien»: con buena salud, no «el bien»
     "INTERPRETAR": None,  # interpretar resultados: el DILSE solo tiene «actuar» y «traducir»
@@ -250,12 +251,14 @@ CHOSEN: dict[str, str | None] = {
 # sí lo es («No entiendo» es el sublema «no entender» de ENTENDER; «Más despacio» se signa
 # DESPACIO), o la de un sinónimo con la misma definición («inferir» es sacar una conclusión,
 # como DEDUCIR; una hipótesis, una suposición) o la palabra de la que sale el nombre
-# (COMPLEJIDAD es COMPLICADO; RIQUEZA, RICO, como PRIVACIDAD es PRIVADO).
+# (COMPLEJIDAD es COMPLICADO; RIQUEZA, RICO, como PRIVACIDAD es PRIVADO; el ARGUMENTO de un
+# discurso, ARGUMENTAR: el ARGUMENTO del DILSE es el de una novela).
 QUERIES: dict[str, str] = {
     "NO_ENTIENDO": "no entender",
     "MAS_DESPACIO": "despacio",
     "EN_DESACUERDO": "desacuerdo",
     "ACUERDO_C1": "acuerdo",
+    "ARGUMENTO": "argumentar",
     "COMPLEJIDAD": "complicado",
     "GLOSADO": "glosa",
     "HIPOTESIS": "suposición",

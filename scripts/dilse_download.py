@@ -231,7 +231,8 @@ CHOSEN: dict[str, str | None] = {
     "PAN": "pan",  # el alimento, no «pan comido»
     "PARQUE": "parque",  # el de la ciudad (unidad de lugares)
     "COMPLEJIDAD": "complicado-lio",  # enmarañado; «complicado-dificil» es DIFÍCIL
-    "CULTURA": "cultura-costumbres",  # la de una comunidad (en «cultura sorda»), no «ser culto»
+    "CULTURA": "cultura-costumbres",
+    "DEMOCRACIA": "democracia_b",  # el archivo de «democracia_a» es el vídeo de LIBERTAD  # la de una comunidad (en «cultura sorda»), no «ser culto»
     "GLOSADO": "glosa_b",  # la escritura de las lenguas de signos, no la nota al margen
     "INTERPRETAR": "interpretar-traducir",  # de una lengua a otra, no actuar
     "INTERPRETE_LS": "interprete",  # el de lenguas (orales o signadas), no el actor

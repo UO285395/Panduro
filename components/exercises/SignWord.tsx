@@ -7,13 +7,16 @@ import { dominantHand, type LandmarkFrame } from "@/lib/esku/domain/landmarks/va
 import { SignSegmenter } from "@/lib/esku/domain/recognition/services/SignSegmenter";
 import { normalizeLandmarks } from "@/lib/mediapipe/landmarks";
 import { createVocabulary, vocabularyConcepts } from "@/lib/recognition/engine";
+import { HandshapeVote, lessonTemplates } from "@/lib/recognition/exercises";
 import { extractFeatures } from "@/lib/recognition/features";
-import { KnnClassifier, withoutSameHandshape } from "@/lib/recognition/knn";
+import { KnnClassifier } from "@/lib/recognition/knn";
 import { conceptFor, glossKey } from "@/lib/recognition/vocabularyMap";
 
 type Props = {
   exercise: Extract<Exercise, { type: "sign_word" }>;
   sign: Sign | undefined;
+  /** Los signos de la lección: contra ellos se compara la forma de la mano. */
+  lessonSigns?: readonly string[];
   onAnswer: (correct: boolean) => void;
   disabled: boolean;
 };
@@ -25,35 +28,34 @@ type Phase =
 
 /** Hay que dar tiempo a subir las manos, signar y bajarlas (así se cierra el signo). */
 const MIN_ATTEMPT_MS = 10000;
-const EARLY_EXIT_CONF = 0.8;
-const EARLY_EXIT_MS = 350;
 
 /**
  * Signar una palabra. Si el signo está en el vocabulario entrenado de Esku (SWL-LSE), se
  * reconoce completo —forma, lugar y movimiento— cuando el signo termina, y vale si está
  * entre las 3 respuestas del modelo. Si no está, se comprueba solo la forma de la mano con
- * las plantillas locales, y así se le indica a quien estudia.
+ * las plantillas de los signos de la lección, y así se le indica a quien estudia.
  */
-export function SignWord({ exercise, sign, onAnswer, disabled }: Props) {
+export function SignWord({ exercise, sign, lessonSigns = [], onAnswer, disabled }: Props) {
   const vocabulary = useMemo(() => createVocabulary(), []);
   // Las plantillas de formas de mano pesan varios MB: se cargan al llegar al ejercicio.
   const [handshapes, setHandshapes] = useState<KnnClassifier | null>(null);
+  const rivals = lessonSigns.join(",");
   useEffect(() => {
     let alive = true;
     import("@/lib/recognition/templates").then(({ loadGlobalTemplates, loadLocalTemplates }) => {
       if (!alive) return;
       const all = [...loadGlobalTemplates(), ...loadLocalTemplates()];
-      setHandshapes(new KnnClassifier(withoutSameHandshape(all, exercise.signId), 3));
+      const lesson = rivals ? rivals.split(",") : [];
+      setHandshapes(new KnnClassifier(lessonTemplates(all, exercise.signId, lesson), 3));
     });
     return () => {
       alive = false;
     };
-  }, [exercise.signId]);
+  }, [exercise.signId, rivals]);
   const [concept, setConcept] = useState<string | null | undefined>(undefined);
   const conceptRef = useRef<string | null>(null);
   const segmenterRef = useRef(new SignSegmenter());
-  const votesRef = useRef<{ label: string; confidence: number }[]>([]);
-  const highSinceRef = useRef<number | null>(null);
+  const voteRef = useRef(new HandshapeVote(exercise.signId, exercise.minConfidence));
   const busyRef = useRef(false);
   const phaseRef = useRef<Phase>({ kind: "await_camera" });
   const [phase, setPhaseState] = useState<Phase>(phaseRef.current);
@@ -89,19 +91,7 @@ export function SignWord({ exercise, sign, onAnswer, disabled }: Props) {
     [onAnswer],
   );
 
-  const finishHandshapeVote = useCallback(() => {
-    const counts = new Map<string, { n: number; conf: number }>();
-    for (const v of votesRef.current) {
-      const c = counts.get(v.label) ?? { n: 0, conf: 0 };
-      c.n += 1;
-      c.conf += v.confidence;
-      counts.set(v.label, c);
-    }
-    let winner = "";
-    let best = { n: -1, conf: 0 };
-    for (const [label, c] of counts) if (c.n > best.n) [winner, best] = [label, c];
-    finish(winner === exercise.signId && best.conf / Math.max(1, best.n) >= exercise.minConfidence);
-  }, [exercise.minConfidence, exercise.signId, finish]);
+  const finishHandshapeVote = useCallback(() => finish(voteRef.current.verdict()), [finish]);
 
   const onFrame = useCallback(
     async (frame: LandmarkFrame) => {
@@ -134,20 +124,14 @@ export function SignWord({ exercise, sign, onAnswer, disabled }: Props) {
 
       const hand = dominantHand(frame);
       if (!hand || !handshapes) {
-        highSinceRef.current = null;
+        voteRef.current.lost();
         return;
       }
       const pred = handshapes.predict(extractFeatures(normalizeLandmarks([...hand.points])));
       if (!pred) return;
-      votesRef.current.push({ label: pred.label, confidence: pred.confidence });
-      if (pred.label === exercise.signId && pred.confidence >= EARLY_EXIT_CONF) {
-        highSinceRef.current ??= frame.timestampMs;
-        if (frame.timestampMs - highSinceRef.current >= EARLY_EXIT_MS) finish(true);
-      } else {
-        highSinceRef.current = null;
-      }
+      if (voteRef.current.push(pred, frame.timestampMs)) finish(true);
     },
-    [exercise.signId, finish, finishHandshapeVote, handshapes, vocabulary, windowMs],
+    [finish, finishHandshapeVote, handshapes, vocabulary, windowMs],
   );
 
   return (
@@ -181,8 +165,7 @@ export function SignWord({ exercise, sign, onAnswer, disabled }: Props) {
         }}
         onStart={() => {
           segmenterRef.current.reset();
-          votesRef.current = [];
-          highSinceRef.current = null;
+          voteRef.current = new HandshapeVote(exercise.signId, exercise.minConfidence);
           setSeen(null);
           setPhase({ kind: "evaluating", startedAt: null });
         }}

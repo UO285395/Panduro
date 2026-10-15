@@ -4,8 +4,8 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { LandmarkCamera } from "@/components/camera/LandmarkCamera";
 import type { Exercise } from "@/lib/curriculum/schema";
 import type { LandmarkFrame } from "@/lib/esku/domain/landmarks/value-objects/LandmarkFrame";
-import { WEAK_LETTERS } from "@/lib/esku/infrastructure/recognition/CtcAlphabetClassifier";
 import { createAlphabet } from "@/lib/recognition/engine";
+import { isUnrecognizedLetter, isWeakLetter, letterAccepted } from "@/lib/recognition/exercises";
 import { getLetterMeta } from "@/lib/recognition/letters";
 
 type Props = {
@@ -17,25 +17,26 @@ type Props = {
 type Phase =
   | { kind: "await_camera" }
   | { kind: "evaluating"; startedAt: number | null }
-  | { kind: "done"; correct: boolean };
+  /** Se acabó el tiempo con una letra que la cámara no sabe reconocer: lo dice quien aprende. */
+  | { kind: "self" }
+  | { kind: "done"; correct: boolean; self?: boolean };
 
 /** Tiempo mínimo para subir la mano y hacer la letra. */
 const MIN_ATTEMPT_MS = 8000;
-/** El mismo umbral con el que el traductor escribe una letra. */
-const ACCEPT = 0.5;
-/** Letras que el modelo reconoce peor: basta con que aparezcan entre las 3 primeras. */
-const ACCEPT_WEAK = 0.25;
 
 /**
  * Signar una letra del alfabeto dactilológico. Lo evalúa el modelo CTC de Esku, entrenado
  * con deletreo real (LSE-FS-UVigo), que marca cada letra en uno o dos fotogramas: se da por
- * buena en cuanto aparece como la más probable.
+ * buena en cuanto aparece como la más probable. Las letras que el modelo no reconoce
+ * (`UNRECOGNIZED_LETTERS`) no se dan por falladas al acabarse el tiempo: quien aprende compara
+ * con la descripción y dice si le ha salido.
  */
 export function SignThis({ exercise, onAnswer, disabled }: Props) {
   const alphabet = useMemo(() => createAlphabet(), []);
   const meta = getLetterMeta(exercise.letterId);
   const target = exercise.letterId.toUpperCase();
-  const weak = WEAK_LETTERS.includes(target.toLowerCase());
+  const weak = isWeakLetter(target);
+  const unrecognized = isUnrecognizedLetter(target);
   const windowMs = Math.max(exercise.voteWindowMs, MIN_ATTEMPT_MS);
 
   const phaseRef = useRef<Phase>({ kind: "await_camera" });
@@ -49,9 +50,9 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
   };
 
   const finish = useCallback(
-    (correct: boolean) => {
+    (correct: boolean, self = false) => {
       if (phaseRef.current.kind === "done") return;
-      setPhase({ kind: "done", correct });
+      setPhase({ kind: "done", correct, self });
       onAnswer(correct);
     },
     [onAnswer],
@@ -65,7 +66,8 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
       if (p.startedAt === null) phaseRef.current = { kind: "evaluating", startedAt: frame.timestampMs };
       const startedAt = (phaseRef.current as { startedAt: number }).startedAt;
       if (frame.timestampMs - startedAt > windowMs) {
-        finish(false);
+        if (unrecognized) setPhase({ kind: "self" });
+        else finish(false);
         return;
       }
       if (frame.hands.length === 0) return;
@@ -74,15 +76,12 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
         const candidates = await alphabet.classify([frame]);
         const top = candidates[0];
         if (top) setSeen(`${top.gloss.text} · ${Math.round(top.confidence * 100)} %`);
-        const hit = weak
-          ? candidates.some((c) => c.gloss.text === target && c.confidence >= ACCEPT_WEAK)
-          : top?.gloss.text === target && top.confidence >= ACCEPT;
-        if (hit) finish(true);
+        if (letterAccepted(candidates, target)) finish(true);
       } finally {
         busyRef.current = false;
       }
     },
-    [alphabet, finish, target, weak, windowMs],
+    [alphabet, finish, target, unrecognized, windowMs],
   );
 
   return (
@@ -112,14 +111,16 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
           setSeen(null);
           setPhase({ kind: "evaluating", startedAt: null });
         }}
-        stop={phase.kind === "done"}
+        stop={phase.kind === "done" || phase.kind === "self"}
         disabled={disabled}
       />
 
       {phase.kind === "await_camera" && (
         <p className="text-sm text-slate-500">
           Pulsa «Empezar cámara» y signa la letra <b>{target}</b>. Tienes {Math.round(windowMs / 1000)} s.
-          {weak && " Esta letra es difícil para el modelo, así que se acepta con menos seguridad."}
+          {unrecognized
+            ? ` La cámara todavía no reconoce bien la ${target}: hazla mirando la descripción y, si no la ve, dirás tú si te ha salido.`
+            : weak && " Esta letra es difícil para el modelo, así que se acepta con menos seguridad."}
         </p>
       )}
       {phase.kind === "evaluating" && (
@@ -128,6 +129,32 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
           className="rounded-lg border border-brand-300 bg-brand-50 p-3 text-sm text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-100"
         >
           Signa <b>{target}</b>… {seen ? <>Veo: <b>{seen}</b></> : "todavía no veo ninguna letra."}
+        </div>
+      )}
+      {phase.kind === "self" && (
+        <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+          <p>
+            La cámara no ha podido comprobar la <b>{target}</b>. Compara tu mano con la descripción:
+            ¿te ha salido así?
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => finish(true, true)}
+              disabled={disabled}
+              className="flex-1 rounded-full bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+            >
+              Sí, me ha salido
+            </button>
+            <button
+              type="button"
+              onClick={() => finish(false, true)}
+              disabled={disabled}
+              className="flex-1 rounded-full border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Todavía no
+            </button>
+          </div>
         </div>
       )}
       {phase.kind === "done" && (
@@ -139,9 +166,13 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
               : "border-red-500 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-950 dark:text-red-100"
           }`}
         >
-          {phase.correct
-            ? `¡Reconocido! Has signado la ${target}.`
-            : `No he visto la ${target}${seen ? ` (lo último que vi: ${seen})` : ""}.`}
+          {phase.self
+            ? phase.correct
+              ? `Apuntado: te ha salido la ${target}.`
+              : `Apuntado: sigue practicando la ${target}.`
+            : phase.correct
+              ? `¡Reconocido! Has signado la ${target}.`
+              : `No he visto la ${target}${seen ? ` (lo último que vi: ${seen})` : ""}.`}
         </div>
       )}
       {phase.kind === "done" && !disabled && (

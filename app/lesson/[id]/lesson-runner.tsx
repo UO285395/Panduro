@@ -318,6 +318,7 @@ function ExerciseView({
         <SignWord
           exercise={exercise}
           sign={sign}
+          lessonSigns={Object.keys(signs)}
           onAnswer={onAnswer}
           disabled={disabled}
         />

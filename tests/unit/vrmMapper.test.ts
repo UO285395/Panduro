@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { restPalm, segmentDistance, unbendFingers } from "@/lib/avatar/vrmMapper";
+import { loopDuration } from "@/lib/avatar/interpolate";
+import { loopBlink, restPalm, segmentDistance, unbendFingers } from "@/lib/avatar/vrmMapper";
+import type { AvatarClip } from "@/lib/curriculum/schema";
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
@@ -67,5 +69,31 @@ describe("unbendFingers: dedos con la palma de frente a la cámara", () => {
     const side = hand(0.45, 0.55);
     expect(unbendFingers(side, [1, 0, 0])).toEqual(side);
     expect(unbendFingers(side, [0, 0, -1])[0]).toEqual(side[0]);
+  });
+});
+
+describe("vrmMapper: parpadeo de un signo que se repite", () => {
+  const clip: AvatarClip = {
+    handedness: "one",
+    duration: 1500,
+    keyframes: [
+      { t: 0, hand: { x: 0, y: 0.5, z: 0.3, rot: [0, 0, 0] }, fingers: [0, 0, 0, 0, 0] },
+      { t: 1500, hand: { x: 0, y: 0.5, z: 0.3, rot: [0, 0, 0] }, fingers: [0, 0, 0, 0, 0] },
+    ],
+  };
+  const period = loopDuration(clip);
+
+  it("no parpadea mientras signa, y sí una vez en cada vuelta al inicio", () => {
+    for (let t = 0; t <= clip.duration; t += 10) expect(loopBlink(clip, t)).toBe(0);
+    const closed = (from: number) => {
+      let n = 0;
+      for (let t = from; t < from + period; t += 10) if (loopBlink(clip, t) > 0.9) n++;
+      return n;
+    };
+    expect(closed(0)).toBeGreaterThan(0);
+    expect(closed(period)).toBe(closed(0));
+    let peak = 0;
+    for (let t = clip.duration; t < period; t += 10) peak = Math.max(peak, loopBlink(clip, t));
+    expect(peak).toBeCloseTo(1, 1);
   });
 });

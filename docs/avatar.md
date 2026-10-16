@@ -133,6 +133,9 @@ persona:
 - Los gestos de la cara se ven: con expresiones de dibujo más marcadas en el modelo, y un gesto
   medido a medias (el ceño de QUÉ, la boca hacia abajo de ABURRIDO, 0,3-0,5) casi entero
   (`exprBoost`). La sonrisa y la pena, a peso 1 (antes 0,8).
+- Parpadea entre una repetición del signo y la siguiente, al volver las manos al inicio
+  (`loopBlink`), como se parpadea al signar entre signos. Antes parpadeaba a los 0,9 s de
+  empezar, en mitad de casi todos los signos, justo cuando la cara dice algo.
 
 Midiendo el error de cada contacto en los 81 signos grabados que tocan la cara o el cuerpo (536
 contactos), la mediana queda en 0,005 brazos (3 mm) y solo 8 pasan de 0,1; con la palma del

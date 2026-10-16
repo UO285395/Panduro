@@ -10,6 +10,7 @@ import {
   applyVrmKeyframe,
   blendFromSnapshot,
   createVrmRigWithHands,
+  loopBlink,
   resolveClip,
   signBounds,
   snapshotPose,
@@ -363,7 +364,8 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           // Rotaciones normalizadas ANTES de vrm.update(), que las pasa a los
           // huesos reales en el mismo frame.
           if (active) {
-            applyVrmKeyframe(rig, sampleLoop(resolveClip(rig, active), dt), dt);
+            const clip = resolveClip(rig, active);
+            applyVrmKeyframe(rig, sampleLoop(clip, dt), dt, loopBlink(clip, dt));
           } else {
             applyVrmIdle(rig, dt);
           }

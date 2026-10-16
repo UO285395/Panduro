@@ -16,7 +16,7 @@ import {
   type FaceGrid,
 } from "./bodyPoints";
 import { HAND_OUTLINE_WIDTH } from "./handOutline";
-import { returnPath, sampleClip, type LoopingClip } from "./interpolate";
+import { LOOP_HOLD_MS, loopDuration, returnPath, sampleClip, type LoopingClip } from "./interpolate";
 import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST, Y_MOUTH, Y_PER_FACE } from "./pose";
 
 /**
@@ -1085,13 +1085,32 @@ function poseHead(rig: VrmRig, head: Vec3 | undefined) {
   setNorm(rig.vrm, B.Head, new THREE.Quaternion().slerp(q, 1 - share));
 }
 
-/** Parpadeo natural: uno cada 4 s, en un momento distinto de cada tramo, de unos 180 ms. */
+/** Un parpadeo de unos 180 ms, `u` ms después de empezar: cierra en 70 y abre en 110. */
+function blinkShape(u: number): number {
+  if (u < 0 || u > 180) return 0;
+  return u < 70 ? u / 70 : 1 - (u - 70) / 110;
+}
+
+/** Parpadeo natural: uno cada 4 s, en un momento distinto de cada tramo. */
 function blinkAt(tMs: number): number {
   const slot = Math.floor(tMs / 4000);
   const r = Math.abs(Math.sin(slot * 12.9898 + 78.233) * 43758.5453) % 1;
-  const u = tMs - slot * 4000 - (400 + 2800 * r);
-  if (u < 0 || u > 180) return 0;
-  return u < 70 ? u / 70 : 1 - (u - 70) / 110;
+  return blinkShape(tMs - slot * 4000 - (400 + 2800 * r));
+}
+
+/** Desde el final del signo hasta el parpadeo, ya en la vuelta al inicio. */
+const LOOP_BLINK_MS = LOOP_HOLD_MS + 40;
+
+/**
+ * Parpadeo de un signo que se repite: uno por vuelta, al acabar el signo, cuando las manos
+ * vuelven al inicio. Con el parpadeo cada 4 s desde que empieza, el primero caía a los
+ * 0,9 s, en mitad de casi todos los signos: los ojos se cerraban justo cuando la cara dice
+ * algo (los ojos abiertos de DESCUBRIR, el ceño de QUIÉN). Al signar, se parpadea entre signos.
+ */
+export function loopBlink(clip: AvatarClip, tMs: number): number {
+  const period = loopDuration(clip);
+  const t = ((tMs % period) + period) % period;
+  return blinkShape(t - clip.duration - LOOP_BLINK_MS);
 }
 
 /**
@@ -1100,7 +1119,7 @@ function blinkAt(tMs: number): number {
  */
 const exprBoost = (x: number) => 1 - (1 - x) * (1 - x);
 
-function setExpressions(rig: VrmRig, expr: Expressions | undefined, tMs: number) {
+function setExpressions(rig: VrmRig, expr: Expressions | undefined, blink: number) {
   const em = rig.vrm.expressionManager;
   if (!em) return;
   for (const name of rig.exprNames) em.setValue(name, 0);
@@ -1110,7 +1129,7 @@ function setExpressions(rig: VrmRig, expr: Expressions | undefined, tMs: number)
     if (target) em.setValue(target[0], Math.min(1, (em.getValue(target[0]) ?? 0) + w * target[1]));
   }
   // Con el ceño los ojos se entornan un poco (como en el «angry» del modelo, sin su símbolo).
-  if (rig.exprNames.includes("blink")) em.setValue("blink", Math.max(blinkAt(tMs), 0.25 * (expr?.browDown ?? 0)));
+  if (rig.exprNames.includes("blink")) em.setValue("blink", Math.max(blink, 0.25 * (expr?.browDown ?? 0)));
 }
 
 // --- Contactos -------------------------------------------------------------
@@ -2489,11 +2508,12 @@ const RELAXED: Fingers = [0.15, 0.15, 0.15, 0.15, 0.15];
 
 /**
  * Signo en curso: brazo derecho según `hand`; el izquierdo según `hand2` o en
- * reposo. El keyframe tiene que venir de un clip pasado por `resolveClip`.
+ * reposo. El keyframe tiene que venir de un clip pasado por `resolveClip`. `blink`: cuánto
+ * tiene los ojos cerrados (ver loopBlink); si no, parpadea cada 4 s.
  */
-export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number) {
+export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number, blink = blinkAt(tMs)) {
   poseHead(rig, kf.head);
-  setExpressions(rig, kf.expr, tMs);
+  setExpressions(rig, kf.expr, blink);
   poseArm(rig, "Right", signingGoal(rig, "Right", kf.hand));
   poseFingers(rig, "Right", kf.fingers, thumbOf(kf, "Right"));
   if (kf.hand2) {
@@ -2508,7 +2528,7 @@ export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number) {
 /** Reposo: brazos caídos junto al cuerpo, palmas hacia los muslos. */
 export function applyVrmIdle(rig: VrmRig, tMs: number) {
   poseHead(rig, undefined);
-  setExpressions(rig, undefined, tMs);
+  setExpressions(rig, undefined, blinkAt(tMs));
   for (const side of ["Right", "Left"] as const) {
     poseArm(rig, side, idleGoal(rig, side, tMs));
     poseFingers(rig, side, RELAXED);

@@ -121,10 +121,13 @@ persona:
   toon del cuerpo, uno grueso las convertía en manchas.
 - La mano puede meterse en la cabeza unos 4 mm antes de girarla o apartarla (antes, 2 mm): con
   nariz y pómulos, la mano que toca con una parte roza con otra.
+- El peso de un contacto dice a cuánto de la piel se quedó la mano en la grabación (de 0 a
+  3,5 cm), como con la otra mano. Antes, en la cara, era la fracción del camino desde donde
+  estaba la muñeca grabada, y un contacto sostenido (peso 0,9: tocar) se quedaba a 3-4 cm: la
+  yema de BUENOS DÍAS o el índice de DOLOR no llegaban.
 
 Midiendo el error de cada contacto en los 81 signos grabados que tocan la cara o el cuerpo (536
-contactos, 480 de ellos completos: la mano llega a tocar), la mediana de los completos queda en
-0,011 brazos y solo 9 pasan de 0,1 (con la palma del revés, la de todos era 0,040 y 105 pasaban
-de 0,1; ahora, 0,022 y 52). Los que quedan son de la mejilla: la mano llega al punto, pero se mete en la cabeza y ni
-girándola sale, así que se aparta un poco. Los contactos parciales (FRUTA, DULCE, MAL…) quedan a
-la distancia que dice la grabación, a propósito.
+contactos), la mediana queda en 0,005 brazos (3 mm) y solo 8 pasan de 0,1; con la palma del
+revés eran 0,040 y 105. Los que quedan son de la mejilla: la mano llega al punto, pero se mete
+en la cabeza y ni girándola sale, así que se aparta un poco. Los contactos parciales (FRUTA,
+DULCE, MAL…) quedan a la distancia que dice la grabación, a propósito.

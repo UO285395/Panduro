@@ -67,6 +67,8 @@ pnpm-debug.log*
 # Datos de terceros descargados en local (SWL-LSE de Zenodo, etc.) y exportaciones intermedias
 /data/
 swl-lse*.json
+# Entorno de Python de scripts/videos_to_signs.py (MediaPipe)
+/.venv/
 
 # Modelo 3D de la mascota (cada modelo de Sketchfab tiene su licencia): solo en local.
 /public/mascot/*

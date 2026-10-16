@@ -474,12 +474,15 @@ export function lateralToModel(g: FaceGrid, h: number, armLen: number): number {
   return Math.sign(h) * (g.halfWidth + (Math.abs(h) - edge) * HUMAN_HALF_EYE_ARMS * armLen);
 }
 
+/** Lo más que mide de delante atrás una oreja (en tramos ojos-boca); más, y es el cráneo. */
+const EAR_DEPTH = 0.6;
+
 /**
  * Punto de la cabeza del modelo que se ve en esas coordenadas de cara mirándolo de
  * frente (lo que vio la cámara), con su normal. El pelo pegado a la piel (flequillo)
- * cuenta como superficie; el que sobresale mucho, no.
+ * cuenta como superficie; el que sobresale mucho, no. Con `behind`, en la oreja, el de detrás.
  */
-export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
+export function faceSurface(g: FaceGrid, face: FaceCoords, behind = false): Surface {
   const [r, u] = faceToModel(g, face);
   const cell = (col: number, row: number) => frontAt(g, col, row, true);
   const row0 = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
@@ -506,6 +509,15 @@ export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
   }
   const f = cell(col, row);
   if (!Number.isFinite(f)) return { p: [r, u, 0], n: [0, 0, 1] };
+  // Por detrás (la mano ahuecada detrás de la oreja de ESCUCHAR): la cara de atrás de la
+  // columna, si es delgada como una oreja; en el cráneo, la de delante.
+  const back = g.back[row * g.nr + col]!;
+  if (behind && Number.isFinite(back) && f - back < EAR_DEPTH * g.eyesToMouth) {
+    return {
+      p: [col === start ? r : g.r0 + (col + 0.5) * g.step, row === row0 ? u : g.u0 + (row + 0.5) * g.step, back],
+      n: norm([Math.sign(r) * 0.5, 0, -1]),
+    };
+  }
   const at = (dc: number, dr: number) => {
     const x = cell(col + dc, row + dr);
     return Number.isFinite(x) ? x : f - 2 * g.step;

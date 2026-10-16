@@ -152,14 +152,14 @@ describe("faceSurface: el punto exacto de la cara", () => {
     expect(faceSurface(grid, [0, 0.8]).p[2]).toBeLessThan(0.02);
   });
 
-  it("fuera de la cabeza, el punto del contorno más cercano: la oreja, no la mandíbula de debajo", () => {
-    // Una oreja a cada lado, de u −0,02 a 0,03, que sobresale de la cabeza.
+  // Una oreja a cada lado, de u −0,02 a 0,03 y de f −0,1 a −0,085, que sobresale de la cabeza.
+  const earedGrid = () => {
     const c = figure();
     const r = [...c.r], u = [...c.u], f = [...c.f], hair = [...c.hair];
     for (const side of [1, -1]) {
       for (let a = 0; a <= 4; a++) {
         for (let b = 0; b <= 10; b++) {
-          for (let d = 0; d <= 6; d++) {
+          for (let d = 0; d <= 3; d++) {
             r.push(side * (0.07 + 0.005 * a));
             u.push(-0.02 + 0.005 * b);
             f.push(-0.1 + 0.005 * d);
@@ -169,7 +169,29 @@ describe("faceSurface: el punto exacto de la cara", () => {
       }
     }
     const eared: Cloud = { r: Float32Array.from(r), u: Float32Array.from(u), f: Float32Array.from(f), hair: Uint8Array.from(hair) };
-    const g = measureFace(eared, measureBody(eared, anchors), anchors);
+    return measureFace(eared, measureBody(eared, anchors), anchors);
+  };
+
+  it("por detrás, la cara de atrás de la oreja; en el cráneo, la de delante", () => {
+    const g = earedGrid();
+    let lo = -1.75;
+    let hi = 0.8;
+    for (let k = 0; k < 40; k++) {
+      const mid = (lo + hi) / 2;
+      if (faceToModel(g, [5, mid])[1] < 0.005) lo = mid;
+      else hi = mid;
+    }
+    const front = faceSurface(g, [5, lo]);
+    const back = faceSurface(g, [5, lo], true);
+    expect(front.p[2]).toBeGreaterThan(-0.09);
+    expect(back.p[2]).toBeLessThan(-0.095);
+    expect(back.n[2]).toBeLessThan(0);
+    // En la mejilla la columna es la cabeza entera: no se pasa al cogote.
+    expect(faceSurface(g, [1.5, -0.5], true).p).toEqual(faceSurface(g, [1.5, -0.5]).p);
+  });
+
+  it("fuera de la cabeza, el punto del contorno más cercano: la oreja, no la mandíbula de debajo", () => {
+    const g = earedGrid();
     // Un poco por debajo de la oreja y muy a un lado.
     let lo = -1.75;
     let hi = 0.8;

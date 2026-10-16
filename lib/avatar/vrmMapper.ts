@@ -1218,7 +1218,9 @@ function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Finge
         return { p: frame.wrist.clone().addScaledVector(frame.normal, frame.thick), n: frame.normal };
     }
   }
-  const s = c.face ? faceSurface(rig.face, c.face) : surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
+  const s = c.face
+    ? faceSurface(rig.face, c.face, (c as BehindEar).behind === true)
+    : surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
   const local = (v: [number, number, number]) =>
     rig.right.clone().multiplyScalar(v[0]).addScaledVector(rig.up, v[1]).addScaledVector(rig.forward, v[2]);
   const p = rig.eyes.clone().add(local(s.p));
@@ -1439,7 +1441,7 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): LoopingClip {
 }
 
 function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
-  const clip = facingCamera(unbentTowardCamera(input));
+  const clip = facingCamera(earsFromBehind(unbentTowardCamera(input)));
   const resolved: AvatarClip = {
     ...clip,
     keyframes: centeredHands(rig, clip).map((kf) => {
@@ -1491,12 +1493,41 @@ export function unbendFingers(fingers: Fingers, palmDir: Vec3 | undefined, yaw =
 }
 
 /** Desde cuánto de frente a la cámara (|palma · cámara|) se enderezan los dedos, y desde cuánto del todo. */
-const UNBEND_FROM = 0.7;
-const UNBEND_FULL = 0.85;
+const UNBEND_FROM = 0.85;
+const UNBEND_FULL = 0.95;
 /** Lo que queda de lo poco doblado, y entre qué flexiones (rad) pasa a quedarse entero. */
 const UNBEND_KEEP = 0.3;
 const UNBEND_OPEN = 0.4;
 const UNBEND_SHUT = 1.4;
+
+/** Un contacto con la oreja por detrás (ver `earsFromBehind`). */
+type BehindEar = Contact & { behind?: boolean };
+
+/** Desde cuánto hacia delante (la cámara) mira la palma de la mano que está detrás de la oreja. */
+const BEHIND_EAR_PALM = 0.6;
+
+/**
+ * La mano en la oreja con la palma hacia delante está detrás de ella, ahuecada (ESCUCHAR). En el
+ * vídeo la oreja se ve dentro de la mano, y el contacto, en lo que se ve de frente, la dejaba
+ * delante de la cara: va a la cara de atrás de la oreja.
+ */
+function earsFromBehind(clip: AvatarClip): AvatarClip {
+  const fromBehind = (h: HandSpec | undefined): HandSpec | undefined => {
+    const c = h?.contact;
+    if (!h || !c?.face || c.at !== "ear" || !h.palmDir) return h;
+    const [x, y, z] = h.palmDir;
+    if (z / (Math.hypot(x, y, z) || 1) < BEHIND_EAR_PALM) return h;
+    return { ...h, contact: { ...c, behind: true } as BehindEar };
+  };
+  return {
+    ...clip,
+    keyframes: clip.keyframes.map((kf) => ({
+      ...kf,
+      hand: fromBehind(kf.hand)!,
+      ...(kf.hand2 ? { hand2: fromBehind(kf.hand2) } : {}),
+    })),
+  };
+}
 
 /** Los dedos de cada keyframe vistos de frente, con `unbendFingers`. */
 function unbentTowardCamera(clip: AvatarClip): AvatarClip {

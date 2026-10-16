@@ -110,7 +110,12 @@ persona:
   tapando la cara.
 - Con la palma de frente a la cámara, MediaPipe da los dedos doblados hacia ella aunque estén
   rectos (la profundidad no la ve bien): la mano abierta de HOLA salía como una garra. Lo poco
-  doblado se endereza (`unbendFingers`); un puño se queda como está.
+  doblado se endereza (`unbendFingers`); un puño se queda como está. Solo con la palma de frente
+  del todo: con la palma algo girada (la mano ahuecada de ESCUCHAR) lo doblado se ve en la imagen
+  y es de verdad.
+- La mano en la oreja con la palma hacia delante (ESCUCHAR) está detrás de ella, ahuecada: el
+  contacto va a la cara de atrás de la oreja, no a lo que se ve de frente, que la dejaba delante
+  de la cara.
 - Las manos no se agrandan con esta cabeza de dibujo: grandes para el cuerpo, el tejado de CASA
   llegaba a la boca. Y su contorno es la mitad de grueso que con el modelo anime: con el contorno
   toon del cuerpo, uno grueso las convertía en manchas.
@@ -120,6 +125,6 @@ persona:
 Midiendo el error de cada contacto en los 81 signos grabados que tocan la cara o el cuerpo (536
 contactos, 480 de ellos completos: la mano llega a tocar), la mediana de los completos queda en
 0,011 brazos y solo 9 pasan de 0,1 (con la palma del revés, la de todos era 0,040 y 105 pasaban
-de 0,1). Los que quedan son de la mejilla: la mano llega al punto, pero se mete en la cabeza y ni
+de 0,1; ahora, 0,022 y 52). Los que quedan son de la mejilla: la mano llega al punto, pero se mete en la cabeza y ni
 girándola sale, así que se aparta un poco. Los contactos parciales (FRUTA, DULCE, MAL…) quedan a
 la distancia que dice la grabación, a propósito.

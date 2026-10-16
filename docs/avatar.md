@@ -120,7 +120,9 @@ persona:
   llegaba a la boca. Y su contorno es la mitad de grueso que con el modelo anime: con el contorno
   toon del cuerpo, uno grueso las convertía en manchas.
 - La mano puede meterse en la cabeza unos 4 mm antes de girarla o apartarla (antes, 2 mm): con
-  nariz y pómulos, la mano que toca con una parte roza con otra.
+  nariz y pómulos, la mano que toca con una parte roza con otra. Para sacarla se gira sobre el
+  contacto hasta 90° (antes, 60°: la mano de ROSA o el índice de DOLOR no salían y, apartados
+  enteros, no llegaban a la mejilla).
 - El peso de un contacto dice a cuánto de la piel se quedó la mano en la grabación (de 0 a
   3,5 cm), como con la otra mano. Antes, en la cara, era la fracción del camino desde donde
   estaba la muñeca grabada, y un contacto sostenido (peso 0,9: tocar) se quedaba a 3-4 cm: la

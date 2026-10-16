@@ -1879,6 +1879,14 @@ function headProbe(rig: VrmRig, side: Side) {
 const OUT_OF_HEAD_FRONT_TURN = 30;
 
 /**
+ * Los giros que se prueban, de menos a más. Hasta 90°: con 60 la mano de ROSA en la mejilla o el
+ * índice de DOLOR en la barbilla no salían, y al sacarla entera quedaban a varios centímetros.
+ */
+const OUT_OF_HEAD_TURNS = [15, 30, 45, 60, 75, 90];
+/** Lo más girada que se aparta entera si ningún giro la saca. */
+const OUT_OF_HEAD_PUSHED_TURN = 60;
+
+/**
  * Lo que una mano puede meterse en la cabeza sin que se note, y lo más que se aparta de ella (en
  * brazos). Unos 4 mm en una persona, menos que medio dedo: parece que aprieta. En una cara con
  * relieve (nariz, pómulos) la mano que toca con una parte roza con otra; con el doble apenas
@@ -1951,7 +1959,7 @@ function outOfHead(
     const seen = (a: [number, number, number], b: [number, number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
     const change = (p: [number, number, number], d: [number, number, number]) =>
       seen(pointDir, d) + Math.abs(Math.abs(palmDir[2]) - Math.abs(p[2])) + 0.5 * seen(palmDir, p);
-    for (const deg of [15, 30, 45, 60]) {
+    for (const deg of OUT_OF_HEAD_TURNS) {
       let best: { placed: HandSpec; change: number } | null = null;
       for (const axis of deg <= OUT_OF_HEAD_FRONT_TURN ? axes : axes.filter((a) => a === tiltAxis)) {
         for (const sign of [1, -1]) {
@@ -1962,9 +1970,10 @@ function outOfHead(
           if (dd <= tol) {
             const c = change(oriented.palmDir, oriented.pointDir);
             if (!best || c < best.change) best = { placed, change: c };
-          } else if (axis === tiltAxis && dd < baseDepth) {
+          } else if (axis === tiltAxis && deg <= OUT_OF_HEAD_PUSHED_TURN && dd < baseDepth) {
             // Si ninguno la saca, se aparta la que menos se mete de las inclinadas: girada de
-            // otro modo la palma podía acabar de frente a la cámara (ENFADADO).
+            // otro modo la palma podía acabar de frente a la cámara (ENFADADO). Y no de las muy
+            // giradas: así, apartada, la de HABLAR quedaba lejos de la boca.
             base = placed;
             baseDepth = dd;
           }

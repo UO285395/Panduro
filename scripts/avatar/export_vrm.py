@@ -1,15 +1,18 @@
 # Exporta el personaje acabado (finish_avatar.py) a VRM 1.0.
 #  1. La pose en T pasa a ser la de reposo (malla y formas de la cara deformadas con el esqueleto).
 #  2. Nombres de mallas y materiales legibles (el reproductor busca «Hair», «Eyes»…).
-#  3. Huesos humanoides, expresiones y datos de licencia (CC0).
-# Uso: blender -b personaje.blend --python export_vrm.py -- meta.json salida.vrm
+#  3. Sombreado toon (MToon), como un modelo de VRoid: más amable que el realista.
+#  4. Huesos humanoides, expresiones y datos de licencia (CC0).
+# Uso: blender -b personaje.blend --python export_vrm.py -- config.json meta.json salida.vrm
 import bpy, json, sys
 import numpy as np
 from bl_ext.user_default.vrm.editor.extension import get_armature_extension
+from bl_ext.user_default.vrm.editor.extension_accessor import get_material_extension
 
 args = sys.argv[sys.argv.index("--") + 1:]
-meta = json.load(open(args[0]))
-out = args[1]
+cfg = json.load(open(args[0]))
+meta = json.load(open(args[1]))
+out = args[2]
 
 armature = next(o for o in bpy.data.objects if o.type == "ARMATURE")
 meshes = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -104,7 +107,40 @@ for o in meshes:
 armature.name = "Panduro"
 armature.data.name = "Panduro"
 
-# --- 3. VRM ---------------------------------------------------------------------------------------
+# --- 3. Sombreado toon ------------------------------------------------------------------------------
+# Sombra de dos tonos (la textura multiplicada por shade) y un contorno fino en el mundo, por mallas.
+# Lo recortado (pelo, cejas, pestañas, ojos) sigue recortado y el pelo, por las dos caras.
+toon = cfg.get("toon")
+if toon:
+    for o in meshes:
+        st = {**toon.get("default", {}), **toon.get(o.name, {})}
+        for mat in o.data.materials:
+            bpy.ops.vrm.convert_material_to_mtoon1(material_name=mat.name)
+            g = get_material_extension(mat).mtoon1
+            g.enabled = True
+            mt = g.extensions.vrmc_materials_mtoon
+            tex = g.pbr_metallic_roughness.base_color_texture.index.source
+            if tex:
+                mt.shade_multiply_texture.index.source = tex
+            mt.shade_color_factor = st.get("shade_color") or [st.get("shade", 0.75)] * 3
+            mt.shading_toony_factor = st.get("toony", 0.9)
+            mt.shading_shift_factor = st.get("shift", 0.0)
+            mt.gi_equalization_factor = st.get("gi", 0.9)
+            if st.get("outline"):
+                mt.outline_width_mode = "worldCoordinates"
+                mt.outline_width_factor = st["outline"]
+                mt.outline_color_factor = st.get("outline_color", [0.2, 0.15, 0.13])
+                mt.outline_lighting_mix_factor = st.get("outline_lighting", 1.0)
+            if st.get("rim"):
+                mt.parametric_rim_color_factor = st["rim"]
+                mt.parametric_rim_fresnel_power_factor = st.get("rim_power", 4.0)
+                mt.parametric_rim_lift_factor = st.get("rim_lift", 0.0)
+            cutout = mat.blend_method == "CLIP"
+            g.alpha_mode = "MASK" if cutout else "OPAQUE"
+            g.alpha_cutoff = 0.5
+            g.double_sided = not mat.use_backface_culling
+
+# --- 4. VRM ---------------------------------------------------------------------------------------
 ext = get_armature_extension(armature.data)
 ext.spec_version = "1.0"
 vrm1 = ext.vrm1
@@ -161,7 +197,8 @@ m.allow_redistribution = True
 m.modification = "allowModificationRedistribution"
 m.other_license_url = meta.get("other_license_url", "")
 
-bpy.ops.wm.save_as_mainfile(filepath=out.replace(".vrm", ".blend"))
+# Aparte de los .blend de los pasos anteriores (con ".blend" a secas pisaba el de build_avatar.py).
+bpy.ops.wm.save_as_mainfile(filepath=out[: -len(".vrm")] + "-vrm.blend")
 res = bpy.ops.export_scene.vrm(filepath=out, armature_object_name=armature.name, ignore_warning=True,
                                export_try_sparse_sk=True)
 print("EXPORT", res, out)

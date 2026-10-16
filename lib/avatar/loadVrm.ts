@@ -49,6 +49,14 @@ export async function loadPanduroVrm(): Promise<LoadedVrm | null> {
       (gltf) => {
         const vrm = (gltf.userData as { vrm?: unknown }).vrm ?? null;
         if (!vrm) return resolve(null);
+        // Lo recortado (pelo, cejas, pestañas) con el borde suavizado por el antialiasing: con
+        // el corte a secas, los mechones salían en escalones.
+        gltf.scene.traverse((o) => {
+          const mats = (o as { material?: { alphaTest?: number; alphaToCoverage?: boolean } | { alphaTest?: number; alphaToCoverage?: boolean }[] }).material;
+          for (const m of Array.isArray(mats) ? mats : mats ? [mats] : []) {
+            if ((m.alphaTest ?? 0) > 0) m.alphaToCoverage = true;
+          }
+        });
         resolve({ scene: gltf.scene, vrm });
       },
       undefined,

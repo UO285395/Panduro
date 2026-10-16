@@ -147,6 +147,26 @@ function perp(v: THREE.Vector3, axis: THREE.Vector3, fallback: THREE.Vector3): T
   return p.normalize();
 }
 
+/**
+ * Hacia dónde mira la palma en reposo (`hand`: de la muñeca al nudillo del corazón). En la pose
+ * en T, abajo; pero se mide con los nudillos, del meñique al índice: en un modelo con las palmas
+ * hacia arriba la mano salía del revés, con el dorso donde tenía que verse la palma y el pulgar
+ * por fuera.
+ */
+export function restPalm(
+  side: Side,
+  hand: THREE.Vector3,
+  index: THREE.Vector3 | null,
+  little: THREE.Vector3 | null,
+  forward: THREE.Vector3,
+): THREE.Vector3 {
+  const down = new THREE.Vector3(0, -1, 0);
+  if (!index || !little) return perp(down, hand, forward);
+  const across = index.clone().sub(little);
+  const palm = side === "Right" ? across.cross(hand) : hand.clone().cross(across);
+  return perp(palm.lengthSq() > 1e-10 ? palm : down, hand, forward);
+}
+
 function basis(primary: THREE.Vector3, secondary: THREE.Vector3): THREE.Matrix4 {
   const x = primary.clone().normalize();
   const y = secondary.clone().addScaledVector(x, -secondary.dot(x)).normalize();
@@ -194,10 +214,10 @@ export function createVrmRig(vrm: VRM): VrmRig {
     const r1 = e.clone().sub(s).normalize();
     const r2 = w.clone().sub(e).normalize();
     const r3 = tip ? tip.clone().sub(w).normalize() : r2.clone();
-    const palmRest = perp(down, r3, forward);
     // Marco de la mano en reposo: hacia el corazón, hacia el lado del índice y la palma.
     const idx = pos(FINGERS[side][1]![0]);
     const lit = pos(FINGERS[side][4]![0]);
+    const palmRest = restPalm(side, r3, idx, lit, forward);
     const thumbSide = idx && lit ? perp(perp(idx.clone().sub(lit), r3, forward), palmRest, forward) : forward.clone();
 
     const fingers: FingerRest[] = FINGERS[side].map((chain) => {
@@ -224,7 +244,9 @@ export function createVrmRig(vrm: VRM): VrmRig {
       upperLen: e.distanceTo(s),
       lowerLen: w.distanceTo(e),
       upperRestInv: basis(r1, perp(forward, r1, down)).invert(),
-      lowerRestInv: basis(r2, perp(down, r2, forward)).invert(),
+      // El antebrazo, con la palma (si no, en un modelo con las palmas hacia arriba la muñeca se
+      // retorcía media vuelta).
+      lowerRestInv: basis(r2, perp(palmRest, r2, down)).invert(),
       handRestInv: basis(r3, palmRest).invert(),
       palmRest,
       fingers,
@@ -302,11 +324,23 @@ export const HAND_SCALE = 1.15;
  */
 const HAND_TO_HEAD = 0.8;
 
-/** El rig del modelo, con las manos agrandadas si las tiene pequeñas (ver `HAND_TO_HEAD`). */
+/**
+ * Y frente al tramo del pecho a la boca: unos 19 cm frente a 30. Con una cabeza de dibujo
+ * (mayor que la de una persona), agrandar las manos hasta la cabeza las dejaba grandes para el
+ * cuerpo: en CASA el tejado de las manos, a la altura del pecho, llegaba a la boca.
+ */
+const HAND_TO_TORSO = 0.63;
+
+/**
+ * El rig del modelo, con las manos agrandadas si las tiene pequeñas para la cabeza y para el
+ * cuerpo (ver `HAND_TO_HEAD` y `HAND_TO_TORSO`).
+ */
 export function createVrmRigWithHands(vrm: VRM): VrmRig {
   const natural = createVrmRig(vrm);
   const head = natural.body.top.p[1] - natural.body.chin.p[1];
-  const scale = Math.min(HAND_SCALE, Math.max(1, (HAND_TO_HEAD * head) / natural.handReach));
+  const torso = natural.mouthY - natural.chestY;
+  const want = Math.min(HAND_TO_HEAD * head, HAND_TO_TORSO * torso);
+  const scale = Math.min(HAND_SCALE, Math.max(1, want / natural.handReach));
   if (scale < 1.01) return natural;
   enlargeHands(vrm, scale);
   return createVrmRig(vrm);
@@ -1405,7 +1439,7 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): LoopingClip {
 }
 
 function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
-  const clip = facingCamera(input);
+  const clip = facingCamera(unbentTowardCamera(input));
   const resolved: AvatarClip = {
     ...clip,
     keyframes: centeredHands(rig, clip).map((kf) => {
@@ -1433,6 +1467,48 @@ function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
   if (apart !== back) clear.back = apart;
   rig.resolved.set(input, clear);
   return clear;
+}
+
+/**
+ * Con la palma de frente a la cámara (o de espaldas), doblar un dedo hacia la palma es doblarlo
+ * hacia la cámara, y esa profundidad MediaPipe se la inventa: la mano abierta de HOLA salía con
+ * los dedos doblados 20-35°, como una garra, y en el vídeo están rectos. Con la palma así, lo
+ * poco doblado (el nudillo y las falanges) se queda en un tercio; lo muy doblado, un puño, igual.
+ * `yaw`: el cuerpo girado respecto a la cámara (AvatarClip.bodyYaw).
+ */
+export function unbendFingers(fingers: Fingers, palmDir: Vec3 | undefined, yaw = 0): Fingers {
+  if (!palmDir) return fingers;
+  const len = Math.hypot(palmDir[0], palmDir[1], palmDir[2]) || 1;
+  const facing = Math.abs(-Math.sin(yaw) * palmDir[0] + Math.cos(yaw) * palmDir[2]) / len;
+  const w = THREE.MathUtils.clamp((facing - UNBEND_FROM) / (UNBEND_FULL - UNBEND_FROM), 0, 1);
+  if (w <= 0) return fingers;
+  const keep = (x: number) => {
+    if (x <= 0) return x;
+    const k = UNBEND_KEEP + (1 - UNBEND_KEEP) * THREE.MathUtils.smoothstep(x, UNBEND_OPEN, UNBEND_SHUT);
+    return x * (1 - w * (1 - k));
+  };
+  return fingers.map((v, i) => (i > 0 && isMeasured(v) ? [v[0], keep(v[1]), keep(v[2])] : v)) as Fingers;
+}
+
+/** Desde cuánto de frente a la cámara (|palma · cámara|) se enderezan los dedos, y desde cuánto del todo. */
+const UNBEND_FROM = 0.7;
+const UNBEND_FULL = 0.85;
+/** Lo que queda de lo poco doblado, y entre qué flexiones (rad) pasa a quedarse entero. */
+const UNBEND_KEEP = 0.3;
+const UNBEND_OPEN = 0.4;
+const UNBEND_SHUT = 1.4;
+
+/** Los dedos de cada keyframe vistos de frente, con `unbendFingers`. */
+function unbentTowardCamera(clip: AvatarClip): AvatarClip {
+  const yaw = clip.bodyYaw ?? 0;
+  return {
+    ...clip,
+    keyframes: clip.keyframes.map((kf) => ({
+      ...kf,
+      fingers: unbendFingers(kf.fingers, kf.hand.palmDir, yaw),
+      ...(kf.fingers2 && kf.hand2 ? { fingers2: unbendFingers(kf.fingers2, kf.hand2.palmDir, yaw) } : {}),
+    })),
+  };
 }
 
 /**
@@ -1772,11 +1848,11 @@ const OUT_OF_HEAD_FRONT_TURN = 30;
 
 /**
  * Lo que una mano puede meterse en la cabeza sin que se note, y lo más que se aparta de ella (en
- * brazos). Unos 8 mm en una persona, menos que el grosor de un dedo: parece que aprieta. En una
- * cara con relieve (nariz, pómulos) la mano que toca con una parte roza con otra, y con 2 mm se
- * giraba o se apartaba en muchos más contactos de la oreja, la sien y la mejilla.
+ * brazos). Unos 4 mm en una persona, menos que medio dedo: parece que aprieta. En una cara con
+ * relieve (nariz, pómulos) la mano que toca con una parte roza con otra; con el doble apenas
+ * mejoran los contactos y la mano se mete más en la mejilla.
  */
-const HEAD_OVERLAP_TOL = 0.015;
+const HEAD_OVERLAP_TOL = 0.008;
 const HEAD_MAX_PUSH = 0.6;
 
 /**

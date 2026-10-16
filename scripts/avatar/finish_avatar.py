@@ -159,6 +159,71 @@ for o in meshes:
             o.vertex_groups.remove(vg)
 print("BODY verts", len(body.data.vertices), "keys", [k.name for k in body.data.shape_keys.key_blocks])
 
+# --- 2b. Proporciones de dibujo -------------------------------------------------------------------
+# Cabeza algo mayor (desde el cuello, sin tocar el cuerpo) y ojos grandes (cada uno desde su
+# centro, con el párpado y las pestañas). Los targets de MakeHuman no pasan de cierto tamaño.
+# Es una deformación suave del espacio aplicada a todas las mallas y a cada forma de expresión,
+# así que el parpadeo sigue cerrando el ojo agrandado.
+cartoon = cfg.get("cartoon")
+if cartoon:
+    def smoothstep(e0, e1, x):
+        t = np.clip((x - e0) / (e1 - e0), 0, 1)
+        return t * t * (3 - 2 * t)
+
+    head_bone = armature.data.bones["mixamorig:Head"]
+    pivot = np.array(armature.matrix_world @ head_bone.head_local)
+    eye_obj = next(o for o in meshes if "high-poly" in o.name)
+    eco = np.array([eye_obj.matrix_world @ v.co for v in eye_obj.data.vertices])
+    eye_centers = [(eco[m].min(0) + eco[m].max(0)) / 2 for m in (eco[:, 0] > 0, eco[:, 0] <= 0)]
+    eye_r = cartoon.get("eye_radius", 0.02)
+
+    def warp(p):
+        out = p.copy()
+        se = cartoon.get("eyes", 1.0)
+        for c in eye_centers:
+            d = np.linalg.norm(out - c, axis=1)
+            w = 1 - smoothstep(eye_r, eye_r * cartoon.get("eye_falloff", 1.9), d)
+            out = c + (out - c) * (1 + (se - 1) * w)[:, None]
+        sh = cartoon.get("head", 1.0)
+        w = smoothstep(pivot[2] - 0.02, pivot[2] + 0.05, out[:, 2])
+        return pivot + (out - pivot) * (1 + (sh - 1) * w)[:, None]
+
+    for o in meshes:
+        if not o.data.vertices:
+            continue
+        mw = np.array(o.matrix_world)
+        inv = np.linalg.inv(mw)
+        to_world = lambda co: co @ mw[:3, :3].T + mw[:3, 3]
+        to_local = lambda co: co @ inv[:3, :3].T + inv[:3, 3]
+        n = len(o.data.vertices)
+        co = np.empty(n * 3, dtype=np.float32)
+        o.data.vertices.foreach_get("co", co)
+        o.data.vertices.foreach_set("co", to_local(warp(to_world(co.reshape(-1, 3)))).astype(np.float32).ravel())
+        if o.data.shape_keys:
+            for k in o.data.shape_keys.key_blocks:
+                kc = coords(k)
+                set_coords(k, to_local(warp(to_world(kc))))
+        o.data.update()
+    print("CARTOON", cartoon, "eyes at", [c.round(3) for c in eye_centers], "pivot", pivot.round(3))
+
+    # Solo las pestañas de arriba, como un trazo de dibujo: las de abajo parecían maquillaje.
+    if cartoon.get("upper_lashes_only"):
+        for o in by_kind("eyelash"):
+            mw = np.array(o.matrix_world)
+            bm = bmesh.new()
+            bm.from_mesh(o.data)
+            z = np.array([(mw[:3, :3] @ np.array(v.co) + mw[:3, 3])[2] for v in bm.verts])
+            # Dos grupos por altura (los párpados de arriba y de abajo); el corte, entre los dos.
+            lo, hi = np.percentile(z, 15), np.percentile(z, 85)
+            for _ in range(10):
+                up = np.abs(z - hi) < np.abs(z - lo)
+                lo, hi = z[~up].mean(), z[up].mean()
+            low = [v for v, u in zip(bm.verts, up) if not u]
+            bmesh.ops.delete(bm, geom=low, context="VERTS")
+            bm.to_mesh(o.data)
+            bm.free()
+            print("LASHES lower removed", o.name, len(low))
+
 # --- 3. Colores y transparencias ----------------------------------------------------------------
 def recolor(obj_kind, fn, suffix):
     for o in by_kind(obj_kind):
@@ -169,6 +234,9 @@ def recolor(obj_kind, fn, suffix):
                     w, h = img.size
                     px = np.empty(w * h * 4, dtype=np.float32)
                     img.pixels.foreach_get(px)
+                    # Las funciones reciben los píxeles en fila (N×4); las que miran vecinos, el
+                    # tamaño en recolor.shape.
+                    recolor.shape = (h, w)
                     px = fn(pad(px.reshape(h, w, 4), cfg.get("pad", {}).get(obj_kind)).reshape(-1, 4)).ravel()
                     new = bpy.data.images.new(f"{img.name}.{suffix}", w, h, alpha=True)
                     new.pixels.foreach_set(px)
@@ -200,6 +268,17 @@ def pad(img, background, steps=24):
     return img
 
 
+def blur(a, r, passes=3):
+    """Desenfoque de caja separable, repetido (casi gaussiano), de un array H×W(×C)."""
+    for _ in range(passes):
+        for axis in (0, 1):
+            pad_width = [(r + 1, r) if k == axis else (0, 0) for k in range(a.ndim)]
+            c = np.cumsum(np.pad(a, pad_width, mode="edge"), axis=axis, dtype=np.float64)
+            n = c.shape[axis]
+            a = (np.take(c, range(2 * r + 1, n), axis) - np.take(c, range(0, n - 2 * r - 1), axis)) / (2 * r + 1)
+    return a.astype(np.float32)
+
+
 def rgb_to_hsv(rgb):
     mx, mn = rgb.max(1), rgb.min(1)
     d = mx - mn + 1e-8
@@ -229,6 +308,66 @@ if shirt:
         return px
     recolor("casualsuit", shirt_fn, "shirt")
 
+def blush_mask(h, w):
+    """Peso del colorete en la textura de la piel: las mejillas, debajo y por fuera de cada ojo."""
+    blush = cfg.get("blush")
+    mask = np.zeros((h, w), dtype=np.float32)
+    if not blush:
+        return mask
+    eye_obj = next(o for o in meshes if "high-poly" in o.name)
+    eco = np.array([eye_obj.matrix_world @ v.co for v in eye_obj.data.vertices])
+    mw = np.array(body.matrix_world)
+    co = np.empty(len(body.data.vertices) * 3, dtype=np.float32)
+    body.data.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3) @ mw[:3, :3].T + mw[:3, 3]
+    uv = body.data.uv_layers.active.data
+    r = blush.get("radius", 0.02)
+    for side in (eco[:, 0] > 0, eco[:, 0] <= 0):
+        c = (eco[side].min(0) + eco[side].max(0)) / 2
+        cheek = c + np.array([np.sign(c[0]) * blush.get("out", 0.008), 0, -blush.get("down", 0.03)])
+        # La piel de la mejilla: lo más adelantado de la cara a esa altura y ese lado, y a su
+        # alrededor en 3D (por anchura y altura cogía también el párpado, más adelantado).
+        col = np.nonzero(np.hypot(co[:, 0] - cheek[0], co[:, 2] - cheek[2]) < 0.006)[0]
+        surf = co[col[co[col, 1].argmin()]]  # la cara mira a -Y
+        dist = np.linalg.norm(co - surf, axis=1)
+        weight = {int(i): 1 - dist[i] / r for i in np.nonzero(dist < r)[0]}
+        # Cada polígono de la mejilla se pinta entero en la textura (su caja en UV), con el peso
+        # medio de sus vértices: con puntos sueltos, al suavizar casi no quedaba color.
+        for poly in body.data.polygons:
+            ws = [weight.get(body.data.loops[li].vertex_index, 0.0) for li in poly.loop_indices]
+            if max(ws) <= 0:
+                continue
+            us = np.array([uv[li].uv for li in poly.loop_indices])
+            x0, y0 = np.floor(us.min(0) * [w - 1, h - 1]).astype(int)
+            x1, y1 = np.ceil(us.max(0) * [w - 1, h - 1]).astype(int) + 1
+            mask[y0:y1, x0:x1] = np.maximum(mask[y0:y1, x0:x1], float(np.mean(ws)))
+    soft = blur(mask, blush.get("soft", 10))
+    return np.clip(soft / max(soft.max(), 1e-6), 0, 1) * blush.get("strength", 0.3)
+
+
+skin = cfg.get("skin_tone")
+if skin:
+    # Piel de dibujo: sin poros ni barba incipiente (desenfoque fino) y sin las sombras pintadas
+    # en la textura (ojeras, surcos): el brillo se iguala con el de alrededor, a lo grande, y el
+    # sombreado toon pone las suyas.
+    def skin_fn(px):
+        h, w = recolor.shape
+        img = px.reshape(h, w, 4)
+        rgb = blur(img[..., :3], skin.get("smooth", 3))
+        lum = rgb @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
+        big = blur(lum, skin.get("flatten_radius", 48))
+        gain = np.clip((np.median(lum) / np.maximum(big, 1e-3)) ** skin.get("flatten", 0.7), 0.6, 1.6)
+        rgb = rgb * gain[..., None]
+        hh, ss, vv = rgb_to_hsv(np.clip(rgb.reshape(-1, 3), 0, 1))
+        hh = (hh + skin.get("hue", 0.0)) % 1.0
+        rgb = hsv_to_rgb(hh, np.clip(ss * skin.get("sat", 1.0), 0, 1), np.clip(vv * skin.get("value", 1.0), 0, 1))
+        rgb = rgb.reshape(h, w, 3)
+        a = blush_mask(h, w)[..., None]
+        rgb = rgb * (1 - a) + np.array(cfg.get("blush", {}).get("color", [1.0, 0.6, 0.6]), dtype=np.float32) * rgb.max(-1, keepdims=True) * a
+        img[..., :3] = rgb
+        return img.reshape(-1, 4)
+    recolor("body", skin_fn, "toon")
+
 eyes = cfg.get("eye_color")
 if eyes:
     # Otro iris de MakeHuman, oscurecido (el «brown» de serie sale rojizo).
@@ -243,16 +382,74 @@ if eyes:
         h, s, v = rgb_to_hsv(px[:, :3])
         iris = s > 0.3
         px[:, :3] = hsv_to_rgb(h, s, np.where(iris, v * eyes["iris_value"], v))
-        return px
+        scale = eyes.get("iris_scale", 1.0)
+        shine = eyes.get("catchlight", 0.0)
+        if scale == 1.0 and not shine:
+            return px
+        # Iris más grandes (de dibujo) y un brillo en cada uno. La textura trae los dos globos:
+        # se separan los iris en dos grupos y cada uno se amplía desde su centro.
+        hgt, wid = recolor.shape
+        img = px.reshape(hgt, wid, 4)
+        ys, xs = np.nonzero(iris.reshape(hgt, wid))
+        pts = np.stack([xs, ys], 1).astype(np.float32)
+        d = pts[:, 0] - pts[:, 1]
+        centers = np.stack([pts[d.argmax()], pts[d.argmin()]])
+        for _ in range(10):
+            lab = np.linalg.norm(pts[:, None] - centers[None], axis=2).argmin(1)
+            centers = np.stack([pts[lab == k].mean(0) for k in (0, 1)])
+        src = img.copy()
+        gy, gx = np.mgrid[0:hgt, 0:wid].astype(np.float32)
+        for k in (0, 1):
+            cx, cy = centers[k]
+            radius = np.percentile(np.linalg.norm(pts[lab == k] - centers[k], axis=1), 97)
+            dist = np.hypot(gx - cx, gy - cy)
+            inside = dist < radius * scale
+            sx = np.clip(np.round(cx + (gx - cx) / scale), 0, wid - 1).astype(int)
+            sy = np.clip(np.round(cy + (gy - cy) / scale), 0, hgt - 1).astype(int)
+            img[inside] = src[sy[inside], sx[inside]]
+            if shine:
+                # Arriba a la izquierda (las filas de Blender van de abajo arriba).
+                spot = np.hypot(gx - (cx - 0.38 * radius * scale), gy - (cy + 0.38 * radius * scale))
+                a = np.clip(1 - spot / (0.2 * radius * scale), 0, 1) ** 0.6 * shine
+                img[..., :3] = img[..., :3] * (1 - a[..., None]) + a[..., None]
+        return img.reshape(-1, 4)
     recolor("high-poly", iris_fn, "iris")
 
-hair = cfg.get("hair_value")
-if hair:
-    def hair_fn(px):
-        px[:, :3] *= hair
+def darken(value, bold=0):
+    """Más oscuro y, con bold, el trazo más grueso (el alfa se dilata bold píxeles)."""
+    def fn(px):
+        px[:, :3] *= value
+        if bold:
+            h, w = recolor.shape
+            a = px[:, 3].reshape(h, w)
+            grown = a.copy()
+            for dy in range(-bold, bold + 1):
+                for dx in range(-bold, bold + 1):
+                    grown = np.maximum(grown, np.roll(a, (dy, dx), (0, 1)))
+            px[:, 3] = grown.ravel()
         return px
-    for kind in ("hair", "eyebrow"):
-        recolor(kind, hair_fn, "dark")
+    return fn
+
+
+if cfg.get("hair_value"):
+    recolor("hair", darken(cfg["hair_value"]), "dark")
+# Colores planos de dibujo: sin la trama de la tela ni los mechones finos (el sombreado toon
+# pone el volumen). {"casualsuit": 3, "hair": 4}: radio del desenfoque por pieza.
+for kind, radius in cfg.get("flatten", {}).items():
+    def flat_fn(px, radius=radius):
+        h, w = recolor.shape
+        img = px.reshape(h, w, 4)
+        img[..., :3] = blur(img[..., :3], radius)
+        return img.reshape(-1, 4)
+    recolor(kind, flat_fn, "flat")
+
+# Pestañas de dibujo: los pelos sueltos se juntan en un trazo (con MASK salían como puntos).
+if cfg.get("lash_bold"):
+    recolor("eyelash", darken(cfg.get("lash_value", 0.4), cfg["lash_bold"]), "bold")
+# Cejas: por defecto como el pelo; en un estilo de dibujo, más oscuras y gruesas.
+brow = cfg.get("brow_value", cfg.get("hair_value"))
+if brow:
+    recolor("eyebrow", darken(brow, cfg.get("brow_bold", 0)), "dark")
 
 for o in meshes:
     for mat in o.data.materials:
@@ -313,7 +510,8 @@ for side, x in (("Left", 1.0), ("Right", -1.0)):
     # MakeHuman mira hacia -Y: la izquierda del personaje está en +X.
     for b in ("Arm", "ForeArm", "Hand"):
         aim(f"mixamorig:{side}{b}", (x, 0, 0))
-    roll_palm_down(side, 1.0 if side == "Left" else -1.0)
+    # Índice × meñique (desde la muñeca) sale por el dorso de la izquierda y por la palma de la derecha.
+    roll_palm_down(side, -1.0 if side == "Left" else 1.0)
     bpy.context.view_layer.update()
     hand_dir = (pb[f"mixamorig:{side}Hand"].tail - pb[f"mixamorig:{side}Hand"].head).normalized()
     for finger in ("Index", "Middle", "Ring", "Pinky"):

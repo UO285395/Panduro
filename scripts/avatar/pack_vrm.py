@@ -21,19 +21,33 @@ for mat in gltf["materials"]:
         mat.pop("alphaMode", None)
         mat.pop("alphaCutoff", None)
 
-# Lado máximo de cada imagen (por nombre) y si conserva el alfa.
-SIZE = {"teeth": 512, "tongue": 256, "shoes": 512, "iris": 512, "normal": 1024, "hair": 1024}
+# Lado máximo de cada imagen (por el material que la usa o por su nombre) y si conserva el alfa.
+# Las texturas recoloreadas no llevan el nombre de la pieza (la del pelo es «male02_diffuse…»).
+SIZE = {"teeth": 512, "tongue": 256, "shoes": 512, "eyes": 512, "iris": 512, "normal": 1024, "hair": 1024}
+
+
+def material_images(mat):
+    """Imágenes de un material: la base, la de sombra de MToon y el resto (normales…)."""
+    refs = [mat.get("pbrMetallicRoughness", {}).get("baseColorTexture"), mat.get("normalTexture"),
+            mat.get("extensions", {}).get("VRMC_materials_mtoon", {}).get("shadeMultiplyTexture")]
+    return [gltf["textures"][r["index"]]["source"] for r in refs if r]
+
+
+owner = {}
 alpha_images = set()
 for mat in gltf["materials"]:
+    images = material_images(mat)
+    for i in images:
+        owner.setdefault(i, mat["name"].lower())
     if mat.get("alphaMode") == "MASK":
-        tex = mat["pbrMetallicRoughness"]["baseColorTexture"]["index"]
-        alpha_images.add(gltf["textures"][tex]["source"])
+        alpha_images.update(images[:1] + images[2:])
 
 views = [binary[v.get("byteOffset", 0):v.get("byteOffset", 0) + v["byteLength"]] for v in gltf["bufferViews"]]
 for i, im in enumerate(gltf["images"]):
     raw = views[im["bufferView"]]
     pic = Image.open(io.BytesIO(raw))
-    limit = next((s for k, s in SIZE.items() if k in im["name"].lower()), None)
+    name = im["name"].lower()
+    limit = next((s for k, s in SIZE.items() if k in name or k == owner.get(i, "")), None)
     if limit and max(pic.size) > limit:
         pic = pic.resize((limit, limit * pic.size[1] // pic.size[0]), Image.LANCZOS)
     out = io.BytesIO()

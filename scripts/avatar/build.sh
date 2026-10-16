@@ -55,7 +55,7 @@ fi
 cd "$WORK/out"
 "$B" -b --python "$HERE/build_avatar.py" -- "$HERE/panduro.json" panduro-base.blend
 "$B" -b panduro-base.blend --python "$HERE/finish_avatar.py" -- "$HERE/panduro.json" panduro-finished.blend
-"$B" -b panduro-finished.blend --python "$HERE/export_vrm.py" -- "$HERE/meta.json" panduro-raw.vrm
+"$B" -b panduro-finished.blend --python "$HERE/export_vrm.py" -- "$HERE/panduro.json" "$HERE/meta.json" panduro-raw.vrm
 python3 -I "$HERE/pack_vrm.py" panduro-raw.vrm "$ROOT/public/avatars/panduro.vrm"
 if [ -n "${PREVIEW:-}" ]; then
   SHOTS=full,tq,face,eyes "$B" -b panduro-finished.blend --python "$HERE/render_preview.py" -- preview

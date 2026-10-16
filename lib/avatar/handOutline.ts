@@ -15,8 +15,11 @@ const FINGER_BONES: B[] = [
   B.LeftLittleProximal, B.LeftLittleIntermediate, B.LeftLittleDistal,
 ];
 
-/** Grosor del contorno de las manos, en brazos del modelo. */
-export const HAND_OUTLINE_WIDTH = 0.016;
+/**
+ * Grosor del contorno de las manos, en brazos del modelo. Con un modelo toon, que ya trae su
+ * contorno fino en todo el cuerpo, uno más grueso convertía las manos en manchas.
+ */
+export const HAND_OUTLINE_WIDTH = 0.009;
 
 /**
  * Contorno de las manos con la técnica de casco invertido (la misma que usa

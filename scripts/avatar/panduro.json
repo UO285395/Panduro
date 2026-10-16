@@ -12,6 +12,60 @@
       "asian": 0.1
     }
   },
+  "targets": [
+    {
+      "target": "head-scale-vert-incr",
+      "value": 1.0
+    },
+    {
+      "target": "head-scale-horiz-incr",
+      "value": 1.0
+    },
+    {
+      "target": "head-scale-depth-incr",
+      "value": 1.0
+    },
+    {
+      "target": "l-eye-scale-incr",
+      "value": 1.0
+    },
+    {
+      "target": "r-eye-scale-incr",
+      "value": 1.0
+    },
+    {
+      "target": "nose-scale-vert-decr",
+      "value": 0.7
+    },
+    {
+      "target": "nose-scale-horiz-decr",
+      "value": 0.7
+    },
+    {
+      "target": "nose-scale-depth-decr",
+      "value": 0.7
+    },
+    {
+      "target": "head-round",
+      "value": 0.8
+    },
+    {
+      "target": "chin-prominent-decr",
+      "value": 0.6
+    },
+    {
+      "target": "l-cheek-volume-incr",
+      "value": 0.6
+    },
+    {
+      "target": "r-cheek-volume-incr",
+      "value": 0.6
+    },
+    {
+      "target": "mouth-scale-horiz-decr",
+      "value": 0.3
+    }
+  ],
   "rig": "mixamo",
   "eyes": "high-poly",
   "eyebrows": "eyebrow001",
@@ -33,15 +87,52 @@
     "teeth",
     "tongue"
   ],
-  "shirt": {
-    "hue": 0.55,
-    "sat": 1.0,
-    "value": 0.6
+  "cartoon": {
+    "head": 1.25,
+    "eyes": 1.45,
+    "eye_radius": 0.019,
+    "eye_falloff": 1.9,
+    "upper_lashes_only": true
   },
-  "hair_value": 1.0,
+  "skin_tone": {
+    "smooth": 6,
+    "flatten": 0.8,
+    "flatten_radius": 40,
+    "sat": 0.72,
+    "value": 1.12,
+    "hue": -0.012
+  },
+  "blush": {
+    "color": [
+      1.0,
+      0.45,
+      0.45
+    ],
+    "strength": 0.5,
+    "radius": 0.026,
+    "down": 0.045,
+    "out": 0.022,
+    "soft": 10
+  },
   "eye_color": {
     "texture": "brownlight_eye.png",
-    "iris_value": 0.55
+    "iris_value": 0.75,
+    "iris_scale": 1.3,
+    "catchlight": 0.9
+  },
+  "shirt": {
+    "hue": 0.56,
+    "sat": 0.95,
+    "value": 0.85
+  },
+  "hair_value": 1.0,
+  "brow_value": 0.45,
+  "brow_bold": 3,
+  "lash_value": 0.3,
+  "lash_bold": 3,
+  "flatten": {
+    "casualsuit": 3,
+    "hair": 3
   },
   "pad": {
     "casualsuit": [
@@ -52,5 +143,71 @@
   },
   "trim": {
     "shoes01": 0.11
+  },
+  "toon": {
+    "default": {
+      "shade": 0.75,
+      "toony": 0.95,
+      "shift": 0.0,
+      "gi": 0.9
+    },
+    "Body": {
+      "shade_color": [
+        0.95,
+        0.8,
+        0.8
+      ],
+      "outline": 0.0012,
+      "outline_color": [
+        0.32,
+        0.18,
+        0.15
+      ],
+      "rim": [
+        0.12,
+        0.08,
+        0.07
+      ],
+      "rim_power": 3.0,
+      "toony": 0.95,
+      "shift": 0.0
+    },
+    "Clothes": {
+      "shade": 0.62,
+      "outline": 0.0015,
+      "outline_color": [
+        0.08,
+        0.12,
+        0.16
+      ]
+    },
+    "Hair": {
+      "shade": 0.55,
+      "outline": 0.0012,
+      "outline_color": [
+        0.08,
+        0.07,
+        0.07
+      ]
+    },
+    "Shoes": {
+      "shade": 0.6,
+      "outline": 0.0012,
+      "outline_color": [
+        0.15,
+        0.08,
+        0.05
+      ]
+    },
+    "Eyes": {
+      "shade": 1.0,
+      "toony": 1.0
+    },
+    "Teeth": {
+      "shade": 0.85
+    },
+    "Tongue": {
+      "shade": 0.8
+    }
   }
 }

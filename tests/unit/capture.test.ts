@@ -442,6 +442,27 @@ describe("capture: landmarks → clip", () => {
         expect(c!.face![0]).toBeGreaterThan(2.5);
       });
 
+      it("el camino es el de la parte que toca en el tramo, aunque otra toque mejor un momento", () => {
+        // Las yemas en la oreja y, al final, el pulgar ahí y las yemas por encima (PADRE: los
+        // nudillos por la frente y el pulgar, más cerca en algún fotograma, a la altura de los ojos).
+        const ear = at(3.5, -0.2);
+        const thumbThere = hand.map((p) => ({ x: ear.x + p.x - hand[4]!.x, y: ear.y + p.y - hand[4]!.y, z: p.z }));
+        const frames = beside(3.5, -0.2).map((f, i): CaptureFrame => {
+          if (i < 12) return f;
+          const poseImage = [...f.poseImage!];
+          poseImage[16] = thumbThere[0]!;
+          return { ...f, poseImage, hands: { right: { world: hand, image: thumbThere } } };
+        });
+        const res = framesToClip(frames, { simplify: false });
+        if (!res.ok) throw new Error(res.error);
+        const late = res.clip.keyframes.filter((k) => k.t > 500 && k.hand.contact);
+        expect(late.length).toBeGreaterThan(0);
+        for (const k of late) {
+          expect(k.hand.contact).toMatchObject({ with: "tips" });
+          expect(k.hand.contact!.face![1]).toBeGreaterThan(0.5);
+        }
+      });
+
       it("sin tocarla, guarda a qué lado de la cara queda la palma (faceH)", () => {
         const res = framesToClip(beside(6, 1));
         if (!res.ok) throw new Error(res.error);

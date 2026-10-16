@@ -379,7 +379,15 @@ type Sample = {
   /** Hacia dónde sale el codo de la línea hombro→muñeca (sin él, el brazo está casi recto). */
   elbow?: Vec;
   /** Parte de la mano más cerca de la cara o de la otra mano, y a qué distancia (m). */
-  touch?: { at: Contact["at"]; with: NonNullable<Contact["with"]>; d: number; face?: FaceCoords; hand?: HandAnchor };
+  touch?: {
+    at: Contact["at"];
+    with: NonNullable<Contact["with"]>;
+    d: number;
+    face?: FaceCoords;
+    hand?: HandAnchor;
+    /** Dónde está cada parte de la mano en la cara (la que toca cambia de un fotograma a otro). */
+    faces?: Partial<Record<NonNullable<Contact["with"]>, FaceCoords>>;
+  };
 };
 
 /**
@@ -532,15 +540,18 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
   const indexDir = unit(sub(v(h.world[8]!), v(h.world[5]!)));
   const earImg = f.poseImage?.[r ? FACE.rEar : FACE.lEar];
   const earFace = f.poseImage && earImg ? faceCoords(f.poseImage, aspect, earImg) : null;
+  const faces: NonNullable<NonNullable<Sample["touch"]>["faces"]> = {};
   /** null: la parte no puede estar tocando la cara; undefined: no hay cara en la imagen. */
   const faceTouch = (what: NonNullable<Contact["with"]>, q: Vec): Sample["touch"] | null => {
     if (!f.poseImage) return undefined;
+    const seen = faceCoords(f.poseImage, f.aspect ?? 1, imageOf(partIds.find(([n]) => n === what)![1]));
+    if (seen) faces[what] = seen;
     // Con las yemas o la palma mirando hacia delante la mano pasa por delante de la cara (se
     // ve encima en la imagen), no la toca.
     if (what === "index" && -indexDir[2] > 0.5) return null;
     if (what === "tips" && -o.point[2] > 0.5) return null;
     if (what === "palm" && -o.palm[2] > 0.3) return null;
-    const face = faceCoords(f.poseImage, f.aspect ?? 1, imageOf(partIds.find(([n]) => n === what)![1]));
+    const face = seen;
     if (!face) return undefined;
     const at = namedFacePoint(face);
     const ref = targets.find(([name]) => name === at) ?? targets.find(([name]) => name === "forehead")!;
@@ -572,7 +583,7 @@ function detectTouch(f: CaptureFrame, side: Side, fingers: number[]): Sample["to
     const onHand = onOtherHand(what, q);
     if (onHand && (!best || onHand.d < best.d)) best = { at: onHand.at, with: what, d: onHand.d, hand: onHand.hand };
   }
-  return best && best.d < TOUCH_FAR ? best : undefined;
+  return best && best.d < TOUCH_FAR ? { ...best, ...(Object.keys(faces).length ? { faces } : {}) } : undefined;
 }
 
 /** Contorno de la cara en coordenadas de cara: de oreja a oreja y de la barbilla a la coronilla. */
@@ -690,7 +701,13 @@ function touchRuns(samples: (Sample | null)[], twoHands: boolean): TouchRun[] {
       const held = where === "face" && same[same.length - 1]!.t - same[0]!.t >= TOUCH_HOLD_MS;
       const weight = held && closeness > 0 ? Math.max(closeness, 0.9) : closeness;
       if (weight >= (where === "face" ? 0.1 : OTHER_MIN_WEIGHT)) {
-        const path = same.filter((s) => s.touch!.face).map((s) => ({ t: s.t, face: s.touch!.face! }));
+        const part = mode(same.map((s) => s.touch!.with));
+        // El camino es el de la parte que toca en el tramo, aunque en algún fotograma toque
+        // mejor otra: PADRE pasa los nudillos por la frente y en esos fotogramas el pulgar,
+        // a la altura de los ojos, estaba más cerca; los nudillos se ponían donde él.
+        const path = same
+          .map((s) => ({ t: s.t, face: s.touch!.faces?.[part] ?? s.touch!.face }))
+          .filter((p): p is { t: number; face: FaceCoords } => !!p.face);
         const handPath = same
           .filter((s) => s.touch!.hand)
           .map((s) => ({ t: s.t, hand: s.touch!.hand!, at: s.touch!.at }));
@@ -701,7 +718,7 @@ function touchRuns(samples: (Sample | null)[], twoHands: boolean): TouchRun[] {
           t1: same[same.length - 1]!.t,
           contact: {
             at: mode(same.map((s) => s.touch!.at)),
-            with: mode(same.map((s) => s.touch!.with)),
+            with: part,
             weight: round(weight),
           },
           ...(path.length ? { path } : {}),

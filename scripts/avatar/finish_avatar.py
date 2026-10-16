@@ -51,6 +51,8 @@ EXPRESSIONS = {
     "EyebrowsDown": {"browDownLeft": 1.0, "browDownRight": 1.0},
     "EyebrowsUp": {"browInnerUp": 1.0, "browOuterUpLeft": 1.0, "browOuterUpRight": 1.0},
 }
+# Un estilo de dibujo exagera los gestos: el personaje los da con sus propias mezclas.
+EXPRESSIONS.update(cfg.get("expressions", {}))
 
 data = LocationService.get_user_data()
 units = {}

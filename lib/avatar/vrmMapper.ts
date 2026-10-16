@@ -431,8 +431,8 @@ function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
     jaw: [has("aa"), 1],
     pucker: [has("ou"), 0.9],
     stretch: [has("ih"), 0.8],
-    smile: [has("happy"), 0.8],
-    frown: [has("sad"), 0.8],
+    smile: [has("happy"), 1],
+    frown: [has("sad"), 1],
     browDown: browDown ? [browDown, 1] : [has("angry"), 0.4],
     browUp: browUp ? [browUp, 1] : [has("surprised"), 1],
   };
@@ -1094,13 +1094,20 @@ function blinkAt(tMs: number): number {
   return u < 70 ? u / 70 : 1 - (u - 70) / 110;
 }
 
+/**
+ * Un gesto medido a medias se ve casi entero: en una cara de dibujo, del tamaño con el que se
+ * ve el avatar entero, el ceño o la boca hacia abajo de ABURRIDO (0,3-0,5) apenas se notaban.
+ */
+const exprBoost = (x: number) => 1 - (1 - x) * (1 - x);
+
 function setExpressions(rig: VrmRig, expr: Expressions | undefined, tMs: number) {
   const em = rig.vrm.expressionManager;
   if (!em) return;
   for (const name of rig.exprNames) em.setValue(name, 0);
   for (const e of EXPRESSIONS) {
     const target = rig.expressions[e];
-    if (target) em.setValue(target[0], Math.min(1, (em.getValue(target[0]) ?? 0) + (expr?.[e] ?? 0) * target[1]));
+    const w = exprBoost(Math.min(1, expr?.[e] ?? 0));
+    if (target) em.setValue(target[0], Math.min(1, (em.getValue(target[0]) ?? 0) + w * target[1]));
   }
   // Con el ceño los ojos se entornan un poco (como en el «angry» del modelo, sin su símbolo).
   if (rig.exprNames.includes("blink")) em.setValue("blink", Math.max(blinkAt(tMs), 0.25 * (expr?.browDown ?? 0)));

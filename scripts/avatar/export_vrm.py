@@ -123,6 +123,8 @@ if toon:
             if tex:
                 mt.shade_multiply_texture.index.source = tex
             mt.shade_color_factor = st.get("shade_color") or [st.get("shade", 0.75)] * 3
+            if st.get("color"):
+                g.pbr_metallic_roughness.base_color_factor = [*st["color"], 1.0]
             mt.shading_toony_factor = st.get("toony", 0.9)
             mt.shading_shift_factor = st.get("shift", 0.0)
             mt.gi_equalization_factor = st.get("gi", 0.9)

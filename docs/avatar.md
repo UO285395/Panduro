@@ -31,7 +31,10 @@ El estilo de dibujo (más amable que uno realista) sale de `panduro.json`:
 - Expresiones VRM: vocales (aa, ih, ou, ee, oh), parpadeo (los dos ojos y cada uno), happy,
   relaxed, sad, angry y surprised; y las cejas por separado (`EyebrowsUp`, `EyebrowsDown`).
   Salen de las formas ARKit (`faceunits01`) y los visemas (`visemes02`) de MakeHuman, también en
-  las cejas, las pestañas, los dientes y la lengua.
+  las cejas, las pestañas, los dientes y la lengua. Como en un dibujo, más marcadas que las de
+  serie (`expressions` en `panduro.json`: la boca abierta, en «u», la sonrisa, la pena, el ceño y
+  la sorpresa), y la boca por dentro oscura (la lengua): a la distancia a la que se ve el avatar
+  entero, con las de serie los gestos de la cara apenas se notaban. La cara neutra no cambia.
 - Unos 6 MB: texturas opacas en JPEG y las formas de la cara como accesores dispersos.
 
 ### Rehacerlo
@@ -127,9 +130,25 @@ persona:
   3,5 cm), como con la otra mano. Antes, en la cara, era la fracción del camino desde donde
   estaba la muñeca grabada, y un contacto sostenido (peso 0,9: tocar) se quedaba a 3-4 cm: la
   yema de BUENOS DÍAS o el índice de DOLOR no llegaban.
+- Los gestos de la cara se ven: con expresiones de dibujo más marcadas en el modelo, y un gesto
+  medido a medias (el ceño de QUÉ, la boca hacia abajo de ABURRIDO, 0,3-0,5) casi entero
+  (`exprBoost`). La sonrisa y la pena, a peso 1 (antes 0,8).
 
 Midiendo el error de cada contacto en los 81 signos grabados que tocan la cara o el cuerpo (536
 contactos), la mediana queda en 0,005 brazos (3 mm) y solo 8 pasan de 0,1; con la palma del
 revés eran 0,040 y 105. Los que quedan son de la mejilla: la mano llega al punto, pero se mete
 en la cabeza y ni girándola sale, así que se aparta un poco. Los contactos parciales (FRUTA,
 DULCE, MAL…) quedan a la distancia que dice la grabación, a propósito.
+
+Lo que viene mal de MediaPipe y no se corrige aquí:
+
+- Un gesto que la signante mantiene todo el vídeo, también antes y después del signo (el ceño
+  de ENFADADO o NERVIOSO), se toma por su cara neutra y no sale. Tomar la cara neutra de otros
+  vídeos de la misma persona no sirve: los blendshapes en reposo cambian mucho de un vídeo a otro
+  (la sonrisa de TRABAJAR, 0,7 con la cara casi seria) y saldrían gestos que no están.
+- Algunos gestos no los ve (la pena de TRISTE).
+- En la «Y» de TELÉFONO vista por el dorso confunde el pulgar con el índice: da el índice
+  estirado hasta la oreja y el pulgar doblado, y el avatar hace índice y meñique.
+- Con la palma de frente, la imagen no sirve para saber cuánto doblado está un dedo de verdad:
+  las falanges no miden en la imagen lo mismo que en 3D (la primera, un 30-50 % más), y esa
+  diferencia es mayor que lo que acorta un dedo doblado 30°.

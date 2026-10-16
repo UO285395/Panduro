@@ -1,4 +1,4 @@
-import type { AvatarClip, AvatarKeyframe, HandSpec } from "@/lib/curriculum/schema";
+import type { AvatarClip, AvatarKeyframe, Expressions, HandSpec } from "@/lib/curriculum/schema";
 
 /**
  * Frases del curso que se signan como una secuencia de signos grabados (su glosa):
@@ -80,4 +80,29 @@ export function composeClips(parts: AvatarClip[], gapMs = PHRASE_GAP_MS): Avatar
     ...(shoulders.length ? { shoulderX: Math.round((shoulders.reduce((s, x) => s + x, 0) / shoulders.length) * 100) / 100 } : {}),
     ...(yaw ? { bodyYaw: Math.round(yaw * 100) / 100 } : {}),
   };
+}
+
+/** Lo que tarda la cara en poner (y en quitar) el gesto del signo (ms de clip). */
+const FACE_RAMP_MS = 200;
+
+/**
+ * El gesto de la cara del signo (`Sign.face`) mientras la mano signa: entra al subir la mano
+ * y se va al bajarla. Lo que ya trae la animación se queda si es más.
+ */
+export function withFace(clip: AvatarClip, face: Expressions): AvatarClip {
+  const [a, b] = activeRange(clip.keyframes);
+  if (a < 0) return clip;
+  const t0 = clip.keyframes[a]!.t;
+  const t1 = clip.keyframes[b]!.t;
+  const on = (t: number) => Math.max(0, Math.min(1, (t - t0) / FACE_RAMP_MS + 1, (t1 - t) / FACE_RAMP_MS + 1));
+  const keyframes = clip.keyframes.map((k) => {
+    const w = on(k.t);
+    if (w <= 0) return k;
+    const expr: Expressions = { ...k.expr };
+    for (const [e, v] of Object.entries(face) as [keyof Expressions, number][]) {
+      expr[e] = Math.round(Math.max(expr[e] ?? 0, v * w) * 100) / 100;
+    }
+    return { ...k, expr };
+  });
+  return { ...clip, keyframes };
 }

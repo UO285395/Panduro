@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import captured from "@/content/signs/captured.json";
 import capturedTemplates from "@/content/signs/captured-templates.json";
+import { withFace } from "@/lib/avatar/compose";
 import {
   getAllLevels,
   getLevel,
@@ -9,7 +10,7 @@ import {
   getSign,
   getUnit,
 } from "@/lib/curriculum/loader";
-import { LevelSchema, validateLevel } from "@/lib/curriculum/schema";
+import { LevelSchema, validateLevel, type AvatarClip } from "@/lib/curriculum/schema";
 
 describe("curriculum: schema + loader", () => {
   it("valida el nivel A1 completo (zod + referencias cruzadas)", () => {
@@ -88,7 +89,8 @@ describe("curriculum: schema + loader", () => {
     for (const [id, entry] of withLicense) {
       const sign = signs.find((s) => s.id === id);
       expect(sign, id).toBeDefined();
-      expect(sign!.avatarClip).toEqual(entry.avatarClip);
+      // Con el gesto de la cara de la descripción añadido (ver withFace).
+      expect(sign!.avatarClip).toEqual(sign!.face ? withFace(entry.avatarClip as AvatarClip, sign!.face) : entry.avatarClip);
       expect(sign!.animationCredit?.license, id).toBe((entry as { license: string }).license);
       if ((entry as { source: string }).source.startsWith("DILSE")) {
         expect(sign!.animationCredit?.url, id).toMatch(/^https:\/\/fundacioncnse-dilse\.org\//);

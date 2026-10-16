@@ -62,9 +62,10 @@ const HandSchema = z.object({
 export type HandSpec = z.infer<typeof HandSchema>;
 
 // Gestos de la cara medidos en una grabación (0..1): la boca al vocalizar la palabra
-// (mandíbula abierta, labios en «u», boca estirada), sonrisa, comisuras abajo, ceño y cejas
-// levantadas. El mapper los lleva a las expresiones de cada modelo.
-export const EXPRESSIONS = ["jaw", "pucker", "stretch", "smile", "frown", "browDown", "browUp"] as const;
+// (mandíbula abierta, labios en «u», boca estirada), sonrisa, comisuras abajo, ceño, cejas
+// levantadas y mejillas hinchadas (esto, solo de la descripción: MediaPipe no lo ve). El
+// mapper los lleva a las expresiones de cada modelo.
+export const EXPRESSIONS = ["jaw", "pucker", "stretch", "smile", "frown", "browDown", "browUp", "puff"] as const;
 const ExpressionsSchema = z.record(z.enum(EXPRESSIONS), z.number().min(0).max(1));
 export type Expressions = z.infer<typeof ExpressionsSchema>;
 
@@ -151,6 +152,13 @@ export const SignSchema = z.object({
   handedness: z.enum(["one", "two"]).default("one"),
   tags: z.array(z.string()).default([]),
   avatarClip: AvatarClipSchema.optional(),
+  /**
+   * El gesto de la cara que lleva el signo (el de la descripción), por si la animación no lo
+   * trae: MediaPipe no ve algunos (la pena de TRISTE, las mejillas hinchadas de GORDO) y uno
+   * que la signante mantiene todo el vídeo lo toma por su cara neutra (el ceño de ENFADADO).
+   * El loader lo pone mientras la mano signa (ver withFace).
+   */
+  face: ExpressionsSchema.optional(),
   /** De dónde sale la animación si viene de un vídeo ajeno (la rellena el loader). */
   animationCredit: z.object({ source: z.string(), license: z.string(), url: z.string().optional() }).optional(),
 });

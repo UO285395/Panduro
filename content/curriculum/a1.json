@@ -956,6 +956,9 @@
       "gloss": "POR-FAVOR",
       "translation": "Por favor",
       "description": "La mano derecha abierta, con los dedos separados y doblados, delante del lado derecho del pecho, se mueve un poco arriba y abajo, con gesto de súplica.",
+      "face": {
+        "browUp": 0.5
+      },
       "handedness": "one",
       "tags": [
         "cortesia",
@@ -2414,6 +2417,9 @@
       "gloss": "MAL",
       "translation": "Mal",
       "description": "La mano derecha, con el índice y el meñique extendidos, sale de la barbilla y baja cruzando delante del pecho hacia la izquierda, con gesto de desagrado.",
+      "face": {
+        "frown": 0.5
+      },
       "handedness": "one",
       "tags": [
         "estado",
@@ -2536,6 +2542,9 @@
       "gloss": "CÓMO-ESTAR",
       "translation": "¿Cómo estás?",
       "description": "CÓMO, con cara de pregunta y mirando a la otra persona: la mano derecha, con el índice doblado en gancho y los demás dedos cerrados, apoya el índice bajo la barbilla, con las cejas fruncidas.",
+      "face": {
+        "browDown": 0.6
+      },
       "handedness": "one",
       "tags": [
         "pregunta",
@@ -8520,6 +8529,9 @@
       "gloss": "TRISTE",
       "translation": "Triste",
       "description": "La mano derecha, con los dedos separados y curvados, baja dos veces por delante de la cara, de la nariz a la barbilla, con gesto triste.",
+      "face": {
+        "frown": 0.7
+      },
       "handedness": "one",
       "tags": [
         "emocion",
@@ -8650,6 +8662,9 @@
       "gloss": "ENFADADO",
       "translation": "Enfadado",
       "description": "La mano derecha plana, con la palma hacia abajo, se apoya bajo la barbilla, con el ceño fruncido.",
+      "face": {
+        "browDown": 0.8
+      },
       "handedness": "one",
       "tags": [
         "emocion",

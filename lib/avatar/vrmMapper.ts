@@ -397,7 +397,8 @@ const BOUNDS_TRIM = 0.1;
  * Cada gesto de la cara en las expresiones del modelo: la boca con sus vocales (VRM trae
  * aa, ih, ou, ee y oh) y la sonrisa y la pena con las emociones. Las cejas, con los morphs
  * que muevan solo las cejas si el modelo los tiene: el «angry» de muchos modelos anime pinta
- * además un símbolo de enfado en la frente, y VRM0 no trae cejas levantadas.
+ * además un símbolo de enfado en la frente, y VRM0 no trae cejas levantadas. Las mejillas
+ * hinchadas, con su forma si la tiene (`CheekPuff`).
  */
 function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
   const em = vrm.expressionManager;
@@ -427,6 +428,7 @@ function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
     (t, mesh) => /eyebrows?[ _.]*down|brw_angry/i.test(t) || (/brow/i.test(mesh) && /angry/i.test(t)),
   );
   const browUp = custom("panduroBrowUp", (t) => /eyebrows?[ _.]*up|brw_surprised/i.test(t));
+  const puff = custom("panduroPuff", (t) => /cheek[ _.]*puff/i.test(t));
   const table: Record<keyof Expressions, [string | null, number]> = {
     jaw: [has("aa"), 1],
     pucker: [has("ou"), 0.9],
@@ -435,6 +437,7 @@ function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
     frown: [has("sad"), 1],
     browDown: browDown ? [browDown, 1] : [has("angry"), 0.4],
     browUp: browUp ? [browUp, 1] : [has("surprised"), 1],
+    puff: [puff, 1],
   };
   const expressions: VrmRig["expressions"] = {};
   for (const e of EXPRESSIONS) {

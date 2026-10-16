@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AvatarClip, AvatarKeyframe } from "@/lib/curriculum/schema";
-import { composeClips, PHRASE_GAP_MS } from "@/lib/avatar/compose";
+import { composeClips, PHRASE_GAP_MS, withFace } from "@/lib/avatar/compose";
 
 const kf = (t: number, y: number, extra: Partial<AvatarKeyframe> = {}): AvatarKeyframe => ({
   t,
@@ -58,5 +58,19 @@ describe("composeClips: frases con signos grabados", () => {
     const a = { ...sign([-0.3, 0.5, -0.3]), bodyYaw: 0.4 };
     expect(composeClips([a, { ...sign([-0.3, 0.5, -0.3]), bodyYaw: 0.44 }]).bodyYaw).toBeCloseTo(0.42, 2);
     expect(composeClips([a, sign([-0.3, 0.5, -0.3])]).bodyYaw).toBeUndefined();
+  });
+});
+
+describe("withFace: el gesto de la cara de la descripción", () => {
+  it("lo pone mientras la mano signa y lo quita en el reposo; lo grabado, si es más, se queda", () => {
+    const clip = sign([-0.3, -0.3, -0.3, 0.5, 0.5, 0.5, -0.3, -0.3, -0.3], (i) => (i === 4 ? { expr: { browDown: 0.9, jaw: 0.3 } } : {}));
+    const out = withFace(clip, { browDown: 0.7 });
+    const brow = out.keyframes.map((k) => k.expr?.browDown ?? 0);
+    // Arriba de 300 a 500 ms; entra y sale en 200 ms.
+    expect(brow).toEqual([0, 0, 0.35, 0.7, 0.9, 0.7, 0.35, 0, 0]);
+    expect(out.keyframes[4]!.expr?.jaw).toBe(0.3);
+    expect(out.keyframes[0]!.expr).toBeUndefined();
+    // El original no cambia.
+    expect(clip.keyframes[3]!.expr).toBeUndefined();
   });
 });

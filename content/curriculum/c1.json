@@ -5320,6 +5320,9 @@
       "gloss": "CONFLICTO",
       "translation": "conflicto",
       "description": "Las dos manos, con los dedos curvados y las palmas hacia abajo, delante de la cintura, chocan y se separan varias veces, con el ceño fruncido.",
+      "face": {
+        "browDown": 0.7
+      },
       "videoUrl": null,
       "posterUrl": null,
       "handedness": "one",

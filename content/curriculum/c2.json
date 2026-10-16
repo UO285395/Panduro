@@ -4245,6 +4245,9 @@
       "gloss": "COMPLEJIDAD",
       "translation": "complejidad",
       "description": "Las dos manos abiertas, con los dedos separados y las palmas al frente, se cruzan una y otra vez delante de la cara y el pecho, con el ceño fruncido.",
+      "face": {
+        "browDown": 0.6
+      },
       "videoUrl": null,
       "posterUrl": null,
       "handedness": "one",

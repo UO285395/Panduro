@@ -29,7 +29,8 @@ El estilo de dibujo (más amable que uno realista) sale de `panduro.json`:
 
 - 54 huesos humanoides, con los tres del pulgar y los ojos.
 - Expresiones VRM: vocales (aa, ih, ou, ee, oh), parpadeo (los dos ojos y cada uno), happy,
-  relaxed, sad, angry y surprised; y las cejas por separado (`EyebrowsUp`, `EyebrowsDown`).
+  relaxed, sad, angry y surprised; las cejas por separado (`EyebrowsUp`, `EyebrowsDown`) y las
+  mejillas hinchadas (`CheekPuff`).
   Salen de las formas ARKit (`faceunits01`) y los visemas (`visemes02`) de MakeHuman, también en
   las cejas, las pestañas, los dientes y la lengua. Como en un dibujo, más marcadas que las de
   serie (`expressions` en `panduro.json`: la boca abierta, en «u», la sonrisa, la pena, el ceño y
@@ -149,7 +150,14 @@ Lo que viene mal de MediaPipe y no se corrige aquí:
   de ENFADADO o NERVIOSO), se toma por su cara neutra y no sale. Tomar la cara neutra de otros
   vídeos de la misma persona no sirve: los blendshapes en reposo cambian mucho de un vídeo a otro
   (la sonrisa de TRABAJAR, 0,7 con la cara casi seria) y saldrían gestos que no están.
-- Algunos gestos no los ve (la pena de TRISTE).
+- Algunos gestos no los ve (la pena de TRISTE) y las mejillas hinchadas, nunca (`cheekPuff`
+  sale siempre 0).
+
+Para esos, el signo lleva en el currículo el gesto de su descripción (`face`: «con el ceño
+fruncido» es `{"browDown": 0.8}`) y el loader lo pone mientras la mano signa, si la animación no
+trae más (`withFace`): ENFADADO, TRISTE, CONFLICTO, COMPLEJIDAD, las preguntas sin él (CÓMO,
+CUÁNTO), los de desagrado o malestar (PEOR, FEO, MAL, ENFERMO…), la súplica de POR FAVOR y las
+mejillas de GORDO y VIENTO (`puff`, con la forma `CheekPuff` del modelo).
 - En la «Y» de TELÉFONO vista por el dorso confunde el pulgar con el índice: da el índice
   estirado hasta la oreja y el pulgar doblado, y el avatar hace índice y meñique.
 - Con la palma de frente, la imagen no sirve para saber cuánto doblado está un dedo de verdad:

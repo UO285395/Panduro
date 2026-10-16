@@ -980,6 +980,9 @@
       "gloss": "VIENTO",
       "translation": "viento",
       "description": "Las dos manos abiertas, con las palmas hacia arriba, una delante del pecho y la otra a la izquierda, con las mejillas hinchadas como soplando.",
+      "face": {
+        "puff": 0.8
+      },
       "videoUrl": null,
       "posterUrl": null,
       "handedness": "one",
@@ -1322,6 +1325,10 @@
       "gloss": "FRIO",
       "translation": "frío",
       "description": "Los dos puños, delante del pecho, tiemblan, con gesto de frío.",
+      "face": {
+        "browDown": 0.4,
+        "stretch": 0.4
+      },
       "videoUrl": null,
       "posterUrl": null,
       "handedness": "one",
@@ -4176,6 +4183,9 @@
       "gloss": "PROHIBIDO",
       "translation": "prohibido",
       "description": "El índice derecho, horizontal delante del pecho, sube hacia la derecha hasta quedar vertical, con gesto serio.",
+      "face": {
+        "browDown": 0.4
+      },
       "videoUrl": null,
       "posterUrl": null,
       "handedness": "one",

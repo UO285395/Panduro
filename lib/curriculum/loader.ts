@@ -1,4 +1,5 @@
 import capturedRaw from "@/content/signs/captured.json";
+import { withFace } from "@/lib/avatar/compose";
 import { CapturedSignsSchema, type Level } from "./schema";
 import { curriculumQueries, parseLevels } from "./structure";
 
@@ -22,6 +23,7 @@ function loadAll(): Level[] {
         sign.handedness = rec.avatarClip.handedness;
         if (rec.license) sign.animationCredit = { source: rec.source, license: rec.license, url: rec.url };
       }
+      if (sign.face && sign.avatarClip) sign.avatarClip = withFace(sign.avatarClip, sign.face);
     }
   }
   cachedLevels = levels;

@@ -21,6 +21,19 @@ Panduro combina código propio con recursos abiertos de la comunidad LSE. Este a
   ni se usan para las animaciones.
 - **ARASAAC** — Portal Aragonés de la Comunicación Aumentativa y Alternativa. Pictogramas y recursos LSE bajo **CC BY-NC-SA 4.0**. <https://arasaac.org>.
 
+## Avatar 3D
+
+- **Modelo de Panduro** (`public/avatars/panduro.vrm`) — **CC0 1.0**, dedicado al dominio
+  público. Hecho con MakeHuman a partir de recursos **CC0** de la comunidad MakeHuman
+  (<https://www.makehumancommunity.org>): malla base, ojos, cejas, pestañas, dientes y lengua de
+  sistema y la ropa `male_casualsuit01` y `shoes01` (`makehuman_system_assets`), el pelo
+  `culturalibre_hair_02` (`hair01`), la piel `toigo_light_skin_male_bronze` (`skins02`), el
+  material de la camisa de toigo (`system_clothes_materials01`, recoloreado) y las formas de la
+  cara `faceunits01` (ARKit) y `visemes02`. Se rehace con `scripts/avatar/build.sh`
+  (ver `docs/avatar.md`).
+- Herramientas, que no se distribuyen: **Blender** (GPL), **MPFB** (complemento de MakeHuman para
+  Blender, GPL) y **VRM Add-on for Blender** (MIT).
+
 ## Marcos normativos y curriculares
 
 - Ley 27/2007 de reconocimiento de las lenguas de signos españolas (BOE-A-2007-18476).

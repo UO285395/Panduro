@@ -9,8 +9,7 @@ import {
   applyVrmIdle,
   applyVrmKeyframe,
   blendFromSnapshot,
-  createVrmRig,
-  enlargeHands,
+  createVrmRigWithHands,
   resolveClip,
   signBounds,
   snapshotPose,
@@ -274,8 +273,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
           scene: import("three").Group;
           vrm: import("@pixiv/three-vrm").VRM;
         };
-        enlargeHands(vrm);
-        const rig = createVrmRig(vrm);
+        const rig = createVrmRigWithHands(vrm);
         addHandOutline(vrm, HAND_OUTLINE_WIDTH * rig.armLen);
         vrmScene.rotation.y = rig.facingY;
         scene.add(vrmScene);

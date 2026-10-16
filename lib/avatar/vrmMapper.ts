@@ -242,7 +242,7 @@ export function createVrmRig(vrm: VRM): VrmRig {
   const head = pos(B.Head) ?? R.shoulder.clone().setY(shoulderY + 0.5 * armLen);
   const eyeL = pos(B.LeftEye);
   const eyeR = pos(B.RightEye);
-  const eyes = eyeL && eyeR ? eyeL.add(eyeR).multiplyScalar(0.5) : null;
+  const eyes = eyeL && eyeR ? eyeL.clone().add(eyeR).multiplyScalar(0.5) : null;
   const eyeY = eyes ? eyes.y : head.y + 0.3 * armLen;
   const faceFwd = eyes
     ? eyes.clone().sub(R.shoulder).dot(forward)
@@ -290,17 +290,34 @@ export function createVrmRig(vrm: VRM): VrmRig {
 }
 
 /**
- * Cuánto más grandes que las del modelo se ven sus manos. En un modelo anime son pequeñas
- * para el cuerpo y, del tamaño del reproductor, no se distinguía la forma de la mano.
+ * Lo más que se agrandan las manos del modelo. En un modelo anime son pequeñas para el cuerpo
+ * y, del tamaño del reproductor, no se distinguía la forma de la mano.
  */
 export const HAND_SCALE = 1.15;
+
+/**
+ * Largo de la mano (muñeca a yema) frente a la cabeza con el pelo (barbilla a coronilla) en una
+ * persona: unos 19 cm frente a 24. Las manos se agrandan hasta ahí, nunca más de `HAND_SCALE`:
+ * en un modelo realista ya lo están y agrandadas tapaban media cara.
+ */
+const HAND_TO_HEAD = 0.8;
+
+/** El rig del modelo, con las manos agrandadas si las tiene pequeñas (ver `HAND_TO_HEAD`). */
+export function createVrmRigWithHands(vrm: VRM): VrmRig {
+  const natural = createVrmRig(vrm);
+  const head = natural.body.top.p[1] - natural.body.chin.p[1];
+  const scale = Math.min(HAND_SCALE, Math.max(1, (HAND_TO_HEAD * head) / natural.handReach));
+  if (scale < 1.01) return natural;
+  enlargeHands(vrm, scale);
+  return createVrmRig(vrm);
+}
 
 /**
  * Agranda las manos del modelo (la mano y sus dedos): la real, que es la que se ve, y la
  * normalizada, con la que el mapper mide contactos y colisiones. Antes de `createVrmRig`, que
  * así mide las yemas, el alcance y el grosor de la mano ya agrandada.
  */
-export function enlargeHands(vrm: VRM, scale = HAND_SCALE) {
+export function enlargeHands(vrm: VRM, scale: number) {
   for (const b of [B.RightHand, B.LeftHand]) {
     vrm.humanoid.getNormalizedBoneNode(b)?.scale.multiplyScalar(scale);
     vrm.humanoid.getRawBoneNode(b)?.scale.multiplyScalar(scale);
@@ -1753,8 +1770,13 @@ function headProbe(rig: VrmRig, side: Side) {
  */
 const OUT_OF_HEAD_FRONT_TURN = 30;
 
-/** Lo que una mano puede meterse en la cabeza sin que se note, y lo más que se aparta de ella (en brazos). */
-const HEAD_OVERLAP_TOL = 0.004;
+/**
+ * Lo que una mano puede meterse en la cabeza sin que se note, y lo más que se aparta de ella (en
+ * brazos). Unos 8 mm en una persona, menos que el grosor de un dedo: parece que aprieta. En una
+ * cara con relieve (nariz, pómulos) la mano que toca con una parte roza con otra, y con 2 mm se
+ * giraba o se apartaba en muchos más contactos de la oreja, la sien y la mejilla.
+ */
+const HEAD_OVERLAP_TOL = 0.015;
 const HEAD_MAX_PUSH = 0.6;
 
 /**

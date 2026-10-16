@@ -97,6 +97,30 @@ describe("measureBody", () => {
   });
 });
 
+describe("measureBody: la barbilla con una malla realista", () => {
+  // Entre el labio y la barbilla de una malla de persona hay franjas sin cara delante: por
+  // ellas solo se ven los dientes, más atrás. Eso aún no es el cuello.
+  const ring = 0.02 + 0.11 * Math.cos((56 * Math.PI) / 80);
+  const withGap = (): Cloud => {
+    const c = figure();
+    const keep = [...c.r.keys()].filter((i) => !(Math.abs(c.u[i]! - ring) < 1e-4 && c.f[i]! > -0.08 && Math.abs(c.r[i]!) < 0.02));
+    const pick = (a: Float32Array | Uint8Array) => keep.map((i) => a[i]!);
+    return {
+      r: Float32Array.from([...pick(c.r), 0]),
+      u: Float32Array.from([...pick(c.u), ring]),
+      f: Float32Array.from([...pick(c.f), -0.12]),
+      hair: Uint8Array.from([...pick(c.hair), 0]),
+    };
+  };
+
+  it("una franja suelta sin cara delante no corta la barbilla", () => {
+    const whole = measureBody(figure(), anchors);
+    const gap = measureBody(withGap(), anchors);
+    expect(gap.chin.p[1]).toBeLessThan(ring);
+    expect(gap.chin.p[1]).toBeCloseTo(whole.chin.p[1], 2);
+  });
+});
+
 describe("faceSurface: el punto exacto de la cara", () => {
   const cloud = figure();
   const body = measureBody(cloud, anchors);
@@ -126,6 +150,38 @@ describe("faceSurface: el punto exacto de la cara", () => {
 
   it("el mechón que sobresale de la frente no cuenta como piel", () => {
     expect(faceSurface(grid, [0, 0.8]).p[2]).toBeLessThan(0.02);
+  });
+
+  it("fuera de la cabeza, el punto del contorno más cercano: la oreja, no la mandíbula de debajo", () => {
+    // Una oreja a cada lado, de u −0,02 a 0,03, que sobresale de la cabeza.
+    const c = figure();
+    const r = [...c.r], u = [...c.u], f = [...c.f], hair = [...c.hair];
+    for (const side of [1, -1]) {
+      for (let a = 0; a <= 4; a++) {
+        for (let b = 0; b <= 10; b++) {
+          for (let d = 0; d <= 6; d++) {
+            r.push(side * (0.07 + 0.005 * a));
+            u.push(-0.02 + 0.005 * b);
+            f.push(-0.1 + 0.005 * d);
+            hair.push(0);
+          }
+        }
+      }
+    }
+    const eared: Cloud = { r: Float32Array.from(r), u: Float32Array.from(u), f: Float32Array.from(f), hair: Uint8Array.from(hair) };
+    const g = measureFace(eared, measureBody(eared, anchors), anchors);
+    // Un poco por debajo de la oreja y muy a un lado.
+    let lo = -1.75;
+    let hi = 0.8;
+    for (let k = 0; k < 40; k++) {
+      const mid = (lo + hi) / 2;
+      if (faceToModel(g, [5, mid])[1] < -0.026) lo = mid;
+      else hi = mid;
+    }
+    const s = faceSurface(g, [5, lo]);
+    expect(s.p[0]).toBeGreaterThan(0.085);
+    expect(s.p[1]).toBeGreaterThan(-0.026);
+    expect(s.p[1]).toBeLessThan(-0.01);
   });
 });
 

@@ -2,12 +2,8 @@
 
 /**
  * Carga el avatar VRM. Intenta en orden:
- *  1. /avatars/panduro.vrm  (archivo local en public/, gitignoreado)
+ *  1. /avatars/panduro.vrm  (el modelo de Panduro, CC0, en public/; ver docs/avatar.md)
  *  2. CDN URLs públicas con modelos CC-BY gratuitos
- *
- * Para persistir el modelo en el repo: coloca un archivo VRM en
- * public/avatars/panduro.vrm. Si no existe, el browser descarga
- * automáticamente uno de las CDN candidatas.
  */
 
 export const VRM_PATH = "/avatars/panduro.vrm";

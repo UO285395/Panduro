@@ -1,0 +1,56 @@
+{
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.5,
+    "muscle": 0.55,
+    "weight": 0.45,
+    "proportions": 0.6,
+    "height": 0.55,
+    "race": {
+      "caucasian": 0.85,
+      "african": 0.05,
+      "asian": 0.1
+    }
+  },
+  "rig": "mixamo",
+  "eyes": "high-poly",
+  "eyebrows": "eyebrow001",
+  "eyelashes": "eyelashes01",
+  "teeth": "teeth_base",
+  "tongue": "tongue01",
+  "hair": "culturalibre_hair_02",
+  "skin": "toigo_light_skin_male_bronze",
+  "clothes": [
+    "male_casualsuit01",
+    "shoes01"
+  ],
+  "materials": {
+    "male_casualsuit01": "male_casualsuit01/toigo_male_casual_suit_01_teal_shirt_with_black_jeans/toigo_male_casual_suit_01_teal_shirt_with_black_jeans.mhmat"
+  },
+  "face_parts": [
+    "eyebrow",
+    "eyelash",
+    "teeth",
+    "tongue"
+  ],
+  "shirt": {
+    "hue": 0.55,
+    "sat": 1.0,
+    "value": 0.6
+  },
+  "hair_value": 1.0,
+  "eye_color": {
+    "texture": "brownlight_eye.png",
+    "iris_value": 0.55
+  },
+  "pad": {
+    "casualsuit": [
+      60,
+      74,
+      100
+    ]
+  },
+  "trim": {
+    "shoes01": 0.11
+  }
+}

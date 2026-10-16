@@ -1,0 +1,14 @@
+{
+  "name": "Panduro",
+  "version": "1.0",
+  "authors": [
+    "Proyecto Panduro"
+  ],
+  "copyright": "CC0 1.0: dedicado al dominio público",
+  "references": [
+    "https://github.com/uo285395/panduro",
+    "http://www.makehumancommunity.org"
+  ],
+  "third_party_licenses": "Hecho con MakeHuman (MPFB) a partir de recursos CC0 1.0 de la comunidad MakeHuman: malla base, ojos, cejas, pestañas, dientes y lengua de sistema; pelo culturalibre_hair_02; piel toigo_light_skin_male_bronze; ropa male_casualsuit01 (material de toigo) y shoes01; formas de la cara faceunits01 (ARKit) y visemes02. Colores retocados.",
+  "other_license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+}

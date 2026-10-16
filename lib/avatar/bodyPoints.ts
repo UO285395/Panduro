@@ -92,21 +92,30 @@ function norm(v: V3): V3 {
   return [v[0] / l, v[1] / l, v[2] / l];
 }
 
-/** Barbilla: el punto más bajo del perfil de la cara antes de caer al cuello. */
+/**
+ * Barbilla: el punto más bajo del perfil de la cara antes de caer al cuello. Una franja suelta
+ * sin cara delante (entre el labio y la barbilla de una malla realista, solo se ven por ella los
+ * dientes) no es aún el cuello: hacen falta dos seguidas.
+ */
 function findChinU(c: Cloud, a: Anchors, bridgeF: number): number {
   const s = a.eyeSep;
   const step = 0.05 * s;
   const mid: [number, number] = [-0.2 * s, 0.2 * s];
   let chin = -1.2 * s;
   let misses = 0;
+  let behind = 0;
   for (let u = -step; u > Math.max(a.neckU, -4 * s); u -= step) {
     const p = best(c, { r: mid, u: [u - step / 2, u + step / 2] }, front);
     if (!p) {
       if (++misses > 2) break;
       continue;
     }
-    if (p[2] < bridgeF - 0.5 * s) break;
+    if (p[2] < bridgeF - 0.5 * s) {
+      if (++behind > 1) break;
+      continue;
+    }
     misses = 0;
+    behind = 0;
     chin = u;
   }
   return chin;
@@ -473,12 +482,28 @@ export function lateralToModel(g: FaceGrid, h: number, armLen: number): number {
 export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
   const [r, u] = faceToModel(g, face);
   const cell = (col: number, row: number) => frontAt(g, col, row, true);
-  const row = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
+  const row0 = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
   const start = Math.min(g.nr - 1, Math.max(0, Math.floor((r - g.r0) / g.step)));
   let col = start;
-  // Fuera del contorno de la cabeza: hacia el centro hasta dar con ella.
-  const center = Math.floor(-g.r0 / g.step);
-  while (!Number.isFinite(cell(col, row)) && col !== center) col += col > center ? -1 : 1;
+  let row = row0;
+  // Fuera del contorno de la cabeza: el punto del contorno más cercano, vista de frente, sin
+  // alejarse mucho de esa altura. Solo hacia el centro, junto a la oreja de una cabeza de
+  // persona caía en la mandíbula, que a la altura del lóbulo queda por delante de la oreja.
+  if (!Number.isFinite(cell(col, row))) {
+    const reach = Math.ceil((0.4 * g.eyesToMouth) / g.step);
+    let best = Infinity;
+    for (let w = Math.max(0, row0 - reach); w <= Math.min(g.nu - 1, row0 + reach); w++) {
+      for (let c = 0; c < g.nr; c++) {
+        if (!Number.isFinite(cell(c, w))) continue;
+        const d = Math.hypot(g.r0 + (c + 0.5) * g.step - r, g.u0 + (w + 0.5) * g.step - u);
+        if (d < best) {
+          best = d;
+          col = c;
+          row = w;
+        }
+      }
+    }
+  }
   const f = cell(col, row);
   if (!Number.isFinite(f)) return { p: [r, u, 0], n: [0, 0, 1] };
   const at = (dc: number, dr: number) => {
@@ -489,7 +514,7 @@ export function faceSurface(g: FaceGrid, face: FaceCoords): Surface {
   const dfr = (at(1, 0) - at(-1, 0)) / (2 * g.step);
   const dfu = (at(0, 1) - at(0, -1)) / (2 * g.step);
   return {
-    p: [col === start ? r : g.r0 + (col + 0.5) * g.step, u, f],
+    p: [col === start ? r : g.r0 + (col + 0.5) * g.step, row === row0 ? u : g.u0 + (row + 0.5) * g.step, f],
     n: norm([-dfr, -dfu, 1]),
   };
 }

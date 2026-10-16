@@ -35,8 +35,10 @@ public/workbox-*.js
 public/workbox-*.js.map
 public/worker-*.js
 
-# Avatares VRM (binarios grandes, licencia de terceros — ver README)
+# Avatares VRM (licencia de terceros), salvo el de Panduro (CC0, scripts/avatar/build.sh)
 public/avatars/*.vrm
+!public/avatars/panduro.vrm
+.avatar-build/
 
 # Modelos MediaPipe (binarios grandes — descargar con scripts/download-mediapipe.sh)
 public/models/*.task

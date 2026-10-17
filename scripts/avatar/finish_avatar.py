@@ -401,6 +401,7 @@ if eyes:
             centers = np.stack([pts[lab == k].mean(0) for k in (0, 1)])
         src = img.copy()
         gy, gx = np.mgrid[0:hgt, 0:wid].astype(np.float32)
+        flat_r, ring = eyes.get("iris_flat", 0), eyes.get("iris_ring", 0.0)
         for k in (0, 1):
             cx, cy = centers[k]
             radius = np.percentile(np.linalg.norm(pts[lab == k] - centers[k], axis=1), 97)
@@ -409,6 +410,17 @@ if eyes:
             sx = np.clip(np.round(cx + (gx - cx) / scale), 0, wid - 1).astype(int)
             sy = np.clip(np.round(cy + (gy - cy) / scale), 0, hgt - 1).astype(int)
             img[inside] = src[sy[inside], sx[inside]]
+            # Iris de dibujo: sin las fibras de la foto (desenfocado dentro del iris) y con un
+            # aro más oscuro en el borde.
+            if flat_r:
+                sm = blur(np.where(inside[..., None], img[..., :3], 0), flat_r)
+                wsum = blur(inside.astype(np.float32), flat_r)[..., None]
+                img[..., :3] = np.where(inside[..., None], sm / np.maximum(wsum, 1e-6), img[..., :3])
+            if ring:
+                rr = dist / (radius * scale)
+                t = np.clip((rr - 0.72) / 0.25, 0, 1)
+                dark = 1 - ring * t * t * (3 - 2 * t)
+                img[..., :3] = np.where(inside[..., None], img[..., :3] * dark[..., None], img[..., :3])
             if shine:
                 # Arriba a la izquierda (las filas de Blender van de abajo arriba).
                 spot = np.hypot(gx - (cx - 0.38 * radius * scale), gy - (cy + 0.38 * radius * scale))

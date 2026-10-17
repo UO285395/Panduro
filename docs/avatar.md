@@ -27,7 +27,8 @@ El estilo de dibujo (más amable que uno realista) sale de `panduro.json`:
   salvo alrededor de los ojos (`outline_eyes`: una máscara del ancho del contorno): el pliegue
   que dejan los ojos agrandados salía dibujado como unas gafas.
 - **Texturas de dibujo**: piel lisa y sin sombras pintadas, colorete en las mejillas, iris más
-  grandes con un brillo, solo las pestañas de arriba, juntas en un trazo con algunas puntas
+  grandes, sin las fibras de la foto, con un aro más oscuro y un brillo (`iris_flat`,
+  `iris_ring`), solo las pestañas de arriba, juntas en un trazo con algunas puntas
   (`lash_close`; separadas parecían púas), y cejas y pelo de color plano, el pelo sin huecos
   entre mechones (`hair_close`), que dejaban el borde deshilachado, ni pelos sueltos en el borde
   (`hair_open`).

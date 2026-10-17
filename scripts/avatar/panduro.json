@@ -116,9 +116,11 @@
   },
   "eye_color": {
     "texture": "brownlight_eye.png",
-    "iris_value": 0.75,
+    "iris_value": 0.9,
     "iris_scale": 1.3,
-    "catchlight": 0.9
+    "catchlight": 0.9,
+    "iris_flat": 4,
+    "iris_ring": 0.35
   },
   "shirt": {
     "hue": 0.56,

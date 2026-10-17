@@ -29,7 +29,8 @@ El estilo de dibujo (más amable que uno realista) sale de `panduro.json`:
 - **Texturas de dibujo**: piel lisa y sin sombras pintadas, colorete en las mejillas, iris más
   grandes con un brillo, solo las pestañas de arriba, juntas en un trazo con algunas puntas
   (`lash_close`; separadas parecían púas), y cejas y pelo de color plano, el pelo sin huecos
-  entre mechones (`hair_close`), que dejaban el borde deshilachado.
+  entre mechones (`hair_close`), que dejaban el borde deshilachado, ni pelos sueltos en el borde
+  (`hair_open`).
 
 - 54 huesos humanoides, con los tres del pulgar y los ojos.
 - Expresiones VRM: vocales (aa, ih, ou, ee, oh), parpadeo (los dos ojos y cada uno), happy,

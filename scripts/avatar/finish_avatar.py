@@ -427,9 +427,10 @@ def morph(a, r, op, disc=False):
     return out
 
 
-def darken(value, bold=0, close=0):
+def darken(value, bold=0, close=0, open_=0):
     """Más oscuro y, con bold, el trazo más grueso (el alfa se dilata bold píxeles); con close,
-    lo que queda a menos de 2·close píxeles se rellena (cierre: dilatar y erosionar)."""
+    lo que queda a menos de 2·close píxeles se rellena (cierre: dilatar y erosionar); con open_,
+    se quita lo más fino que 2·open_ píxeles (apertura: erosionar y dilatar)."""
     def fn(px):
         px[:, :3] *= value
         h, w = recolor.shape
@@ -438,15 +439,17 @@ def darken(value, bold=0, close=0):
             a = morph(a, bold, np.maximum)
         if close:
             a = morph(morph(a, close, np.maximum, True), close, np.minimum, True)
+        if open_:
+            a = morph(morph(a, open_, np.minimum, True), open_, np.maximum, True)
         px[:, 3] = a.ravel()
         return px
     return fn
 
 
 # Con hair_close, los huecos entre mechones se rellenan: el borde (las patillas, la nuca)
-# salía deshilachado, con trozos sueltos.
+# salía deshilachado, con trozos sueltos; con hair_open, fuera los pelos sueltos del borde.
 if cfg.get("hair_value"):
-    recolor("hair", darken(cfg["hair_value"], close=cfg.get("hair_close", 0)), "dark")
+    recolor("hair", darken(cfg["hair_value"], close=cfg.get("hair_close", 0), open_=cfg.get("hair_open", 0)), "dark")
 # Colores planos de dibujo: sin la trama de la tela ni los mechones finos (el sombreado toon
 # pone el volumen). {"casualsuit": 3, "hair": 4}: radio del desenfoque por pieza.
 for kind, radius in cfg.get("flatten", {}).items():

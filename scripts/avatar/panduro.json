@@ -132,6 +132,7 @@
   "lash_bold": 3,
   "lash_close": 4,
   "hair_close": 6,
+  "hair_open": 4,
   "flatten": {
     "casualsuit": 3,
     "hair": 10

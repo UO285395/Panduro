@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  chinUnderside,
   faceSurface,
   faceToModel,
   headCenter,
@@ -132,6 +133,14 @@ describe("faceSurface: el punto exacto de la cara", () => {
     expect(Math.abs(s.p[0])).toBeLessThan(0.005);
     expect(s.p[2]).toBeCloseTo(body.mouth.p[2], 2);
     expect(s.n[2]).toBeGreaterThan(0.8);
+  });
+
+  it("bajo la barbilla: por debajo y algo por detrás de su punta, con la normal hacia abajo", () => {
+    const s = chinUnderside(grid, [0, -1.54]);
+    const front = faceSurface(grid, [0, -1.54]);
+    expect(s.p[1]).toBeLessThan(body.chin.p[1]);
+    expect(s.p[2]).toBeLessThan(front.p[2]);
+    expect(s.n).toEqual([0, -1, 0]);
   });
 
   it("de abajo arriba y de un lado a otro, en orden", () => {

@@ -402,6 +402,34 @@ export function faceToModel(g: FaceGrid, [h, v]: FaceCoords): [number, number] {
   return [r, u];
 }
 
+/** Por detrás de la punta de la barbilla, en distancias ojos→boca, donde la sostiene la mano. */
+const UNDER_CHIN_DEPTH = 0.25;
+/**
+ * Por debajo de la barbilla, en distancias ojos→boca, donde quedan los nudillos de en medio (el
+ * contacto «knuckles»): con los dedos algo doblados, el dorso queda por encima de ellos.
+ */
+const UNDER_CHIN_DROP = 0.8;
+
+/**
+ * Bajo la barbilla, en la vertical de `face`: la mano plana que la sostiene (ENFADADO, PADRE)
+ * apoya el dorso ahí, algo por detrás de la punta; el punto, el de sus nudillos de en medio, y
+ * la normal hacia abajo. Con el punto de
+ * la cara, en una cara de dibujo (la barbilla pegada a la boca) la mano tapaba la boca.
+ */
+export function chinUnderside(g: FaceGrid, face: FaceCoords): Surface {
+  const [r] = faceToModel(g, face);
+  const col = Math.min(g.nr - 1, Math.max(0, Math.floor((r - g.r0) / g.step)));
+  let row = Math.min(g.nu - 1, Math.max(0, Math.floor((g.chinU - g.u0) / g.step)));
+  // La primera fila con cara desde la barbilla hacia arriba.
+  while (row < g.nu - 1 && !Number.isFinite(frontAt(g, col, row))) row++;
+  const f = frontAt(g, col, row);
+  if (!Number.isFinite(f)) return faceSurface(g, face);
+  return {
+    p: [r, g.u0 + row * g.step - UNDER_CHIN_DROP * g.eyesToMouth, f - UNDER_CHIN_DEPTH * g.eyesToMouth],
+    n: [0, -1, 0],
+  };
+}
+
 /**
  * Lo más adelantado de la cabeza en una celda: la piel, o el pelo pegado a ella (flequillo).
  * Con `hairOnly`, donde no hay piel detrás (lo alto de la cabeza), el pelo.

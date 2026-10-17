@@ -1,19 +1,37 @@
 # Retoques del .vrm exportado, sobre el glTF binario:
 #  - pelo, cejas, pestañas y ojos con alphaMode MASK (BLEND se ordena mal en three.js),
 #  - texturas opacas en JPEG y las pequeñas a menos resolución (de ~21 MB a unos pocos).
-# Uso: python3 pack_vrm.py entrada.vrm salida.vrm
+# Con --vroid, para un modelo hecho en VRoid Studio: los materiales se quedan como vienen, en
+# PNG solo las texturas que usan el alfa, y a 1024 (los mapas de normales a 512).
+# Uso: python3 pack_vrm.py entrada.vrm salida.vrm [--vroid]
 import io, json, struct, sys
 from PIL import Image
 
 src, dst = sys.argv[1], sys.argv[2]
+vroid = "--vroid" in sys.argv[3:]
 data = open(src, "rb").read()
 json_len = struct.unpack("<I", data[12:16])[0]
 gltf = json.loads(data[20:20 + json_len])
 bin_start = 20 + json_len + 8
 binary = data[bin_start:bin_start + struct.unpack("<I", data[20 + json_len:24 + json_len])[0]]
 
+# VRoid deja los nombres de las formas de la cara en cada primitiva; three.js los lee de la malla
+# (extras.targetNames) y sin ellos el reproductor no encuentra las cejas ni la boca por su nombre.
+for mesh in gltf["meshes"] if vroid else []:
+    names = next((p["extras"]["targetNames"] for p in mesh["primitives"] if "targetNames" in p.get("extras", {})), None)
+    if names and "targetNames" not in mesh.get("extras", {}):
+        mesh.setdefault("extras", {})["targetNames"] = names
+
+# El contorno de VRoid (0,75 mm) es más fino que un píxel a la distancia del avatar entero y se
+# veía a puntos: 2 mm, como un trazo de dibujo (en VRM 0.x, _OutlineWidth va en centímetros).
+VROID_OUTLINE_CM = 0.2
+for mat in gltf.get("extensions", {}).get("VRM", {}).get("materialProperties", []) if vroid else []:
+    fp = mat.get("floatProperties", {})
+    if fp.get("_OutlineWidthMode") == 1 and fp.get("_OutlineWidth", 0) > 0:
+        fp["_OutlineWidth"] = max(fp["_OutlineWidth"], VROID_OUTLINE_CM)
+
 MASK = {"Hair", "Eyebrows", "Eyelashes", "Eyes"}
-for mat in gltf["materials"]:
+for mat in [] if vroid else gltf["materials"]:
     if mat["name"] in MASK:
         mat["alphaMode"] = "MASK"
         mat["alphaCutoff"] = 0.5
@@ -25,6 +43,9 @@ for mat in gltf["materials"]:
 # Las texturas recoloreadas no llevan el nombre de la pieza (la del pelo es «male02_diffuse…»).
 SIZE = {"teeth": 512, "tongue": 256, "shoes": 512, "eyes": 512, "iris": 512, "normal": 1024, "hair": 1024,
         "outline": 256}
+if vroid:
+    # VRoid: «_nml», mapas de normales; la miniatura del VRM, solo para listados.
+    SIZE = {"_nml": 512, "thumbnail": 256, "": 1024}
 
 
 def material_images(mat):
@@ -40,7 +61,7 @@ for mat in gltf["materials"]:
     images = material_images(mat)
     for i in images:
         owner.setdefault(i, mat["name"].lower())
-    if mat.get("alphaMode") == "MASK":
+    if mat.get("alphaMode") == "MASK" and not vroid:
         alpha_images.update(images[:1] + images[2:])
 
 views = [binary[v.get("byteOffset", 0):v.get("byteOffset", 0) + v["byteLength"]] for v in gltf["bufferViews"]]
@@ -48,6 +69,11 @@ for i, im in enumerate(gltf["images"]):
     raw = views[im["bufferView"]]
     pic = Image.open(io.BytesIO(raw))
     name = im["name"].lower()
+    if vroid and pic.mode in ("RGBA", "LA", "P"):
+        # Con algún texel transparente (cejas, pestañas, iris, el recorte de la ropa), en PNG.
+        alpha = pic.convert("RGBA").getchannel("A")
+        if alpha.histogram()[0] > 0.001 * pic.size[0] * pic.size[1]:
+            alpha_images.add(i)
     limit = next((s for k, s in SIZE.items() if k in name or k == owner.get(i, "")), None)
     if limit and max(pic.size) > limit:
         pic = pic.resize((limit, limit * pic.size[1] // pic.size[0]), Image.LANCZOS)

@@ -13,11 +13,38 @@ pecho en la malla, grosor de los dedos y hacia dónde mira (VRM0 o VRM1). Las an
 
 ## El modelo de Panduro
 
+**HairSample_Male**, del **VRoid Project**: un chico de estilo anime, con el pelo negro y
+despeinado y una sudadera blanca. Es una de las muestras de las versiones alfa de VRoid Studio
+que el VRoid Project publicó con licencia **CC0** (las recoge OpenGameArt,
+<https://opengameart.org/content/vroid-studio-cc0-models>; los datos del VRM lo dicen así:
+cualquiera puede usarlo, modificarlo y redistribuirlo, también con fines comerciales, sin
+citar). El modelo de MakeHuman que lo precedía, aun con estilo de dibujo, seguía pareciendo
+barato: una cara realista con sombreado de dibujo encima.
+
+- VRM 0.x, 54 huesos humanoides, con los tres del pulgar y los ojos, y el pelo con física
+  (spring bones).
+- Expresiones de VRoid: vocales (A, I, U, E, O), parpadeo, Joy, Angry, Sorrow, Fun y
+  Surprised, y las formas sueltas de cejas, ojos y boca (`Fcl_BRW_*`, `Fcl_EYE_*`,
+  `Fcl_MTH_*`), que el mapper usa por su nombre: el ceño con los ojos de enfado y las cejas
+  arriba con los ojos muy abiertos (el flequillo le tapa las cejas), y la sonrisa con los ojos
+  abiertos («Joy» los cierra del todo).
+- Unos 3 MB (de 19): `scripts/avatar/build_vroid.sh` lo descarga, comprueba el archivo y lo
+  aligera con `pack_vrm.py --vroid`: texturas a 1024 (las de normales a 512) y en JPEG las que
+  no usan el alfa, las formas de la cara como accesores dispersos y sus nombres en la malla, donde
+  los lee three.js (VRoid los deja en cada primitiva y, sin ellos, el mapper no encontraba las
+  cejas ni la boca por su nombre), y el contorno a 2 mm (el de VRoid, 0,75 mm, se veía a puntos).
+
+```bash
+bash scripts/avatar/build_vroid.sh   # escribe public/avatars/panduro.vrm
+```
+
+## El modelo de MakeHuman (el anterior)
+
 Un hombre joven con estilo de dibujo, con camisa azul petróleo, vaqueros oscuros y el pelo
 corto y pegado a la cabeza, con las orejas a la vista. Está hecho con **MakeHuman** (complemento
 MPFB para Blender) y solo con recursos **CC0** de la comunidad MakeHuman, y se exporta a
-**VRM 1.0** con el complemento VRM. El modelo también es **CC0**: se puede usar, modificar y
-redistribuir sin pedir permiso ni citar (los datos del VRM lo dicen así).
+**VRM 1.0** con el complemento VRM. El modelo también es **CC0**. Se sigue pudiendo rehacer con
+`scripts/avatar/build.sh`, que **sustituye** `public/avatars/panduro.vrm`.
 
 El estilo de dibujo (más amable que uno realista) sale de `panduro.json`:
 
@@ -78,7 +105,8 @@ cambiar también la licencia en `meta.json` y en `CREDITS.md`.
   la supone más arriba y las manos que van a la cara se quedan por encima de la cabeza.
 - **Orejas a la vista** y **pelo corto pegado a la cabeza**: OREJA, ESCUCHAR o SORDO las tocan, y
   el pelo cerca de la piel cuenta como cabeza: con un tupé, la mano que va a la sien o a la frente
-  se queda encima del pelo.
+  se queda encima del pelo. (A HairSample_Male el pelo le tapa las orejas: se eligió así, y esos
+  signos tocan el pelo que las cubre.)
 - **Muñecas a la vista**: mangas ajustadas, sin capucha puesta ni ropa holgada en los brazos.
 - **Sin accesorios en la cara** (gafas, mascarilla): las manos pasan por ahí.
 - **Expresiones VRM** de serie (aa, ih, ou, ee, oh, happy, sad, angry, surprised, blink) y, si
@@ -103,7 +131,22 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
   que tocan la cabeza.
 - Añadir el modelo, su autor y su licencia a `CREDITS.md`.
 
-## Con este modelo: lo que cambió y lo que falta
+## Con el modelo de VRoid
+
+- Los contactos con la cara y el cuerpo llegan mejor que con el de MakeHuman: midiendo el error
+  de los 536 contactos de los 81 signos grabados que tocan la cara o el cuerpo, la mediana es
+  0,003 brazos y solo 2 pasan de 0,1 (con el de MakeHuman, 0,005 y 8). El mapper se había
+  afinado con un modelo anime, y la cabeza de dibujo, sin nariz ni pómulos, no estorba.
+- La mano plana bajo la barbilla (ENFADADO, PADRE) va debajo, sosteniéndola
+  (`chinUnderside`): la barbilla de dibujo está a 1 cm de la boca y, en el punto de la cara, la
+  mano tapaba la boca. Con los dedos algo doblados, los nudillos del contacto quedan por debajo
+  del dorso, así que el punto baja un poco más.
+- Los gestos de la cara salen de las formas sueltas de VRoid por su nombre (ver arriba).
+- Siguen algo altos el principio de PADRE (la captura lo dejó a la altura de los ojos; las
+  capturas nuevas ya siguen a la parte que toca) y el índice de NARIZ, y en GRACIAS las manos
+  pasan un momento por delante de la boca.
+
+## Con el modelo de MakeHuman: lo que cambió y lo que falta
 
 El mapper se había afinado con un modelo anime, de cabeza enorme y cara plana. Con una cabeza de
 persona:

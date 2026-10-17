@@ -23,8 +23,12 @@ Panduro combina código propio con recursos abiertos de la comunidad LSE. Este a
 
 ## Avatar 3D
 
-- **Modelo de Panduro** (`public/avatars/panduro.vrm`) — **CC0 1.0**, dedicado al dominio
-  público. Hecho con MakeHuman a partir de recursos **CC0** de la comunidad MakeHuman
+- **Modelo de Panduro** (`public/avatars/panduro.vrm`) — **HairSample_Male**, del **VRoid
+  Project** (pixiv), una de las muestras de VRoid Studio publicadas con licencia **CC0 1.0**
+  (<https://opengameart.org/content/vroid-studio-cc0-models>), aligerada para la web. Se rehace
+  con `scripts/avatar/build_vroid.sh` (ver `docs/avatar.md`).
+- **Modelo de MakeHuman** (el anterior, que se rehace con `scripts/avatar/build.sh`) — **CC0 1.0**,
+  dedicado al dominio público. Hecho con MakeHuman a partir de recursos **CC0** de la comunidad MakeHuman
   (<https://www.makehumancommunity.org>): malla base, ojos, cejas, pestañas, dientes y lengua de
   sistema y la ropa `male_casualsuit01` y `shoes01` (`makehuman_system_assets`), el pelo
   `culturalibre_hair_02` (`hair01`), la piel `toigo_light_skin_male_bronze` (`skins02`), el

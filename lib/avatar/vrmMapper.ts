@@ -3,6 +3,7 @@ import { VRMHumanBoneName as B, VRMExpression, VRMExpressionMorphTargetBind } fr
 import * as THREE from "three";
 import { EXPRESSIONS, type AvatarClip, type AvatarKeyframe, type Contact, type Expressions } from "@/lib/curriculum/schema";
 import {
+  chinUnderside,
   faceSurface,
   headCenter,
   headDepth,
@@ -422,18 +423,22 @@ function faceExpressions(vrm: VRM): Pick<VrmRig, "expressions" | "exprNames"> {
     return name;
   };
   const has = (name: string) => (em.getExpression(name) ? name : null);
-  // Ceño: cejas abajo y, si la malla de las cejas tiene su forma de enfado, también esa.
+  // Ceño: cejas abajo y, si la malla de las cejas tiene su forma de enfado, también esa. En
+  // los de VRoid, también los ojos de enfado (y abiertos, con las cejas arriba): el flequillo
+  // les tapa las cejas y el gesto no se veía.
   const browDown = custom(
     "panduroBrowDown",
-    (t, mesh) => /eyebrows?[ _.]*down|brw_angry/i.test(t) || (/brow/i.test(mesh) && /angry/i.test(t)),
+    (t, mesh) => /eyebrows?[ _.]*down|brw_angry|fcl_eye_angry/i.test(t) || (/brow/i.test(mesh) && /angry/i.test(t)),
   );
-  const browUp = custom("panduroBrowUp", (t) => /eyebrows?[ _.]*up|brw_surprised/i.test(t));
+  const browUp = custom("panduroBrowUp", (t) => /eyebrows?[ _.]*up|brw_surprised|fcl_eye_spread/i.test(t));
   const puff = custom("panduroPuff", (t) => /cheek[ _.]*puff/i.test(t));
+  // La sonrisa de VRoid con los ojos abiertos («happy» los cierra del todo, ^^).
+  const smile = custom("panduroSmile", (t) => /fcl_(mth|eye)_fun/i.test(t));
   const table: Record<keyof Expressions, [string | null, number]> = {
     jaw: [has("aa"), 1],
     pucker: [has("ou"), 0.9],
     stretch: [has("ih"), 0.8],
-    smile: [has("happy"), 1],
+    smile: smile ? [smile, 1] : [has("happy"), 1],
     frown: [has("sad"), 1],
     browDown: browDown ? [browDown, 1] : [has("angry"), 0.4],
     browUp: browUp ? [browUp, 1] : [has("surprised"), 1],
@@ -1248,7 +1253,9 @@ function touchedSurface(rig: VrmRig, side: Side, c: Contact, otherFingers: Finge
     }
   }
   const s = c.face
-    ? faceSurface(rig.face, c.face, (c as BehindEar).behind === true)
+    ? (c as UnderChin).under
+      ? chinUnderside(rig.face, c.face)
+      : faceSurface(rig.face, c.face, (c as BehindEar).behind === true)
     : surfaceFor(rig.body, c.at, side === "Right" ? "right" : "left");
   const local = (v: [number, number, number]) =>
     rig.right.clone().multiplyScalar(v[0]).addScaledVector(rig.up, v[1]).addScaledVector(rig.forward, v[2]);
@@ -1471,7 +1478,7 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): LoopingClip {
 }
 
 function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
-  const clip = facingCamera(earsFromBehind(unbentTowardCamera(input)));
+  const clip = facingCamera(chinsFromBelow(earsFromBehind(unbentTowardCamera(input))));
   const resolved: AvatarClip = {
     ...clip,
     keyframes: centeredHands(rig, clip).map((kf) => {
@@ -1555,6 +1562,35 @@ function earsFromBehind(clip: AvatarClip): AvatarClip {
       ...kf,
       hand: fromBehind(kf.hand)!,
       ...(kf.hand2 ? { hand2: fromBehind(kf.hand2) } : {}),
+    })),
+  };
+}
+
+/** Un contacto bajo la barbilla (ver `chinsFromBelow`). */
+type UnderChin = Contact & { under?: boolean };
+
+/** Desde cuánto hacia abajo (componente vertical de la normal de la palma) la mano plana la sostiene. */
+const UNDER_CHIN_PALM = 0.6;
+
+/**
+ * La mano plana con la palma hacia abajo que toca la barbilla con los nudillos está debajo,
+ * sosteniéndola (ENFADADO, PADRE): el contacto va bajo la barbilla (`chinUnderside`). El
+ * índice bajo el labio de DOLOR, con la palma igual, toca delante: no es «knuckles».
+ */
+function chinsFromBelow(clip: AvatarClip): AvatarClip {
+  const fromBelow = (h: HandSpec | undefined): HandSpec | undefined => {
+    const c = h?.contact;
+    if (!h || !c?.face || c.at !== "chin" || c.with !== "knuckles" || !h.palmDir) return h;
+    const [x, y, z] = h.palmDir;
+    if (-y / (Math.hypot(x, y, z) || 1) < UNDER_CHIN_PALM) return h;
+    return { ...h, contact: { ...c, under: true } as UnderChin };
+  };
+  return {
+    ...clip,
+    keyframes: clip.keyframes.map((kf) => ({
+      ...kf,
+      hand: fromBelow(kf.hand)!,
+      ...(kf.hand2 ? { hand2: fromBelow(kf.hand2) } : {}),
     })),
   };
 }

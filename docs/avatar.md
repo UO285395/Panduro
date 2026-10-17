@@ -29,7 +29,7 @@ El estilo de dibujo (más amable que uno realista) sale de `panduro.json`:
 - **Texturas de dibujo**: piel lisa y sin sombras pintadas, colorete en las mejillas, iris más
   grandes, sin las fibras de la foto, con un aro más oscuro y un brillo (`iris_flat`,
   `iris_ring`), solo las pestañas de arriba, juntas en un trazo con algunas puntas
-  (`lash_close`; separadas parecían púas), y cejas y pelo de color plano, el pelo sin huecos
+  (`lash_close`; separadas parecían púas), y cejas, pelo y ropa de color plano (`flatten`), el pelo sin huecos
   entre mechones (`hair_close`), que dejaban el borde deshilachado, ni pelos sueltos en el borde
   (`hair_open`).
 

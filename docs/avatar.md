@@ -133,18 +133,46 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
 
 ## Con el modelo de VRoid
 
-- Los contactos con la cara y el cuerpo llegan mejor que con el de MakeHuman: midiendo el error
-  de los 536 contactos de los 81 signos grabados que tocan la cara o el cuerpo, la mediana es
-  0,003 brazos y solo 2 pasan de 0,1 (con el de MakeHuman, 0,005 y 8). El mapper se había
-  afinado con un modelo anime, y la cabeza de dibujo, sin nariz ni pómulos, no estorba.
-- La mano plana bajo la barbilla (ENFADADO, PADRE) va debajo, sosteniéndola
-  (`chinUnderside`): la barbilla de dibujo está a 1 cm de la boca y, en el punto de la cara, la
-  mano tapaba la boca. Con los dedos algo doblados, los nudillos del contacto quedan por debajo
-  del dorso, así que el punto baja un poco más.
+- La cara se mide de la malla, pero la de VRoid hay que leerla con cuidado:
+  - Sus partes (piel, ojos, boca, pestañas) son primitivas que comparten los vértices: cada una
+    cuenta solo los de sus triángulos (`collectCloud`), y los ojos se reconocen también por el
+    material. Así se mide el contorno de los ojos del modelo (del 5 % al 90 % de lo ancho, sin
+    el rabillo del delineado), que antes salía con las proporciones de una persona: el ojo
+    llega a 7 cm del centro, el doble.
+  - La boca es una textura y de la nariz a la barbilla la cara es casi plana, de triángulos
+    grandes: el perfil con el que se busca la barbilla sale también de los triángulos que
+    cruzan la línea media (`midlineFront`), sin parar en el hueso del cuello (en una cabeza
+    grande queda por encima de la barbilla) y con el cuello donde el perfil se va de golpe
+    hacia atrás. Antes la barbilla se quedaba en la punta de la nariz y la distancia de los
+    ojos a la boca salía a la mitad (3,8 cm en vez de 7,5): todo lo de debajo de la nariz
+    quedaba alto (el índice de NARIZ en la mejilla, las manos de GRACIAS delante de la boca).
+  - La rejilla de la cabeza deja fuera la ropa: el cuello de la capucha llega a la barbilla y
+    echaba hacia delante la mano que la sostiene.
+- Lo que en una persona está en la nariz o pegado a ella (NARIZ, DESCUBRIR, INFERIR) queda junto
+  a la nariz del modelo, un bultito de 6 mm de semiancho (`besideNose`, con `noseHalf` medido),
+  y no en medio de la mejilla.
+- Por debajo de la boca, el cuello no cuenta como cara, y lo que cae fuera de una barbilla
+  estrecha va al borde de la mandíbula de encima: las yemas de GRACIAS la tocan desde abajo,
+  sin tapar la boca.
+- En los signos a dos manos simétricas en la boca o la barbilla (GRACIAS, DESAYUNO, HISTORIA),
+  la otra mano también toca, en el punto reflejado (`bothHandsTouch`): las grabaciones solo
+  detectan el contacto de la dominante. Más arriba no (en LLUVIA no tocan la cabeza).
+- La mano plana bajo la barbilla (ENFADADO, PADRE) va debajo, sosteniéndola (`chinUnderside`),
+  bajo la fila más baja de la barbilla en esa vertical (no la del cuello).
+- NARIZ y PADRE se han vuelto a convertir de los vídeos con la corrección del giro de la cabeza
+  y el camino de la parte que toca: el índice de NARIZ va a la nariz y PADRE empieza en la
+  frente.
+- DOLOR también: el índice bajo el labio ya cuenta como contacto todo el signo (ver
+  `docs/datasets.md`) y no baja al pecho a la mitad.
+- Midiendo el error de los 545 contactos de los 81 signos grabados que tocan la cara o el
+  cuerpo, la mediana es 0,004 brazos y 2 pasan de 0,1, los dos de ROSA al pasar por la mejilla
+  junto al ojo: entre el rabillo del ojo y el borde de la cara la de dibujo está tapada por el
+  pelo de los lados, y la mano no cabe (lo mismo deja las yemas de TRISTE en el pelo de la
+  sien).
+- Revisados frente al vídeo los 81 signos con contacto en la cara: siguen algo altos los de lo
+  alto de la frente (PENSAR, DOMINGO, en el flequillo) y el índice de DOLOR, HABLAR o MAL bajo el
+  labio sale más inclinado hacia arriba que en el vídeo.
 - Los gestos de la cara salen de las formas sueltas de VRoid por su nombre (ver arriba).
-- Siguen algo altos el principio de PADRE (la captura lo dejó a la altura de los ojos; las
-  capturas nuevas ya siguen a la parte que toca) y el índice de NARIZ, y en GRACIAS las manos
-  pasan un momento por delante de la boca.
 
 ## Con el modelo de MakeHuman: lo que cambió y lo que falta
 

@@ -199,12 +199,19 @@ python -m venv .venv
 - En la cara, el punto de contacto se lleva a la cabeza del modelo anclado en lo que tienen
   las dos caras (el contorno del ojo, medido en las mallas de ojos del modelo, el borde de
   la cara, la boca y la barbilla): lo que en la persona queda junto al ojo cae junto al ojo
-  del modelo aunque este sea enorme, como en los modelos anime.
+  del modelo aunque este sea enorme, como en los modelos anime. Lo que está en la nariz o
+  pegado a ella queda junto a la del modelo (en uno de dibujo, un bultito), no en la mejilla.
+- Con la cabeza girada, lo que sobresale de la cara se desplaza de lado en la imagen: la punta
+  de la nariz de NARIZ (girada 24°) salía a 0,8 medias distancias entre ojos del centro y la
+  yema que la tocaba, en la mejilla. Las coordenadas de cara de cada punto se corrigen en lo
+  que se desplaza la nariz, según lo que sobresale la cara a esa altura y junto a ella.
 - La oreja queda fuera del contorno de la cara (y más con la cabeza algo girada), así que
   también cuenta cuánto queda de ella en la imagen la parte de la mano. Encima de la oreja,
   como dentro de la cara, pesa poco la profundidad: con el brazo levantado MediaPipe pone la
   mano unos 30 cm por delante aunque la toque. Así se detectan el índice de OREJA, el pulgar
-  de ESCUCHAR y el de MÓVIL, que antes no tocaban nada.
+  de ESCUCHAR y el de MÓVIL, que antes no tocaban nada. Dentro de la cara cuenta hasta lo más
+  bajo de la barbilla: el índice bajo el labio de DOLOR, en v −1,6 a −1,7, se perdía a la mitad
+  del signo. Por debajo, delante del cuello (IGUALDAD, hacia v −2,5), la profundidad pesa más.
 - Sin contacto, junto a la cara se guarda a qué lado de ella queda el centro de la palma
   (`faceH`, en coordenadas de cara) y el avatar la pone igual respecto a la suya: medida en
   brazos, una mano junto a la oreja (ESCUCHAR, PENSAR) le quedaba delante del ojo, porque su

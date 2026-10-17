@@ -415,13 +415,14 @@ const TOUCH_HOLD_MS = 200;
 /**
  * Peso de la profundidad (z de la cámara) al medir si la mano toca la cara. Con el brazo
  * levantado MediaPipe pone la mano 20-30 cm por delante de donde está: dentro de la cara y
- * por encima de la barbilla, que la mano se vea encima en la imagen pesa más (DESCUBRIR,
- * NARIZ, DULCE, TELÉFONO…); en la barbilla y por debajo no, porque una mano delante del
- * cuello o del pecho se proyecta justo ahí (IGUALDAD, PORQUE, TRADICIÓN).
+ * hasta lo más bajo de la barbilla, que la mano se vea encima en la imagen pesa más
+ * (DESCUBRIR, NARIZ, DULCE, TELÉFONO, el índice bajo el labio de DOLOR…); por debajo no,
+ * porque una mano delante del cuello o del pecho se proyecta justo ahí (IGUALDAD, PORQUE,
+ * TRADICIÓN, que quedan bastante más abajo, hacia v −2,5).
  */
 const FACE_DEPTH_WEIGHT = 0.25;
 const FACE_DEPTH_WEIGHT_INSIDE = 0.15;
-const CHIN_V = -1.6;
+const CHIN_V = -1.75;
 
 /**
  * Qué toca la mano en un fotograma: la parte de la mano (yemas, índice, pulgar, palma o
@@ -616,6 +617,38 @@ function earGap([h, v]: FaceCoords, [eh, ev]: FaceCoords): number {
  * arriba en distancias ojos→boca. En la imagen la cara se ve bien; en profundidad, no.
  */
 export function faceCoords(img: Point3[], aspect: number, q: { x: number; y: number }): FaceCoords | null {
+  const flat = flatFaceCoords(img, aspect, q);
+  const nose = img[FACE.nose] && flatFaceCoords(img, aspect, img[FACE.nose]!);
+  if (!flat || !nose) return flat;
+  // Con la cabeza girada, lo que sobresale se desplaza de lado en la imagen: la nariz, que de
+  // frente queda en h = 0, salía a 0,8 en NARIZ (girada 24°) y la yema que la tocaba, en la
+  // mejilla. Cada punto se corrige en lo que se desplaza la nariz, según lo que sobresale.
+  const [h, v] = flat;
+  const relief = interp(v, FACE_RELIEF[0], FACE_RELIEF[1]) * Math.exp(-(((h - nose[0]) / RELIEF_WIDTH) ** 2));
+  return [Math.round((h - nose[0] * relief) * 100) / 100, v];
+}
+
+/**
+ * Lo que sobresale la cara respecto a los ojos, en proporción a la punta de la nariz, según la
+ * altura (v): el puente, la nariz, la boca y la barbilla; y de lado, a RELIEF_WIDTH medias
+ * distancias entre los ojos de la nariz, casi nada (las mejillas, la oreja).
+ */
+const FACE_RELIEF: [number[], number[]] = [
+  [-2.2, -1.75, -1, -0.55, 0, 0.5],
+  [0, 0.4, 0.6, 1, 0.3, 0],
+];
+const RELIEF_WIDTH = 1;
+
+const interp = (x: number, xs: number[], ys: number[]) => {
+  if (x <= xs[0]!) return ys[0]!;
+  for (let k = 1; k < xs.length; k++) {
+    if (x <= xs[k]!) return ys[k - 1]! + ((x - xs[k - 1]!) / (xs[k]! - xs[k - 1]!)) * (ys[k]! - ys[k - 1]!);
+  }
+  return ys[ys.length - 1]!;
+};
+
+/** Coordenadas de cara tal como se ven en la imagen, sin corregir el giro de la cabeza. */
+function flatFaceCoords(img: Point3[], aspect: number, q: { x: number; y: number }): FaceCoords | null {
   const pt = (i: number): [number, number] | null => (img[i] ? [img[i]!.x * aspect, img[i]!.y] : null);
   const eyeL = pt(FACE.lEye);
   const eyeR = pt(FACE.rEye);

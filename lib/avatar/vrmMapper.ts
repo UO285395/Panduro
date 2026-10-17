@@ -530,6 +530,8 @@ function measureHandShape(vrm: VRM): VrmRig["handShape"] {
 const HAIR = /hair|kami|bang|ahoge|髪/i;
 /** Mallas de los ojos (globo, iris, pestañas), no de las cejas. */
 const EYE = /eye|iris|pupil|lash|目/i;
+/** Ropa (por la malla o el material): «CLOTH» en VRoid, el traje y la camisa en MakeHuman. */
+const CLOTH = /cloth|tops|bottoms|shoes|suit|shirt|jacket|hood|pants|skirt|dress|服/i;
 
 /** Vértices de las mallas en reposo, en coordenadas del signante (r, u, f). */
 function collectCloud(
@@ -545,6 +547,7 @@ function collectCloud(
   const f: number[] = [];
   const hair: number[] = [];
   const eye: number[] = [];
+  const cloth: number[] = [];
   const tri: number[] = [];
   const v = new THREE.Vector3();
   vrm.scene.traverse((obj) => {
@@ -554,15 +557,27 @@ function collectCloud(
     if (!position) return;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     const isHair = HAIR.test(mesh.name) || materials.some((m) => HAIR.test(m.name));
-    const isEye = EYE.test(mesh.name) && !/brow/i.test(mesh.name);
+    // De los ojos por la malla o por el material: en VRoid, globo, iris y pestañas son
+    // materiales de la malla de la cara.
+    const names = [mesh.name, ...materials.map((m) => m.name)];
+    const isEye = names.some((n) => EYE.test(n)) && !names.some((n) => /brow/i.test(n));
+    const isCloth = names.some((n) => CLOTH.test(n));
     const toLocal = mesh.matrixWorld.clone().premultiply(toModel);
     const base = r.length;
     const index = mesh.geometry.getIndex();
     const corners = index ? index.count : position.count;
+    // Solo los vértices de sus triángulos: en VRoid, las partes de la cara (piel, ojos, boca)
+    // son mallas con el mismo búfer de vértices y cada una se quedaba con todos, marcados
+    // como suyos (toda la cara, de los ojos).
+    const slot = new Int32Array(position.count).fill(index ? -1 : 0);
+    if (index) for (let k = 0; k < corners; k++) slot[index.getX(k)] = 0;
+    let used = 0;
+    for (let i = 0; i < position.count; i++) slot[i] = slot[i]! < 0 ? -1 : used++;
     for (let k = 0; k + 2 < corners; k += 3) {
-      for (let c = 0; c < 3; c++) tri.push(base + (index ? index.getX(k + c) : k + c));
+      for (let c = 0; c < 3; c++) tri.push(base + slot[index ? index.getX(k + c) : k + c]!);
     }
     for (let i = 0; i < position.count; i++) {
+      if (slot[i]! < 0) continue;
       v.fromBufferAttribute(position, i);
       mesh.applyBoneTransform(i, v);
       v.applyMatrix4(toLocal).sub(origin);
@@ -571,6 +586,7 @@ function collectCloud(
       f.push(v.dot(forward));
       hair.push(isHair ? 1 : 0);
       eye.push(isEye ? 1 : 0);
+      cloth.push(isCloth ? 1 : 0);
     }
   });
   return {
@@ -579,6 +595,7 @@ function collectCloud(
     f: Float32Array.from(f),
     hair: Uint8Array.from(hair),
     eye: Uint8Array.from(eye),
+    cloth: Uint8Array.from(cloth),
     tri: Uint32Array.from(tri),
   };
 }
@@ -1478,7 +1495,7 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): LoopingClip {
 }
 
 function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
-  const clip = facingCamera(chinsFromBelow(earsFromBehind(unbentTowardCamera(input))));
+  const clip = facingCamera(chinsFromBelow(earsFromBehind(bothHandsTouch(unbentTowardCamera(input)))));
   const resolved: AvatarClip = {
     ...clip,
     keyframes: centeredHands(rig, clip).map((kf) => {
@@ -1563,6 +1580,33 @@ function earsFromBehind(clip: AvatarClip): AvatarClip {
       hand: fromBehind(kf.hand)!,
       ...(kf.hand2 ? { hand2: fromBehind(kf.hand2) } : {}),
     })),
+  };
+}
+
+/** Por debajo de esto (en distancias ojos→boca) es la parte baja de la cara: la boca y la barbilla. */
+const LOWER_FACE_V = -0.9;
+/** Cuánto pueden diferir las distancias a la cara de las dos manos (en proporción) para ser simétricas. */
+const MIRROR_TOLERANCE = 0.35;
+
+/**
+ * En los signos a dos manos simétricas en la boca o la barbilla (GRACIAS, DESAYUNO, HISTORIA),
+ * la otra mano toca también, en el punto reflejado. Las grabaciones solo detectan el contacto
+ * de la mano dominante, y la otra se quedaba a unos centímetros de la cara. Más arriba no: en
+ * LLUVIA la otra mano junto a la oreja no la toca.
+ */
+function bothHandsTouch(clip: AvatarClip): AvatarClip {
+  if (clip.handedness !== "two") return clip;
+  return {
+    ...clip,
+    keyframes: clip.keyframes.map((kf) => {
+      const c = kf.hand.contact;
+      const h2 = kf.hand2;
+      const [a, b] = [kf.hand.faceH, h2?.faceH];
+      if (!h2 || h2.contact || !c?.face || c.face[1] > LOWER_FACE_V || a === undefined || b === undefined) return kf;
+      const symmetric = a * b < 0 && Math.abs(a + b) <= MIRROR_TOLERANCE * Math.max(Math.abs(a), Math.abs(b));
+      if (!symmetric || Math.abs(kf.hand.y - h2.y) > 0.1) return kf;
+      return { ...kf, hand2: { ...h2, contact: { ...c, face: [-c.face[0], c.face[1]] } } };
+    }),
   };
 }
 

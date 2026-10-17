@@ -43,6 +43,8 @@ export type Cloud = {
   hair: Uint8Array;
   /** 1 si es de los ojos (globo, iris, pestañas): da el contorno de los ojos del modelo. */
   eye?: Uint8Array;
+  /** 1 si es ropa: no es la cabeza, aunque el cuello de una capucha llegue a la barbilla. */
+  cloth?: Uint8Array;
   /** Triángulos de la malla (tres índices de vértice cada uno), para la cara vista de frente. */
   tri?: Uint32Array;
 };
@@ -93,6 +95,56 @@ function norm(v: V3): V3 {
 }
 
 /**
+ * Ya es el cuello lo que está esto por detrás del entrecejo, o de golpe esto por detrás de lo
+ * anterior del perfil (en distancias entre los ojos). La barbilla de una cara de dibujo, pequeña
+ * y metida, queda más de media distancia por detrás del entrecejo.
+ */
+const CHIN_BEHIND = 0.9;
+const CHIN_CLIFF = 0.5;
+
+/**
+ * Perfil de la cara: lo más adelantado de la línea media en franjas de altura `step` hacia abajo
+ * desde los ojos (la k-ésima centrada en −(k+1)·step), de los vértices cerca del centro y de los
+ * triángulos que lo cruzan. Con los vértices solos, la cara de un modelo de dibujo (casi plana de
+ * la nariz a la boca, de triángulos grandes) dejaba franjas vacías o con solo la nuca.
+ */
+function midlineFront(c: Cloud, mid: number, step: number, n: number): Float32Array {
+  const out = new Float32Array(n).fill(-Infinity);
+  const put = (u: number, f: number) => {
+    const k = Math.round(-u / step) - 1;
+    if (k >= 0 && k < n && f > out[k]!) out[k] = f;
+  };
+  for (let i = 0; i < c.r.length; i++) {
+    if (!c.hair[i] && Math.abs(c.r[i]!) <= mid) put(c.u[i]!, c.f[i]!);
+  }
+  const t = c.tri;
+  for (let j = 0; t && j + 2 < t.length; j += 3) {
+    const v = [t[j]!, t[j + 1]!, t[j + 2]!];
+    if (v.every((i) => c.hair[i])) continue;
+    // Donde el triángulo corta el plano r = 0: un segmento en (u, f).
+    const pts: [number, number][] = [];
+    for (let e = 0; e < 3; e++) {
+      const a = v[e]!;
+      const b = v[(e + 1) % 3]!;
+      const ra = c.r[a]!;
+      const rb = c.r[b]!;
+      if ((ra < 0) === (rb < 0) || ra === rb) continue;
+      const x = ra / (ra - rb);
+      pts.push([c.u[a]! + x * (c.u[b]! - c.u[a]!), c.f[a]! + x * (c.f[b]! - c.f[a]!)]);
+    }
+    if (pts.length < 2) continue;
+    const [[ua, fa], [ub, fb]] = pts as [[number, number], [number, number]];
+    const k0 = Math.ceil(-Math.max(ua, ub) / step) - 1;
+    const k1 = Math.floor(-Math.min(ua, ub) / step) - 1;
+    for (let k = Math.max(0, k0); k <= Math.min(n - 1, k1); k++) {
+      const u = -(k + 1) * step;
+      put(u, ua === ub ? Math.max(fa, fb) : fa + ((u - ua) / (ub - ua)) * (fb - fa));
+    }
+  }
+  return out;
+}
+
+/**
  * Barbilla: el punto más bajo del perfil de la cara antes de caer al cuello. Una franja suelta
  * sin cara delante (entre el labio y la barbilla de una malla realista, solo se ven por ella los
  * dientes) no es aún el cuello: hacen falta dos seguidas.
@@ -100,23 +152,26 @@ function norm(v: V3): V3 {
 function findChinU(c: Cloud, a: Anchors, bridgeF: number): number {
   const s = a.eyeSep;
   const step = 0.05 * s;
-  const mid: [number, number] = [-0.2 * s, 0.2 * s];
+  // Sin parar en el hueso del cuello: en una cabeza de dibujo, grande, está por encima de la barbilla.
+  const profile = midlineFront(c, 0.2 * s, step, Math.floor((4 * s) / step) - 1);
   let chin = -1.2 * s;
   let misses = 0;
   let behind = 0;
-  for (let u = -step; u > Math.max(a.neckU, -4 * s); u -= step) {
-    const p = best(c, { r: mid, u: [u - step / 2, u + step / 2] }, front);
-    if (!p) {
+  let last = bridgeF;
+  for (let k = 0; k < profile.length; k++) {
+    const f = profile[k]!;
+    if (f === -Infinity) {
       if (++misses > 2) break;
       continue;
     }
-    if (p[2] < bridgeF - 0.5 * s) {
+    if (f < bridgeF - CHIN_BEHIND * s || f < last - CHIN_CLIFF * s) {
       if (++behind > 1) break;
       continue;
     }
     misses = 0;
     behind = 0;
-    chin = u;
+    last = f;
+    chin = -(k + 1) * step;
   }
   return chin;
 }
@@ -128,6 +183,9 @@ export function measureBody(c: Cloud, a: Anchors): BodyMap {
   const bridgeF = best(c, { r: mid, u: [-0.1 * s, 0.1 * s] }, front)?.[2] ?? 0.4 * s;
   const chinU = findChinU(c, a, bridgeF);
   const h = -chinU; // de la barbilla a los ojos
+  // Media altura del cuello, por debajo de la barbilla aunque el hueso del cuello (en una cabeza
+  // de dibujo) quede por encima.
+  const neckU = (chinU + Math.min(a.neckU, chinU - 0.4 * h)) / 2;
   const band = (lo: number, hi: number): [number, number] => [chinU + lo * h, chinU + hi * h];
   const F: V3 = [0, 0, 1];
   const U: V3 = [0, 1, 0];
@@ -194,7 +252,7 @@ export function measureBody(c: Cloud, a: Anchors): BodyMap {
       [0, 1.1 * h, bridgeF - h],
       U,
     ),
-    neck: midFront([(chinU + a.neckU) / 2 - 0.1 * h, (chinU + a.neckU) / 2 + 0.1 * h], [0, (chinU + a.neckU) / 2, bridgeF - 0.8 * h]),
+    neck: midFront([neckU - 0.1 * h, neckU + 0.1 * h], [0, neckU, bridgeF - 0.8 * h]),
     chest: midFront([chestU - 0.04 * L, chestU + 0.04 * L], [0, chestU, chestFallbackF], F, true),
     heart: at(
       best(c, { r: [-0.5 * shoulderHalf, -0.25 * shoulderHalf], u: [chestU - 0.04 * L, chestU + 0.04 * L], hair: true }, front),
@@ -242,6 +300,10 @@ export type FaceGrid = {
   /** Semiancho de la cara (sin pelo) a la altura de los ojos. */
   halfWidth: number;
   chinU: number;
+  /** Lo más adelantado de la barbilla. */
+  chinF: number;
+  /** Semiancho de la nariz (lo que sobresale de las mejillas a la altura de su punta). */
+  noseHalf: number;
   topU: number;
   /** Contorno del ojo derecho del modelo: lado de la nariz y de fuera (r), y arriba y abajo (u). */
   eye: { inR: number; outR: number; top: number; bottom: number };
@@ -277,6 +339,7 @@ export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
   const hair = new Float32Array(nr * nu).fill(-Infinity);
   const back = new Float32Array(nr * nu).fill(Infinity);
   for (let i = 0; i < c.r.length; i++) {
+    if (c.cloth?.[i]) continue;
     const col = Math.floor((c.r[i]! - r0) / step);
     const row = Math.floor((c.u[i]! - u0) / step);
     if (col < 0 || col >= nr || row < 0 || row >= nu) continue;
@@ -294,6 +357,7 @@ export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
     const a = t[j]!;
     const b = t[j + 1]!;
     const d = t[j + 2]!;
+    if (c.cloth?.[a]) continue;
     const ra = c.r[a]!, rb = c.r[b]!, rd = c.r[d]!;
     const ua = c.u[a]!, ub = c.u[b]!, ud = c.u[d]!;
     const c0 = Math.max(0, Math.ceil((Math.min(ra, rb, rd) - r0) / step - 0.5));
@@ -342,7 +406,22 @@ export function measureFace(c: Cloud, map: BodyMap, a: Anchors): FaceGrid {
       }
     }
   }
-  return { halfEye, eyesToMouth, halfWidth, chinU, topU, eye: eyeBox(c, halfEye, eyesToMouth, halfWidth), r0, u0, step, nr, nu, skin, hair, back };
+  return { halfEye, eyesToMouth, halfWidth, chinU, chinF: map.chin.p[2], noseHalf: noseHalf(c, map, eyesToMouth), topU, eye: eyeBox(c, halfEye, eyesToMouth, halfWidth), r0, u0, step, nr, nu, skin, hair, back };
+}
+
+/**
+ * Semiancho de la nariz: hasta dónde, a la altura de su punta, la cara sobresale más de la
+ * mitad de lo que la nariz sobresale de las mejillas. En una cara de dibujo es un bultito.
+ */
+function noseHalf(c: Cloud, map: BodyMap, eyesToMouth: number): number {
+  const [, noseU, noseF] = map.nose.p;
+  const cut = (noseF + Math.max(map.right.cheek.p[2], map.left.cheek.p[2])) / 2;
+  let half = 0;
+  for (let i = 0; i < c.r.length; i++) {
+    if (c.hair[i] || c.eye?.[i] || Math.abs(c.u[i]! - noseU) > 0.15 * eyesToMouth || c.f[i]! < cut) continue;
+    half = Math.max(half, Math.abs(c.r[i]!));
+  }
+  return half;
 }
 
 /**
@@ -368,7 +447,9 @@ function eyeBox(c: Cloud, halfEye: number, eyesToMouth: number, halfWidth: numbe
   }
   if (rs.length < 20) return human;
   const q = (xs: number[], p: number) => [...xs].sort((a, b) => a - b)[Math.floor(p * (xs.length - 1))]!;
-  const box = { inR: q(rs, 0.02), outR: q(rs, 0.98), top: q(us, 0.98), bottom: q(us, 0.02) };
+  // De lado, sin las puntas: el rabillo del delineado de un ojo de dibujo (VRoid) sale bastante
+  // más allá del blanco del ojo.
+  const box = { inR: q(rs, 0.05), outR: q(rs, 0.9), top: q(us, 0.98), bottom: q(us, 0.02) };
   // Los huesos de los ojos no siempre están en el centro del ojo que se ve (en este modelo,
   // más hacia dentro): basta con que el contorno sea coherente con la cara.
   const sane = box.inR < box.outR && box.outR < halfWidth && box.bottom < box.top && box.bottom > -eyesToMouth && box.top < 2 * eyesToMouth;
@@ -389,26 +470,98 @@ function piecewise(x: number, xs: number[], ys: number[]): number {
  * encima del ojo cae igual respecto al ojo del modelo, aunque sea mucho más grande.
  */
 export function faceToModel(g: FaceGrid, [h, v]: FaceCoords): [number, number] {
-  const r = Math.sign(h) * piecewise(
-    Math.abs(h),
-    [0, HUMAN.eyeInH, HUMAN.eyeOutH, HUMAN.edgeH],
-    [0, g.eye.inR, g.eye.outR, g.halfWidth],
-  );
   const u = piecewise(
     v,
     [HUMAN.chinV, -1, HUMAN.eyeBottomV, HUMAN.eyeTopV, HUMAN.topV],
     [g.chinU, -g.eyesToMouth, g.eye.bottom, g.eye.top, 0.8 * g.topU],
   );
-  return [r, u];
+  const byEye = piecewise(
+    Math.abs(h),
+    [0, HUMAN.eyeInH, HUMAN.eyeOutH, HUMAN.edgeH],
+    [0, g.eye.inR, g.eye.outR, g.halfWidth],
+  );
+  // Por debajo de los ojos, de lado según lo ancha que es la cara a esa altura: en una cara de
+  // dibujo, de ojos enormes y barbilla en punta, junto a la nariz caía bajo el centro del ojo
+  // (NARIZ) y bajo la mandíbula, fuera de la barbilla, a la altura de la boca (GRACIAS). Fuera
+  // de la cara solo de la boca para abajo: a la altura de la oreja, como el ojo.
+  const human = piecewise(v, HUMAN_HALF[0], HUMAN_HALF[1]);
+  const below = smoothstep01((HUMAN.eyeBottomV - v) / 0.5);
+  const outside = smoothstep01((v + 1) / 0.5) * smoothstep01((Math.abs(h) / human - 0.9) / 0.3);
+  const w = below * (1 - outside);
+  // Bajo la barbilla, con su anchura: la del cuello es otra.
+  const byWidth = w > 0 ? besideNose(g, Math.abs(h), v, human, rowHalf(g, Math.max(u, g.chinU))) : byEye;
+  return [Math.sign(h) * ((1 - w) * byEye + w * byWidth), u];
 }
 
+/**
+ * De lado por debajo de los ojos, en proporción a la anchura de la cara (`half` en el modelo,
+ * `human` en la persona) y, a la altura de la nariz, con la nariz como nariz: lo que en una
+ * persona está en ella o pegado a ella (NARIZ, DESCUBRIR) queda junto a la del modelo, que en
+ * una cara de dibujo es un bultito, y no en medio de la mejilla.
+ */
+function besideNose(g: FaceGrid, h: number, v: number, human: number, half: number): number {
+  const byWidth = (h / human) * half;
+  const band = smoothstep01((v + 0.85) / 0.2) * smoothstep01((-0.05 - v) / 0.2);
+  if (band <= 0) return byWidth;
+  const nose = Math.min(g.noseHalf, (HUMAN_NOSE_H / human) * half);
+  const byNose = h <= HUMAN_NOSE_H
+    ? (h / HUMAN_NOSE_H) * nose
+    : nose + ((h - HUMAN_NOSE_H) / (human - HUMAN_NOSE_H)) * (half - nose);
+  return (1 - band) * byWidth + band * byNose;
+}
+
+/** Semiancho de la nariz de una persona con el dedo que la toca por un lado, en coordenadas de cara. */
+const HUMAN_NOSE_H = 0.8;
+
+/** Media anchura de la cara de una persona (sin las orejas) según la altura, en coordenadas de cara. */
+const HUMAN_HALF: [number[], number[]] = [
+  [HUMAN.chinV, -1.4, -1, -0.55, HUMAN.eyeBottomV],
+  [0.9, 1.5, 1.9, 2.2, HUMAN.edgeH],
+];
+
+const smoothstep01 = (x: number) => {
+  const t = Math.max(0, Math.min(1, x));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * Media anchura de la cara del modelo en la fila de altura `u` (o en la más cercana con piel):
+ * la de la piel que está casi tan delante como la más adelantada de la fila. La de más atrás es
+ * el cuello, las orejas o los lados de la cabeza, que de frente asoman tras la mandíbula.
+ */
+function rowHalf(g: FaceGrid, u: number): number {
+  const row0 = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
+  for (let d = 0; d < g.nu; d++) {
+    for (const row of [row0 + d, row0 - d]) {
+      if (row < 0 || row >= g.nu) continue;
+      let front = -Infinity;
+      for (let c = 0; c < g.nr; c++) {
+        const f = g.skin[row * g.nr + c]!;
+        if (f > front) front = f;
+      }
+      if (front === -Infinity) continue;
+      let half = 0;
+      for (let c = 0; c < g.nr; c++) {
+        if (g.skin[row * g.nr + c]! >= front - FACE_FRONT_DEPTH * g.eyesToMouth) {
+          half = Math.max(half, Math.abs(g.r0 + (c + 0.5) * g.step));
+        }
+      }
+      return half;
+    }
+  }
+  return g.halfWidth;
+}
+
+/** Cuánto más atrás que lo más adelantado de su fila sigue siendo cara, en distancias ojos→boca. */
+const FACE_FRONT_DEPTH = 0.6;
+
 /** Por detrás de la punta de la barbilla, en distancias ojos→boca, donde la sostiene la mano. */
-const UNDER_CHIN_DEPTH = 0.25;
+const UNDER_CHIN_DEPTH = 0.13;
 /**
  * Por debajo de la barbilla, en distancias ojos→boca, donde quedan los nudillos de en medio (el
  * contacto «knuckles»): con los dedos algo doblados, el dorso queda por encima de ellos.
  */
-const UNDER_CHIN_DROP = 0.8;
+const UNDER_CHIN_DROP = 0.15;
 
 /**
  * Bajo la barbilla, en la vertical de `face`: la mano plana que la sostiene (ENFADADO, PADRE)
@@ -420,8 +573,12 @@ export function chinUnderside(g: FaceGrid, face: FaceCoords): Surface {
   const [r] = faceToModel(g, face);
   const col = Math.min(g.nr - 1, Math.max(0, Math.floor((r - g.r0) / g.step)));
   let row = Math.min(g.nu - 1, Math.max(0, Math.floor((g.chinU - g.u0) / g.step)));
-  // La primera fila con cara desde la barbilla hacia arriba.
-  while (row < g.nu - 1 && !Number.isFinite(frontAt(g, col, row))) row++;
+  // La primera fila con cara desde la barbilla hacia arriba y, desde ella, hacia abajo mientras
+  // siga siendo barbilla (el cuello queda muy por detrás): la barbilla medida es lo más
+  // adelantado de su parte baja, algo por encima de donde acaba.
+  const neckF = g.chinF - NECK_BEHIND * g.eyesToMouth;
+  while (row < g.nu - 1 && !(frontAt(g, col, row) >= neckF)) row++;
+  while (row > 0 && frontAt(g, col, row - 1) >= neckF) row--;
   const f = frontAt(g, col, row);
   if (!Number.isFinite(f)) return faceSurface(g, face);
   return {
@@ -505,6 +662,9 @@ export function lateralToModel(g: FaceGrid, h: number, armLen: number): number {
 /** Lo más que mide de delante atrás una oreja (en tramos ojos-boca); más, y es el cráneo. */
 const EAR_DEPTH = 0.6;
 
+/** Cuánto por detrás de la barbilla empieza el cuello, en distancias ojos→boca. */
+const NECK_BEHIND = 0.5;
+
 /**
  * Punto de la cabeza del modelo que se ve en esas coordenadas de cara mirándolo de
  * frente (lo que vio la cámara), con su normal. El pelo pegado a la piel (flequillo)
@@ -512,7 +672,14 @@ const EAR_DEPTH = 0.6;
  */
 export function faceSurface(g: FaceGrid, face: FaceCoords, behind = false): Surface {
   const [r, u] = faceToModel(g, face);
-  const cell = (col: number, row: number) => frontAt(g, col, row, true);
+  // Por debajo de la boca, lo que está muy por detrás de la barbilla es el cuello, no la cara:
+  // junto a una barbilla estrecha (de dibujo), el contacto de la mandíbula (GRACIAS) caía en el
+  // cuello, detrás de ella, y la mano no llegaba. Así va al borde de la mandíbula.
+  const neckF = g.chinF - NECK_BEHIND * g.eyesToMouth;
+  const cell = (col: number, row: number) => {
+    const f = frontAt(g, col, row, true);
+    return f < neckF && g.u0 + (row + 0.5) * g.step < -g.eyesToMouth ? -Infinity : f;
+  };
   const row0 = Math.min(g.nu - 1, Math.max(0, Math.floor((u - g.u0) / g.step)));
   const start = Math.min(g.nr - 1, Math.max(0, Math.floor((r - g.r0) / g.step)));
   let col = start;
@@ -520,8 +687,18 @@ export function faceSurface(g: FaceGrid, face: FaceCoords, behind = false): Surf
   // Fuera del contorno de la cabeza: el punto del contorno más cercano, vista de frente, sin
   // alejarse mucho de esa altura. Solo hacia el centro, junto a la oreja de una cabeza de
   // persona caía en la mandíbula, que a la altura del lóbulo queda por delante de la oreja.
+  const reach = Math.ceil((0.4 * g.eyesToMouth) / g.step);
+  // Bajo la mandíbula, el borde que queda justo encima: las yemas la tocan desde abajo
+  // (GRACIAS). Lo más cercano era la punta de una barbilla estrecha y las dos manos se juntaban.
+  if (!Number.isFinite(cell(col, row)) && u < -g.eyesToMouth) {
+    for (let w = row0 + 1; w <= Math.min(g.nu - 1, row0 + reach); w++) {
+      if (Number.isFinite(cell(col, w))) {
+        row = w;
+        break;
+      }
+    }
+  }
   if (!Number.isFinite(cell(col, row))) {
-    const reach = Math.ceil((0.4 * g.eyesToMouth) / g.step);
     let best = Infinity;
     for (let w = Math.max(0, row0 - reach); w <= Math.min(g.nu - 1, row0 + reach); w++) {
       for (let c = 0; c < g.nr; c++) {

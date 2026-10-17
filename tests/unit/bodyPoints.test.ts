@@ -342,3 +342,69 @@ describe("la cabeza vista de frente: triángulos, fondo y lo alto", () => {
     expect(s.p[2]).toBeGreaterThan(-0.08);
   });
 });
+
+describe("measureBody: una cara de dibujo, de triángulos grandes", () => {
+  // Plana de los ojos a la barbilla (u −0,1) y con la nariz como único vértice de en medio; el
+  // cuello, bastante por detrás, y su hueso por encima de la barbilla (cabeza grande). Con los
+  // vértices solos, la barbilla se quedaba en la nariz.
+  const anime = (): Cloud => {
+    const pts: [number, number, number][] = [
+      [0, 0, 0],
+      [-0.04, 0.01, 0],
+      [0.04, 0.01, 0],
+      [-0.04, -0.1, 0],
+      [0.04, -0.1, 0],
+      [0, -0.03, 0.015],
+    ];
+    for (let k = 0; k <= 10; k++) {
+      for (let j = 0; j < 24; j++) {
+        const ph = (2 * Math.PI * j) / 24;
+        pts.push([0.03 * Math.cos(ph), -0.1 - 0.01 * k, -0.08 + 0.03 * Math.sin(ph)]);
+      }
+    }
+    return {
+      r: Float32Array.from(pts, (p) => p[0]),
+      u: Float32Array.from(pts, (p) => p[1]),
+      f: Float32Array.from(pts, (p) => p[2]),
+      hair: new Uint8Array(pts.length),
+      tri: Uint32Array.from([1, 2, 5, 2, 4, 5, 4, 3, 5, 3, 1, 5]),
+    };
+  };
+
+  it("la barbilla, abajo del todo de la cara", () => {
+    const chin = measureBody(anime(), { ...anchors, neckU: -0.08 }).chin.p[1];
+    expect(chin).toBeLessThan(-0.09);
+    expect(chin).toBeGreaterThan(-0.105);
+  });
+});
+
+describe("faceSurface y faceToModel por debajo de los ojos", () => {
+  const cloud = figure();
+  const body = measureBody(cloud, anchors);
+  const grid = measureFace(cloud, body, anchors);
+
+  it("bajo la boca, el cuello (muy por detrás de la barbilla) no es cara", () => {
+    // A un lado de la barbilla, por debajo de la mandíbula: el borde de encima, no el cuello.
+    const s = faceSurface(grid, [2, -1.75]);
+    expect(s.p[2]).toBeGreaterThan(grid.chinF - 0.5 * grid.eyesToMouth);
+    expect(s.n[1]).toBeLessThan(0);
+  });
+
+  it("junto a la nariz, con la anchura de la nariz del modelo", () => {
+    const narrow = { ...grid, noseHalf: 0.002 };
+    const wide = { ...grid, noseHalf: 1 };
+    // Pegado a la nariz de una persona: junto a una nariz pequeña queda más cerca del centro.
+    expect(faceToModel(narrow, [0.7, -0.5])[0]).toBeLessThan(0.5 * faceToModel(wide, [0.7, -0.5])[0]);
+    // Lejos de ella, en la mejilla, casi igual; a la altura de la boca, igual.
+    expect(faceToModel(narrow, [2, -0.5])[0]).toBeGreaterThan(0.9 * faceToModel(wide, [2, -0.5])[0]);
+    expect(faceToModel(narrow, [0.7, -1.2])[0]).toBeCloseTo(faceToModel(wide, [0.7, -1.2])[0], 6);
+  });
+
+  it("bajo la barbilla, en la fila más baja de la barbilla y no en el cuello", () => {
+    for (const h of [0, 1.2]) {
+      const s = chinUnderside(grid, [h, -1.5]);
+      expect(s.p[1]).toBeLessThan(grid.chinU);
+      expect(s.p[2]).toBeGreaterThan(grid.chinF - 0.5 * grid.eyesToMouth - 0.2 * grid.eyesToMouth);
+    }
+  });
+});

@@ -420,10 +420,10 @@ describe("capture: landmarks → clip", () => {
       const at = (h: number, v: number) => ({ x: 0.5 - 0.05 * h, y: 0.3 - 0.07 * v });
       // La yema del índice en (h, v) de la imagen; en 3D, 30 cm por delante de la oreja, como
       // pone MediaPipe la mano con el brazo levantado aunque la toque.
-      const beside = (h: number, v: number): CaptureFrame[] => {
+      const beside = (h: number, v: number, ahead = 0.32): CaptureFrame[] => {
         const tip = at(h, v);
         const img = hand.map((p) => ({ x: tip.x + p.x - hand[8]!.x, y: tip.y + p.y - hand[8]!.y, z: p.z }));
-        const wrist = add(signer(0.08, 0.26, 0.32), mul(indexOffset, -1));
+        const wrist = add(signer(0.08, 0.26, ahead), mul(indexOffset, -1));
         return Array.from({ length: 20 }, (_, i) => {
           const p = withFace(pose({ elbow: add(R_SH, signer(0.1, 0, 0.2)), wrist }, DOWN_LEFT));
           const poseImage = [...faceImg];
@@ -461,6 +461,18 @@ describe("capture: landmarks → clip", () => {
           expect(k.hand.contact).toMatchObject({ with: "tips" });
           expect(k.hand.contact!.face![1]).toBeGreaterThan(0.5);
         }
+      });
+
+      it("en lo bajo de la barbilla toca aunque la pose adelante la mano; más abajo, en el cuello, no", () => {
+        // El índice bajo el labio de DOLOR, en lo bajo de la barbilla (v −1,6 a −1,75), con la
+        // mano 40 cm por delante, como la pone MediaPipe.
+        const chin = framesToClip(beside(0.5, -1.68, 0.42));
+        if (!chin.ok) throw new Error(chin.error);
+        expect(chin.clip.keyframes[0]!.hand.contact).toMatchObject({ at: "chin" });
+        // Delante del cuello (IGUALDAD), la mano se proyecta bajo la barbilla sin tocarla.
+        const neck = framesToClip(beside(0.5, -2.4, 0.42));
+        if (!neck.ok) throw new Error(neck.error);
+        expect(neck.clip.keyframes[0]!.hand.contact).toBeUndefined();
       });
 
       it("sin tocarla, guarda a qué lado de la cara queda la palma (faceH)", () => {
@@ -551,6 +563,16 @@ describe("capture: dónde toca en la cara, en la imagen", () => {
     const [h, v] = faceCoords(img, 1, { x: 0.39, y: 0.28 })!;
     expect(h).toBeCloseTo(2.2, 5);
     expect(v).toBeCloseTo(0.29, 2);
+  });
+
+  it("con la cabeza girada, lo que está junto a la nariz se corrige con ella; la sien, no", () => {
+    // La nariz de frente cae en h = 0 (v = −0,55); girada, la imagen la da en h = 0,8.
+    const turned = [...img];
+    turned[0] = { x: 0.5 - 0.05 * 0.8, y: 0.3 + 0.07 * 0.55, z: 0 };
+    const [hn] = faceCoords(turned, 1, turned[0])!;
+    expect(hn).toBeCloseTo(0, 1);
+    const [hs] = faceCoords(turned, 1, { x: 0.39, y: 0.28 })!;
+    expect(hs).toBeCloseTo(faceCoords(img, 1, { x: 0.39, y: 0.28 })![0], 1);
   });
 
   it("no depende del tamaño ni del ancho del vídeo", () => {

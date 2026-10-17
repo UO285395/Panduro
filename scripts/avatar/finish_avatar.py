@@ -417,24 +417,36 @@ if eyes:
         return img.reshape(-1, 4)
     recolor("high-poly", iris_fn, "iris")
 
-def darken(value, bold=0):
-    """Más oscuro y, con bold, el trazo más grueso (el alfa se dilata bold píxeles)."""
+def morph(a, r, op, disc=False):
+    """Dilata (np.maximum) o erosiona (np.minimum) el alfa con un cuadrado (o un disco) de radio r."""
+    out = a.copy()
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            if not disc or dx * dx + dy * dy <= r * r:
+                out = op(out, np.roll(a, (dy, dx), (0, 1)))
+    return out
+
+
+def darken(value, bold=0, close=0):
+    """Más oscuro y, con bold, el trazo más grueso (el alfa se dilata bold píxeles); con close,
+    lo que queda a menos de 2·close píxeles se rellena (cierre: dilatar y erosionar)."""
     def fn(px):
         px[:, :3] *= value
+        h, w = recolor.shape
+        a = px[:, 3].reshape(h, w)
         if bold:
-            h, w = recolor.shape
-            a = px[:, 3].reshape(h, w)
-            grown = a.copy()
-            for dy in range(-bold, bold + 1):
-                for dx in range(-bold, bold + 1):
-                    grown = np.maximum(grown, np.roll(a, (dy, dx), (0, 1)))
-            px[:, 3] = grown.ravel()
+            a = morph(a, bold, np.maximum)
+        if close:
+            a = morph(morph(a, close, np.maximum, True), close, np.minimum, True)
+        px[:, 3] = a.ravel()
         return px
     return fn
 
 
+# Con hair_close, los huecos entre mechones se rellenan: el borde (las patillas, la nuca)
+# salía deshilachado, con trozos sueltos.
 if cfg.get("hair_value"):
-    recolor("hair", darken(cfg["hair_value"]), "dark")
+    recolor("hair", darken(cfg["hair_value"], close=cfg.get("hair_close", 0)), "dark")
 # Colores planos de dibujo: sin la trama de la tela ni los mechones finos (el sombreado toon
 # pone el volumen). {"casualsuit": 3, "hair": 4}: radio del desenfoque por pieza.
 for kind, radius in cfg.get("flatten", {}).items():
@@ -445,9 +457,10 @@ for kind, radius in cfg.get("flatten", {}).items():
         return img.reshape(-1, 4)
     recolor(kind, flat_fn, "flat")
 
-# Pestañas de dibujo: los pelos sueltos se juntan en un trazo (con MASK salían como puntos).
+# Pestañas de dibujo: los pelos sueltos se juntan en un trazo (con MASK salían como puntos) y,
+# con lash_close, los mechones en una raya con algunas puntas (separados parecían púas).
 if cfg.get("lash_bold"):
-    recolor("eyelash", darken(cfg.get("lash_value", 0.4), cfg["lash_bold"]), "bold")
+    recolor("eyelash", darken(cfg.get("lash_value", 0.4), cfg["lash_bold"], cfg.get("lash_close", 0)), "bold")
 # Cejas: por defecto como el pelo; en un estilo de dibujo, más oscuras y gruesas.
 brow = cfg.get("brow_value", cfg.get("hair_value"))
 if brow:

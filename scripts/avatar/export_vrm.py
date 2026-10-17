@@ -110,6 +110,50 @@ armature.data.name = "Panduro"
 # --- 3. Sombreado toon ------------------------------------------------------------------------------
 # Sombra de dos tonos (la textura multiplicada por shade) y un contorno fino en el mundo, por mallas.
 # Lo recortado (pelo, cejas, pestañas, ojos) sigue recortado y el pelo, por las dos caras.
+def eye_outline_mask(o, radius, size=512):
+    """Ancho del contorno de `o` por texel: 0 a menos de radius[0] del centro de un ojo, 1 desde
+    radius[1]. Los ojos agrandados (cartoon) dejan un pliegue alrededor y el contorno lo dibujaba
+    como unas gafas."""
+    eyes = next(m for m in meshes if m.name == "Eyes")
+    ew = np.array([eyes.matrix_world @ v.co for v in eyes.data.vertices])
+    centers = [(ew[s].min(0) + ew[s].max(0)) / 2 for s in (ew[:, 0] > 0, ew[:, 0] <= 0)]
+    co = np.array([o.matrix_world @ v.co for v in o.data.vertices])
+    d = np.min([np.linalg.norm(co - c, axis=1) for c in centers], axis=0)
+    t = np.clip((d - radius[0]) / (radius[1] - radius[0]), 0, 1)
+    w = t * t * (3 - 2 * t)
+    mask = np.ones((size, size), dtype=np.float32)
+    uv = o.data.uv_layers.active.data
+    for poly in o.data.polygons:
+        vids = list(poly.vertices)
+        if w[vids].min() >= 1:
+            continue
+        pts = np.array([uv[li].uv for li in poly.loop_indices]) * size
+        for k in range(1, len(vids) - 1):
+            tri, tw = pts[[0, k, k + 1]], w[[vids[0], vids[k], vids[k + 1]]]
+            (x0, y0), (x1, y1) = np.floor(tri.min(0)).astype(int), np.ceil(tri.max(0)).astype(int)
+            xs, ys = np.meshgrid(np.arange(max(x0, 0), min(x1, size - 1) + 1), np.arange(max(y0, 0), min(y1, size - 1) + 1))
+            p = np.stack([xs + 0.5, ys + 0.5], -1)
+            a, b, c = tri
+            den = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+            if abs(den) < 1e-12:
+                continue
+            l0 = ((b[1] - c[1]) * (p[..., 0] - c[0]) + (c[0] - b[0]) * (p[..., 1] - c[1])) / den
+            l1 = ((c[1] - a[1]) * (p[..., 0] - c[0]) + (a[0] - c[0]) * (p[..., 1] - c[1])) / den
+            l2 = 1 - l0 - l1
+            # Un texel de margen: el filtrado de la textura no trae el 1 de fuera.
+            inside = (l0 >= -0.02) & (l1 >= -0.02) & (l2 >= -0.02)
+            val = l0 * tw[0] + l1 * tw[1] + l2 * tw[2]
+            sub = mask[ys, xs]
+            mask[ys, xs] = np.where(inside, np.minimum(sub, np.clip(val, 0, 1)), sub)
+    img = bpy.data.images.new(f"{o.name}.outline", size, size, alpha=False)
+    px = np.repeat(mask.ravel(), 4)
+    px[3::4] = 1.0
+    img.pixels.foreach_set(px)
+    img.pack()
+    print("OUTLINE MASK", o.name, f"{(mask < 0.5).mean():.4f} sin contorno")
+    return img
+
+
 toon = cfg.get("toon")
 if toon:
     for o in meshes:
@@ -133,6 +177,8 @@ if toon:
                 mt.outline_width_factor = st["outline"]
                 mt.outline_color_factor = st.get("outline_color", [0.2, 0.15, 0.13])
                 mt.outline_lighting_mix_factor = st.get("outline_lighting", 1.0)
+                if st.get("outline_eyes"):
+                    mt.outline_width_multiply_texture.index.source = eye_outline_mask(o, st["outline_eyes"])
             if st.get("rim"):
                 mt.parametric_rim_color_factor = st["rim"]
                 mt.parametric_rim_fresnel_power_factor = st.get("rim_power", 4.0)

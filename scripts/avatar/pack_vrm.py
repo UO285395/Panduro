@@ -23,7 +23,8 @@ for mat in gltf["materials"]:
 
 # Lado máximo de cada imagen (por el material que la usa o por su nombre) y si conserva el alfa.
 # Las texturas recoloreadas no llevan el nombre de la pieza (la del pelo es «male02_diffuse…»).
-SIZE = {"teeth": 512, "tongue": 256, "shoes": 512, "eyes": 512, "iris": 512, "normal": 1024, "hair": 1024}
+SIZE = {"teeth": 512, "tongue": 256, "shoes": 512, "eyes": 512, "iris": 512, "normal": 1024, "hair": 1024,
+        "outline": 256}
 
 
 def material_images(mat):

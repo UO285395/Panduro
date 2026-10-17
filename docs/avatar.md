@@ -23,9 +23,13 @@ El estilo de dibujo (más amable que uno realista) sale de `panduro.json`:
 
 - **Proporciones** (`cartoon` y `targets`): la cabeza un 25 % mayor y los ojos un 45 %, cabeza
   redonda, mejillas llenas, barbilla pequeña y nariz pequeña.
-- **Sombreado toon** (`toon`, MToon de VRM): sombra de dos tonos y un contorno fino por malla.
+- **Sombreado toon** (`toon`, MToon de VRM): sombra de dos tonos y un contorno fino por malla,
+  salvo alrededor de los ojos (`outline_eyes`: una máscara del ancho del contorno): el pliegue
+  que dejan los ojos agrandados salía dibujado como unas gafas.
 - **Texturas de dibujo**: piel lisa y sin sombras pintadas, colorete en las mejillas, iris más
-  grandes con un brillo, solo las pestañas de arriba, y cejas y pelo de color plano.
+  grandes con un brillo, solo las pestañas de arriba, juntas en un trazo con algunas puntas
+  (`lash_close`; separadas parecían púas), y cejas y pelo de color plano, el pelo sin huecos
+  entre mechones (`hair_close`), que dejaban el borde deshilachado.
 
 - 54 huesos humanoides, con los tres del pulgar y los ojos.
 - Expresiones VRM: vocales (aa, ih, ou, ee, oh), parpadeo (los dos ojos y cada uno), happy,
@@ -134,6 +138,9 @@ persona:
 - Los gestos de la cara se ven: con expresiones de dibujo más marcadas en el modelo, y un gesto
   medido a medias (el ceño de QUÉ, la boca hacia abajo de ABURRIDO, 0,3-0,5) casi entero
   (`exprBoost`). La sonrisa y la pena, a peso 1 (antes 0,8).
+- Lo recortado (pelo, cejas, pestañas) se suaviza con el antialiasing (alpha to coverage) sin
+  bajar el alfa del lienzo: el borde de cada mechón lo dejaba a medias y el fondo de la página se
+  veía a través del pelo en rayitas blancas (`loadVrm`).
 - Parpadea entre una repetición del signo y la siguiente, al volver las manos al inicio
   (`loopBlink`), como se parpadea al signar entre signos. Antes parpadeaba a los 0,9 s de
   empezar, en mitad de casi todos los signos, justo cuando la cara dice algo.

@@ -35,7 +35,8 @@ export async function loadPanduroVrm(): Promise<LoadedVrm | null> {
   }
   if (!targetUrl) return null;
 
-  const [{ GLTFLoader }, { VRMLoaderPlugin }] = await Promise.all([
+  const [THREE, { GLTFLoader }, { VRMLoaderPlugin }] = await Promise.all([
+    import("three"),
     import("three/examples/jsm/loaders/GLTFLoader.js"),
     import("@pixiv/three-vrm"),
   ]);
@@ -50,11 +51,21 @@ export async function loadPanduroVrm(): Promise<LoadedVrm | null> {
         const vrm = (gltf.userData as { vrm?: unknown }).vrm ?? null;
         if (!vrm) return resolve(null);
         // Lo recortado (pelo, cejas, pestañas) con el borde suavizado por el antialiasing: con
-        // el corte a secas, los mechones salían en escalones.
+        // el corte a secas, los mechones salían en escalones. El borde de cada mechón escribe
+        // en el lienzo un alfa a medias aunque detrás haya pelo o piel, y el fondo de la página
+        // se veía a través en rayitas blancas: el alfa se queda con el mayor (el color, igual).
         gltf.scene.traverse((o) => {
-          const mats = (o as { material?: { alphaTest?: number; alphaToCoverage?: boolean } | { alphaTest?: number; alphaToCoverage?: boolean }[] }).material;
+          const mats = (o as { material?: InstanceType<typeof THREE.Material> | InstanceType<typeof THREE.Material>[] }).material;
           for (const m of Array.isArray(mats) ? mats : mats ? [mats] : []) {
-            if ((m.alphaTest ?? 0) > 0) m.alphaToCoverage = true;
+            if (m.alphaTest <= 0) continue;
+            m.alphaToCoverage = true;
+            m.blending = THREE.CustomBlending;
+            m.blendSrc = THREE.OneFactor;
+            m.blendDst = THREE.ZeroFactor;
+            m.blendEquation = THREE.AddEquation;
+            m.blendSrcAlpha = THREE.OneFactor;
+            m.blendDstAlpha = THREE.OneFactor;
+            m.blendEquationAlpha = THREE.MaxEquation;
           }
         });
         resolve({ scene: gltf.scene, vrm });

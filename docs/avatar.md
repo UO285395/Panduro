@@ -172,6 +172,17 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
 - Revisados frente al vídeo los 81 signos con contacto en la cara: siguen algo altos los de lo
   alto de la frente (PENSAR, DOMINGO, en el flequillo) y el índice de DOLOR, HABLAR o MAL bajo el
   labio sale más inclinado hacia arriba que en el vídeo.
+- Sin contacto, la altura de la mano se cuenta respecto a la boca medida (`mouthY`). Con el
+  hueso de la cabeza, que en una cabeza de dibujo está a la altura de la mandíbula, la boca
+  salía a 3,4 cm de los ojos en vez de 7,5: por encima de ella las manos quedaban bajas (en
+  ENFERMERO las yemas se juntaban delante de la frente y no sobre la cabeza).
+- Contactos entre manos (91 signos, 593 contactos): vistos de frente, como los ve la cámara, la
+  mediana del error es 0,001 brazos y solo 2 pasan de 0,05. En profundidad la dominante queda
+  de media 3,5 cm por delante: `keepHandsApart` aparta así las manos que se meterían una en la
+  otra, que de frente no se nota. Revisados frente al vídeo, coinciden; quedan NARANJA (las
+  yemas se tocan punta con punta y el avatar entrecruza los dedos) y PRESENTAR/PROPONER (la
+  mano vertical queda delante de la cara: el contacto con el índice de la otra, que está en el
+  centro, manda sobre el lado de la cara donde estaba en el vídeo).
 - Los gestos de la cara salen de las formas sueltas de VRoid por su nombre (ver arriba).
 
 ## Con el modelo de MakeHuman: lo que cambió y lo que falta

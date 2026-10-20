@@ -296,7 +296,11 @@ export function createVrmRig(vrm: VRM): VrmRig {
     forward,
     armLen,
     chestY: shoulderY - 0.15 * armLen,
-    mouthY: head.y + 0.45 * (eyeY - head.y),
+    // La boca medida en la cara. Con el hueso de la cabeza (a la altura de la mandíbula en una
+    // cabeza de dibujo) salía a la mitad de distancia de los ojos y las manos que no tocan nada
+    // quedaban bajas por encima de la boca (ENFERMERO, en la frente y no sobre la cabeza) y
+    // altas entre el pecho y la boca.
+    mouthY: THREE.MathUtils.clamp(origin.y + body.mouth.p[1], shoulderY - 0.15 * armLen + 0.1 * armLen, eyeY - 0.05 * armLen),
     faceFwd,
     arms,
     eyes: origin,
@@ -2655,4 +2659,3 @@ export function blendFromSnapshot(rig: VrmRig, from: PoseSnapshot, u: number) {
     if (em && e !== "blink") em.setValue(e, w + ((em.getValue(e) ?? 0) - w) * u);
   }
 }
-

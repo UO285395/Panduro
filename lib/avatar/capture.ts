@@ -416,13 +416,14 @@ const TOUCH_HOLD_MS = 200;
  * Peso de la profundidad (z de la cámara) al medir si la mano toca la cara. Con el brazo
  * levantado MediaPipe pone la mano 20-30 cm por delante de donde está: dentro de la cara y
  * hasta lo más bajo de la barbilla, que la mano se vea encima en la imagen pesa más
- * (DESCUBRIR, NARIZ, DULCE, TELÉFONO, el índice bajo el labio de DOLOR…); por debajo no,
+ * (DESCUBRIR, NARIZ, DULCE, TELÉFONO, el índice bajo el labio de DOLOR, el de COMO en la
+ * punta de la barbilla, en v −1,8 a −1,9…); por debajo no,
  * porque una mano delante del cuello o del pecho se proyecta justo ahí (IGUALDAD, PORQUE,
  * TRADICIÓN, que quedan bastante más abajo, hacia v −2,5).
  */
 const FACE_DEPTH_WEIGHT = 0.25;
 const FACE_DEPTH_WEIGHT_INSIDE = 0.15;
-const CHIN_V = -1.75;
+const CHIN_V = -1.9;
 
 /**
  * Qué toca la mano en un fotograma: la parte de la mano (yemas, índice, pulgar, palma o

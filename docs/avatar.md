@@ -179,10 +179,24 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
 - Contactos entre manos (91 signos, 593 contactos): vistos de frente, como los ve la cámara, la
   mediana del error es 0,001 brazos y solo 2 pasan de 0,05. En profundidad la dominante queda
   de media 3,5 cm por delante: `keepHandsApart` aparta así las manos que se meterían una en la
-  otra, que de frente no se nota. Revisados frente al vídeo, coinciden; quedan NARANJA (las
-  yemas se tocan punta con punta y el avatar entrecruza los dedos) y PRESENTAR/PROPONER (la
-  mano vertical queda delante de la cara: el contacto con el índice de la otra, que está en el
-  centro, manda sobre el lado de la cara donde estaba en el vídeo).
+  otra, que de frente no se nota. Revisados frente al vídeo, coinciden salvo NARANJA (ver
+  abajo).
+- Revisados también frente al vídeo los 161 signos sin contacto: coinciden en posición,
+  orientación y movimiento casi todos. Lo que no:
+  - CANSADO y DERECHO venían de una conversión antigua que no coincidía con el vídeo (CANSADO
+    con el meñique levantado y lejos de la sien; DERECHO con la mano a la altura del hombro):
+    se han vuelto a convertir.
+  - COMO no tocaba la barbilla (el contacto, en la punta de la barbilla, quedaba fuera de la
+    cara para la captura; ver `docs/datasets.md`).
+  - Algunas formas de la mano con los dedos rectos salen con algún dedo doblado: el 2, el 15 o
+    el 20, A VECES, ALTO. MediaPipe se inventa la flexión en profundidad, y con la palma casi de
+    frente (no del todo) `unbendFingers` no la quita. Bajar ese umbral apenas los arreglaba y
+    aplanaba la mano ahuecada de ESCUCHAR, así que se queda como está.
+  - Los contactos con el cuerpo (los hombros de RESPONSABLE) y algunos casi-contactos (las
+    yemas de las dos manos de IGUALDAD, la mano junto a la cabeza de ENTENDER) no se detectan
+    en la captura y el avatar deja la mano un poco separada.
+  - En NARANJA la mano pasiva sale con los nudillos rectos (MediaPipe) y las garras se
+    entrecruzan en vez de tocarse punta con punta.
 - Los gestos de la cara salen de las formas sueltas de VRoid por su nombre (ver arriba).
 
 ## Con el modelo de MakeHuman: lo que cambió y lo que falta

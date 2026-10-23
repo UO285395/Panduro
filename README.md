@@ -128,6 +128,20 @@ la orientación de las manos y los contactos, y el avatar los reproduce
 (`content/signs/captured.json`). Cada animación cita su fuente y enlaza la entrada del
 diccionario. El proceso completo está en [`docs/datasets.md`](./docs/datasets.md).
 
+### Revisar los signos (`/dev/revisar`)
+
+Para validar las animaciones con alguien que signa: la página pone el vídeo del DILSE junto al
+avatar, en bucle y a velocidad normal o lenta, y cada signo se marca como **bien**, **con
+dudas** o **mal**, con qué falla (forma de la mano, orientación, posición, movimiento,
+contacto, la otra mano, la cara, el ritmo) y una nota. Va con el teclado (`1` `2` `3` para
+valorar, `←` `→` para moverse, `N` al siguiente sin revisar, `S` para la velocidad). Lo marcado
+se guarda en el navegador; **Exportar** descarga un JSON con todo (e **Importar** junta el de
+otra persona o de otro equipo). Ese archivo es el que dice qué signos corregir.
+
+Los vídeos salen de `data/dilse/videos` si se han descargado (`scripts/dilse_download.py`, solo
+en desarrollo) y, si no, de la web del DILSE (los enlaces están en
+`content/signs/dilse-videos.json`, que se rehace con `node scripts/dilse-video-urls.mjs`).
+
 ## Corpus semilla del clasificador
 
 El clasificador k-NN reconoce desde el minuto uno con **plantillas sintéticas plausibles** para las **12 letras más distintivas** (A, B, C, F, I, L, O, P, U, V, W, Y) y **6 signos léxicos** (HOLA, ADIOS, GRACIAS, SI, NO, BIEN), tres muestras por cada uno. Las plantillas viven en `content/signs/fingerspelling.json` y `content/signs/lexicon.json`, marcadas con `templateSource: "synthetic"`.

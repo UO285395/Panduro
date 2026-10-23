@@ -79,9 +79,14 @@ export function SignDetailView({ sign, levelId, lessons }: Props) {
           <div className="max-w-[280px] text-center">
             <AnimationCredit credit={sign.animationCredit} />
           </div>
-          <Link href={`/dev/grabar?sign=${sign.id}`} className="text-xs text-slate-500 hover:text-brand-600 hover:underline">
-            ¿Está mal? Grabar este signo
-          </Link>
+          <div className="flex gap-3 text-xs text-slate-500">
+            <Link href={`/dev/revisar?sign=${sign.id}`} className="hover:text-brand-600 hover:underline">
+              Revisar con el vídeo
+            </Link>
+            <Link href={`/dev/grabar?sign=${sign.id}`} className="hover:text-brand-600 hover:underline">
+              ¿Está mal? Grabar este signo
+            </Link>
+          </div>
         </div>
 
         {/* Info del signo */}

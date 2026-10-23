@@ -36,8 +36,8 @@ const VERDICTS: { id: Verdict; label: string; hint: string; key: string; on: str
     label: "Bien",
     hint: "Se entiende y está bien hecho",
     key: "1",
-    on: "bg-emerald-600 text-white border-emerald-600",
-    off: "border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950",
+    on: "bg-petrol-600 text-white border-petrol-600",
+    off: "border-petrol-300 text-petrol-700 hover:bg-petrol-50 dark:border-petrol-800 dark:text-petrol-300 dark:hover:bg-petrol-950",
   },
   {
     id: "doubt",
@@ -52,8 +52,8 @@ const VERDICTS: { id: Verdict; label: string; hint: string; key: string; on: str
     label: "Mal",
     hint: "No se entiende o parece otro signo",
     key: "3",
-    on: "bg-rose-600 text-white border-rose-600",
-    off: "border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950",
+    on: "bg-ko-600 text-white border-ko-600",
+    off: "border-ko-300 text-ko-700 hover:bg-ko-50 dark:border-ko-800 dark:text-ko-300 dark:hover:bg-ko-950",
   },
 ];
 
@@ -78,7 +78,7 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "approved", label: "Aprobados antes" },
 ];
 
-const DOT: Record<Verdict, string> = { ok: "bg-emerald-500", doubt: "bg-amber-500", bad: "bg-rose-500" };
+const DOT: Record<Verdict, string> = { ok: "bg-petrol-500", doubt: "bg-amber-500", bad: "bg-ko-500" };
 
 function loadJson<T>(key: string, fallback: T): T {
   try {
@@ -310,15 +310,15 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
               {done} de {signs.length} revisados
             </span>
             <span className="tabular-nums text-slate-500">
-              <span className="text-emerald-600">{counts.ok} bien</span> ·{" "}
+              <span className="text-petrol-600">{counts.ok} bien</span> ·{" "}
               <span className="text-amber-600">{counts.doubt} dudas</span> ·{" "}
-              <span className="text-rose-600">{counts.bad} mal</span>
+              <span className="text-ko-600">{counts.bad} mal</span>
             </span>
           </div>
           <div className="flex h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div className="bg-emerald-500" style={{ width: `${(100 * counts.ok) / signs.length}%` }} />
+            <div className="bg-petrol-500" style={{ width: `${(100 * counts.ok) / signs.length}%` }} />
             <div className="bg-amber-500" style={{ width: `${(100 * counts.doubt) / signs.length}%` }} />
-            <div className="bg-rose-500" style={{ width: `${(100 * counts.bad) / signs.length}%` }} />
+            <div className="bg-ko-500" style={{ width: `${(100 * counts.bad) / signs.length}%` }} />
           </div>
         </div>
         <label className="flex items-center gap-2 text-sm">
@@ -436,7 +436,7 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
                   {current.levelId}
                 </span>
                 {current.approved && (
-                  <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                  <span className="rounded bg-petrol-100 px-2 py-0.5 text-xs font-semibold text-petrol-700 dark:bg-petrol-900/40 dark:text-petrol-300">
                     Aprobado antes
                   </span>
                 )}
@@ -572,7 +572,7 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
               Siguiente sin revisar
             </button>
             {review && (
-              <button type="button" onClick={clear} className="text-xs text-slate-500 hover:text-rose-600 hover:underline">
+              <button type="button" onClick={clear} className="text-xs text-slate-500 hover:text-ko-600 hover:underline">
                 Quitar valoración
               </button>
             )}
@@ -666,6 +666,6 @@ function SignAvatar({ id, speed }: { id: string; speed: Speed }) {
   }, [id]);
 
   const shown = useMemo(() => (clip ? atSpeed(clip, speed) : null), [clip, speed]);
-  if (error) return <p className="p-6 text-sm text-rose-600">No se ha podido cargar la animación.</p>;
+  if (error) return <p className="p-6 text-sm text-ko-600">No se ha podido cargar la animación.</p>;
   return <AvatarPlayer clip={shown} size={320} label={id} />;
 }

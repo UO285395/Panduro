@@ -1,16 +1,21 @@
+@import "@fontsource-variable/lexend";
+@import "@fontsource-variable/baloo-2";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  /* Crema cálido y tinta petróleo (ver la paleta en tailwind.config.ts). */
+  --background: #fff8f1;
+  --foreground: #14262b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1220;
-    --foreground: #f8fafc;
+    --background: #0c1a1e;
+    --foreground: #f3ece4;
+    color-scheme: dark;
   }
 }
 
@@ -23,16 +28,101 @@ body {
 
 body {
   font-family:
+    "Lexend Variable",
     system-ui,
     -apple-system,
     Segoe UI,
     Roboto,
-    Inter,
     sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
+/* Titulares en Baloo 2: redondeada y con carácter. */
+h1,
+h2,
+h3 {
+  font-family:
+    "Baloo 2 Variable",
+    "Lexend Variable",
+    system-ui,
+    sans-serif;
+  text-wrap: balance;
+}
+
 button {
   cursor: pointer;
+}
+
+@layer components {
+  /* Botón principal: mandarina con canto, que baja al pulsarlo. */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-5 py-2.5 font-display text-lg font-extrabold leading-tight text-white shadow-press shadow-brand-700 transition-[transform,box-shadow,background-color] hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-300/60 active:translate-y-[3px] active:shadow-press-sm disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-5 py-2 font-display text-lg font-extrabold leading-tight text-slate-800 shadow-press shadow-slate-200 transition-[transform,box-shadow,background-color] hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-300/60 active:translate-y-[3px] active:shadow-press-sm disabled:pointer-events-none disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:shadow-slate-800 dark:hover:bg-slate-800;
+  }
+  /* Continuar tras un acierto o un fallo: el color del resultado. */
+  .btn-ok {
+    @apply btn-primary bg-petrol-500 shadow-petrol-700 hover:bg-petrol-600 focus-visible:ring-petrol-300/60;
+  }
+  .btn-ko {
+    @apply btn-primary bg-ko-500 shadow-ko-700 hover:bg-ko-600 focus-visible:ring-ko-300/60;
+  }
+  .btn-sm {
+    @apply rounded-xl px-3.5 py-1.5 text-base;
+  }
+  .icon-btn {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-300/60 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
+  }
+  .card {
+    @apply rounded-3xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900;
+  }
+  /* Enunciado de un ejercicio. */
+  .exercise-title {
+    @apply font-display text-2xl font-extrabold leading-tight text-slate-900 dark:text-slate-50;
+  }
+  /* Etiqueta pequeña sobre un título. */
+  .eyebrow {
+    @apply font-display text-sm font-bold uppercase tracking-[0.08em] text-brand-600 dark:text-brand-400;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-display text-sm font-bold leading-none;
+  }
+  .input {
+    @apply w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-lg text-slate-900 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-300/40 disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800;
+  }
+  /*
+   * Opción de respuesta, como una ficha. data-state: idle (por defecto), selected,
+   * correct, wrong o dim (las que ya no cuentan tras responder).
+   */
+  .choice {
+    @apply flex w-full items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-left font-semibold text-slate-800 shadow-press shadow-slate-200 transition-[transform,box-shadow,background-color,border-color] hover:border-brand-300 hover:bg-brand-50/60 active:translate-y-[3px] active:shadow-press-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-300/50 disabled:pointer-events-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:shadow-slate-800 dark:hover:border-brand-700 dark:hover:bg-brand-950/40;
+  }
+  .choice[data-state="selected"] {
+    @apply border-brand-400 bg-brand-50 text-brand-900 shadow-brand-300 dark:border-brand-500 dark:bg-brand-950/50 dark:text-brand-100 dark:shadow-brand-800;
+  }
+  .choice[data-state="correct"] {
+    @apply border-petrol-400 bg-petrol-50 text-petrol-800 shadow-petrol-300 dark:border-petrol-500 dark:bg-petrol-950 dark:text-petrol-100 dark:shadow-petrol-800;
+  }
+  .choice[data-state="wrong"] {
+    @apply border-ko-300 bg-ko-50 text-ko-700 shadow-ko-200 dark:border-ko-500 dark:bg-ko-950 dark:text-ko-100 dark:shadow-ko-800;
+  }
+  .choice[data-state="dim"] {
+    @apply opacity-50;
+  }
+  /* Tecla con el número de la opción. */
+  .choice-key {
+    @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current font-display text-sm font-bold opacity-60;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

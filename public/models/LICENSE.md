@@ -51,6 +51,29 @@ stricter of the two. If it is confirmed as CC BY, this file goes away.
 Google's MediaPipe Tasks Vision bundles, vendored so they are served same-origin.
 <https://github.com/google-ai-edge/mediapipe>
 
+## `hand.glb` — MIT
+
+The app's mascot: the right "generic-hand" model of the WebXR Input Profiles assets
+(`@webxr-input-profiles/assets` 1.0.19, `dist/profiles/generic-hand/right.glb`), unchanged.
+<https://github.com/immersive-web/webxr-input-profiles>
+
+> MIT License — Copyright (c) 2019 Amazon
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+> and associated documentation files (the "Software"), to deal in the Software without
+> restriction, including without limitation the rights to use, copy, modify, merge, publish,
+> distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+> Software is furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all copies or
+> substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+> BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+> NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+> DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 ## What is not here
 
 No video and no landmark file from any corpus is redistributed — only weights derived from them.

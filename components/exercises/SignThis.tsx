@@ -87,13 +87,13 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
   return (
     <section className="space-y-4" aria-labelledby={`ex-${exercise.id}`}>
       <div className="space-y-2">
-        <h2 id={`ex-${exercise.id}`} className="text-lg font-semibold">
+        <h2 id={`ex-${exercise.id}`} className="exercise-title">
           {exercise.prompt}
         </h2>
-        <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className="card flex items-center gap-4 p-4">
           <div
             aria-hidden
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-3xl font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-100"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-100 font-display text-4xl font-extrabold text-brand-600 dark:bg-brand-900/40 dark:text-brand-200"
           >
             {target}
           </div>
@@ -126,13 +126,13 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
       {phase.kind === "evaluating" && (
         <div
           role="status"
-          className="rounded-lg border border-brand-300 bg-brand-50 p-3 text-sm text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-100"
+          className="rounded-2xl border-2 border-brand-200 bg-brand-50 p-3 text-sm text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-100"
         >
           Signa <b>{target}</b>… {seen ? <>Veo: <b>{seen}</b></> : "todavía no veo ninguna letra."}
         </div>
       )}
       {phase.kind === "self" && (
-        <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+        <div className="space-y-3 rounded-2xl border-2 border-accent-500/60 bg-accent-100 p-3 text-sm text-accent-700 dark:bg-accent-700/20 dark:text-accent-100">
           <p>
             La cámara no ha podido comprobar la <b>{target}</b>. Compara tu mano con la descripción:
             ¿te ha salido así?
@@ -142,7 +142,7 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
               type="button"
               onClick={() => finish(true, true)}
               disabled={disabled}
-              className="flex-1 rounded-full bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+              className="btn-primary btn-sm flex-1"
             >
               Sí, me ha salido
             </button>
@@ -150,7 +150,7 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
               type="button"
               onClick={() => finish(false, true)}
               disabled={disabled}
-              className="flex-1 rounded-full border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="btn-secondary btn-sm flex-1"
             >
               Todavía no
             </button>
@@ -160,10 +160,10 @@ export function SignThis({ exercise, onAnswer, disabled }: Props) {
       {phase.kind === "done" && (
         <div
           role="status"
-          className={`rounded-lg border p-3 text-sm ${
+          className={`rounded-2xl border-2 p-3 text-sm ${
             phase.correct
-              ? "border-green-500 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-950 dark:text-green-100"
-              : "border-red-500 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-950 dark:text-red-100"
+              ? "border-petrol-500 bg-petrol-50 text-petrol-900 dark:border-petrol-700 dark:bg-petrol-950 dark:text-petrol-100"
+              : "border-ko-500 bg-ko-50 text-ko-900 dark:border-ko-700 dark:bg-ko-950 dark:text-ko-100"
           }`}
         >
           {phase.self

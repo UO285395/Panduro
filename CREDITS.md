@@ -21,7 +21,13 @@ Panduro combina código propio con recursos abiertos de la comunidad LSE. Este a
   ni se usan para las animaciones.
 - **ARASAAC** — Portal Aragonés de la Comunicación Aumentativa y Alternativa. Pictogramas y recursos LSE bajo **CC BY-NC-SA 4.0**. <https://arasaac.org>.
 
-## Avatar 3D
+## Avatar 3D y mascota
+
+- **Mano de la mascota** (`public/models/hand.glb`) — el modelo «generic-hand» derecho de
+  **WebXR Input Profiles** (`@webxr-input-profiles/assets`), © 2019 Amazon, licencia **MIT**
+  (texto completo en `public/models/LICENSE.md`). <https://github.com/immersive-web/webxr-input-profiles>.
+  La app le pone material de dibujo, contorno y una manga, y calcula la postura de los dedos
+  (`components/mascot/HandMascot.tsx`).
 
 - **Modelo de Panduro** (`public/avatars/panduro.vrm`) — **HairSample_Male**, del **VRoid
   Project** (pixiv), una de las muestras de VRoid Studio publicadas con licencia **CC0 1.0**
@@ -49,6 +55,7 @@ Panduro combina código propio con recursos abiertos de la comunidad LSE. Este a
 - **Next.js** — MIT
 - **React** — MIT
 - **Tailwind CSS** — MIT
+- **Baloo 2** y **Lexend** (tipografías, vía `@fontsource-variable`) — SIL Open Font License 1.1
 - **@supabase/ssr, @supabase/supabase-js** — MIT
 - **@tanstack/react-query** — MIT
 - **zod** — MIT

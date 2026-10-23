@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AnimationCredit } from "@/components/avatar/AnimationCredit";
 import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
+import { Icon } from "@/components/ui/Icon";
 import type { AvatarClip, Sign } from "@/lib/curriculum/schema";
 
 type LessonRef = {
@@ -42,41 +43,39 @@ export function SignDetailView({ sign, levelId, lessons }: Props) {
     : null;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8 space-y-8">
-      <nav className="flex items-center gap-2 text-sm text-slate-500">
+    <main className="mx-auto max-w-4xl space-y-8 px-4 py-6 sm:px-6">
+      <nav className="flex items-center gap-2 font-display font-bold text-slate-500" aria-label="Migas">
         <Link href="/dashboard" className="hover:text-brand-600">Panel</Link>
-        <span>›</span>
+        <span aria-hidden>›</span>
         <Link href="/glossary" className="hover:text-brand-600">Glosario</Link>
-        <span>›</span>
-        <span className="text-slate-800 dark:text-slate-200 font-medium">{sign.translation}</span>
+        <span aria-hidden>›</span>
+        <span className="text-slate-800 dark:text-slate-200">{sign.translation}</span>
       </nav>
 
-      <div className="flex flex-col sm:flex-row gap-6 items-start">
-        {/* Avatar grande */}
-        <div className="flex flex-col items-center gap-3 shrink-0">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-            <AvatarPlayer clip={slowClip} size={280} label={sign.gloss} />
+      <div className="grid items-start gap-8 md:grid-cols-[auto_1fr]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="overflow-hidden rounded-[2rem] border-4 border-white bg-brand-100 shadow-[0_8px_0_0] shadow-brand-200 dark:border-slate-800 dark:bg-brand-900/40 dark:shadow-slate-950">
+            <AvatarPlayer clip={slowClip} size={320} label={sign.gloss} />
           </div>
 
-          {/* Controles de velocidad */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Velocidad:</span>
+          <div className="inline-flex rounded-xl bg-slate-100 p-1 text-sm dark:bg-slate-800" role="group" aria-label="Velocidad">
             {([1, 0.5, 0.25] as const).map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setSpeed(s)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                aria-pressed={speed === s}
+                className={`rounded-lg px-3 py-1 font-display font-bold transition ${
                   speed === s
-                    ? "bg-brand-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                    ? "bg-white text-brand-600 shadow-sm dark:bg-slate-900 dark:text-brand-400"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
-                {s === 1 ? "Normal" : s === 0.5 ? "Lenta ×½" : "Muy lenta ×¼"}
+                {s === 1 ? "Normal" : s === 0.5 ? "Lenta" : "Muy lenta"}
               </button>
             ))}
           </div>
-          <div className="max-w-[280px] text-center">
+          <div className="max-w-[320px] text-center">
             <AnimationCredit credit={sign.animationCredit} />
           </div>
           <div className="flex gap-3 text-xs text-slate-500">
@@ -89,37 +88,29 @@ export function SignDetailView({ sign, levelId, lessons }: Props) {
           </div>
         </div>
 
-        {/* Info del signo */}
-        <div className="flex-1 space-y-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="rounded bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-                {levelId}
-              </span>
-              <span className="text-xs text-slate-500">
-                {sign.handedness === "two" ? "Bimanual" : "Una mano"}
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="chip bg-brand-500 text-white">{levelId}</span>
+              <span className="chip bg-petrol-50 text-petrol-700 dark:bg-petrol-950 dark:text-petrol-200">
+                {sign.handedness === "two" ? "Con las dos manos" : "Con una mano"}
               </span>
             </div>
-            <h1 className="text-3xl font-bold">{sign.translation}</h1>
-            <p className="text-slate-500 text-sm font-mono mt-0.5">{sign.gloss}</p>
+            <h1 className="text-5xl font-extrabold leading-none">{sign.translation}</h1>
+            <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">{sign.gloss}</p>
           </div>
 
           {sign.description && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                Cómo ejecutarlo
-              </h2>
-              <p className="text-sm text-slate-700 dark:text-slate-300">{sign.description}</p>
+            <div className="card space-y-1 p-5">
+              <h2 className="eyebrow">Cómo se hace</h2>
+              <p className="text-slate-700 dark:text-slate-200">{sign.description}</p>
             </div>
           )}
 
           {sign.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {sign.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                >
+                <span key={tag} className="chip bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   {tag}
                 </span>
               ))}
@@ -127,21 +118,21 @@ export function SignDetailView({ sign, levelId, lessons }: Props) {
           )}
 
           {lessons.length > 0 && (
-            <div>
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                Aparece en
-              </h2>
-              <ul className="space-y-1">
+            <div className="space-y-2">
+              <h2 className="eyebrow">Aparece en</h2>
+              <ul className="space-y-2">
                 {lessons.map((l) => (
                   <li key={l.lessonId}>
                     <Link
                       href={`/lesson/${l.lessonId}`}
-                      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm hover:border-brand-400 hover:shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
+                      className="card flex items-center gap-3 px-4 py-3 transition hover:border-brand-300"
                     >
-                      <span className="text-brand-500">▶</span>
-                      <span>
-                        <span className="font-medium">{l.lessonTitle}</span>
-                        <span className="text-slate-500"> · {l.unitTitle}</span>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white">
+                        <Icon name="play" size={16} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block font-display font-bold leading-tight">{l.lessonTitle}</span>
+                        <span className="block text-sm text-slate-500">{l.unitTitle}</span>
                       </span>
                     </Link>
                   </li>

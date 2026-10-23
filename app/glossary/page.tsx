@@ -6,6 +6,7 @@ export const metadata = { title: "Glosario de signos" };
 export default function GlossaryPage() {
   const levels = getAllLevels();
 
+  // Sin las animaciones: la lista solo enseña las palabras y cada ficha carga la suya.
   const signsByLevel = levels.map((lvl) => ({
     levelId: lvl.id,
     levelTitle: lvl.title,
@@ -14,7 +15,7 @@ export default function GlossaryPage() {
       gloss: s.gloss,
       translation: s.translation,
       description: s.description ?? null,
-      avatarClip: s.avatarClip ?? null,
+      twoHands: s.handedness === "two",
     })),
   }));
 

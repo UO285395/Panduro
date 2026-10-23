@@ -142,6 +142,22 @@ Los vídeos salen de `data/dilse/videos` si se han descargado (`scripts/dilse_do
 en desarrollo) y, si no, de la web del DILSE (los enlaces están en
 `content/signs/dilse-videos.json`, que se rehace con `node scripts/dilse-video-urls.mjs`).
 
+## Diseño y mascota
+
+La interfaz usa la paleta **Mandarina y petróleo** (en `tailwind.config.ts`): mandarina para la
+marca y las acciones, petróleo para el progreso y los aciertos, coral (`ko`) para los fallos y
+dorado (`accent`) para rachas y XP, sobre neutros cálidos que sustituyen a `slate`. Sigue el
+modo claro u oscuro del sistema. Tipografías: **Baloo 2** en los títulos y **Lexend** en el
+texto. Las piezas comunes (`.btn-primary`, `.btn-secondary`, `.btn-ok`/`.btn-ko`, `.card`,
+`.chip`, `.input`, `.choice` con `data-state`) están en `app/globals.css`; los iconos, en
+`components/ui/Icon.tsx`.
+
+La mascota es una **mano 3D** (`components/mascot/HandMascot.tsx`, modelo «generic-hand» de
+WebXR Input Profiles, MIT): saluda en reposo, levanta el pulgar al acertar, lo baja al fallar y
+da una vuelta al terminar la lección. Las poses son funciones puras en
+`lib/mascot/handPose.ts`; para verla, `/dev/mascota`. El feedback de la lección es discreto:
+cambia el color y asoma la mano, sin sonidos ni confeti.
+
 ## Corpus semilla del clasificador
 
 El clasificador k-NN reconoce desde el minuto uno con **plantillas sintéticas plausibles** para las **12 letras más distintivas** (A, B, C, F, I, L, O, P, U, V, W, Y) y **6 signos léxicos** (HOLA, ADIOS, GRACIAS, SI, NO, BIEN), tres muestras por cada uno. Las plantillas viven en `content/signs/fingerspelling.json` y `content/signs/lexicon.json`, marcadas con `templateSource: "synthetic"`.

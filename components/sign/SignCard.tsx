@@ -15,15 +15,15 @@ export function SignCard({
     <figure
       className={
         compact
-          ? "flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
-          : "flex flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+          ? "card flex items-center gap-3 rounded-2xl p-3"
+          : "card flex flex-col items-center gap-4 p-4 sm:p-6"
       }
     >
       <div
         className={
           compact
-            ? "flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-brand-100 text-lg font-bold text-brand-700"
-            : "flex aspect-square w-full max-w-[280px] flex-col items-center justify-center overflow-hidden rounded-xl bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-100"
+            ? "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-lg font-bold text-brand-700"
+            : "flex min-h-[200px] min-w-[200px] flex-col items-center justify-center overflow-hidden rounded-2xl bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-100"
         }
         aria-hidden
       >
@@ -39,7 +39,7 @@ export function SignCard({
           <AvatarPlayer
             clip={sign.avatarClip}
             label={hideAnswer ? undefined : sign.gloss}
-            size={260}
+            size={280}
           />
         ) : (
           <span className={compact ? "text-xs" : "text-4xl font-bold"}>
@@ -51,7 +51,7 @@ export function SignCard({
         <figcaption
           className={compact ? "text-sm" : "space-y-1 text-center"}
         >
-          <span className="block font-semibold">{sign.translation}</span>
+          <span className="block font-display text-2xl font-extrabold">{sign.translation}</span>
           {!compact && sign.description && (
             <span className="block text-sm text-slate-600 dark:text-slate-300">
               {sign.description}

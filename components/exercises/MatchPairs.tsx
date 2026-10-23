@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AvatarPlayer } from "@/components/avatar/AvatarPlayer";
+import { Icon } from "@/components/ui/Icon";
 import type { Exercise, Sign } from "@/lib/curriculum/schema";
 
 type Pair = { sign: Sign; translation: string };
@@ -105,13 +106,13 @@ export function MatchPairs({ exercise, pairs, onAnswer, disabled }: Props) {
 
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-semibold">{exercise.prompt}</h2>
-      <figure className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex aspect-square w-full max-w-[240px] items-center justify-center overflow-hidden rounded-xl bg-brand-100 dark:bg-brand-900/40">
+      <h2 className="exercise-title">{exercise.prompt}</h2>
+      <figure className="card flex flex-col items-center gap-2 p-4">
+        <div className="flex aspect-square w-full max-w-[240px] items-center justify-center overflow-hidden rounded-2xl bg-brand-100 dark:bg-brand-900/40">
           <AvatarPlayer clip={playing?.avatarClip ?? null} size={240} />
         </div>
         <figcaption className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          ▶ {playingLabel} · toca otro signo para verlo
+          <b className="font-display text-base">{playingLabel}</b> · toca otro signo para verlo
         </figcaption>
       </figure>
       <div className="grid grid-cols-2 gap-3">
@@ -145,7 +146,7 @@ export function MatchPairs({ exercise, pairs, onAnswer, disabled }: Props) {
           ))}
         </ul>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Emparejadas: {matched.size}/{pairs.length}
         {errorsMade > 0 && ` · Fallos: ${errorsMade}`}
       </p>
@@ -176,17 +177,10 @@ function MatchButton({
       onClick={() => onPick(token)}
       disabled={disabled || matched}
       aria-pressed={selected}
-      className={`w-full rounded-lg border px-3 py-3 text-left font-medium transition ${
-        matched
-          ? "border-green-400 bg-green-50 text-green-900 opacity-70 dark:bg-green-950 dark:text-green-100"
-          : wrong
-            ? "border-red-500 bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100"
-            : selected
-              ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40"
-              : "border-slate-200 bg-white hover:border-brand-400 dark:border-slate-800 dark:bg-slate-900"
-      } ${playing && !matched ? "ring-2 ring-brand-300 dark:ring-brand-700" : ""}`}
+      data-state={matched ? "correct" : wrong ? "wrong" : selected ? "selected" : "idle"}
+      className={`choice ${matched ? "opacity-60" : ""} ${playing && !matched && !selected ? "border-brand-300 dark:border-brand-700" : ""}`}
     >
-      {token.kind === "sign" && "▶ "}
+      {token.kind === "sign" && <Icon name="play" size={16} className="shrink-0 text-brand-500" />}
       {token.label}
     </button>
   );

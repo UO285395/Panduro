@@ -360,7 +360,7 @@ export function RecordView({ signs, initialSign }: { signs: SignOption[]; initia
             </div>
           )}
           {status === "recording" && (
-            <div className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
+            <div className="absolute left-3 top-3 rounded-full bg-ko-600 px-3 py-1 text-xs font-semibold text-white">
               {source === "video" ? `Procesando ${Math.round(progress * 100)} %` : `● Grabando ${sign?.id}`}
             </div>
           )}
@@ -371,7 +371,7 @@ export function RecordView({ signs, initialSign }: { signs: SignOption[]; initia
             <button
               type="button"
               onClick={record}
-              className="rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700"
+              className="rounded-full bg-ko-600 px-5 py-2 text-sm font-semibold text-white hover:bg-ko-700"
             >
               {source === "camera" ? "● Grabar" : "▶ Procesar vídeo"}
             </button>
@@ -387,10 +387,10 @@ export function RecordView({ signs, initialSign }: { signs: SignOption[]; initia
           )}
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-ko-600">{error}</p>}
 
         {result && !result.ok && (
-          <p className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950 dark:text-red-100">
+          <p className="rounded-lg border border-ko-300 bg-ko-50 p-3 text-sm text-ko-900 dark:bg-ko-950 dark:text-ko-100">
             {result.error}
           </p>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -16,11 +16,12 @@ import { MotionThis } from "@/components/exercises/MotionThis";
 import { SignWord } from "@/components/exercises/SignWord";
 import { PickSign } from "@/components/exercises/PickSign";
 import { LearnCard } from "@/components/lesson/LearnCard";
-import type { MascotState } from "@/components/mascot/ThingMascot";
+import type { HandMood } from "@/components/mascot/HandMascot";
+import { Icon } from "@/components/ui/Icon";
 import { isRetryable, planLesson, type LessonStep } from "@/lib/lesson/plan";
 
-const ThingMascot = dynamic(
-  () => import("@/components/mascot/ThingMascot").then((m) => ({ default: m.ThingMascot })),
+const HandMascot = dynamic(
+  () => import("@/components/mascot/HandMascot").then((m) => ({ default: m.HandMascot })),
   { ssr: false },
 );
 
@@ -50,15 +51,6 @@ export function LessonRunner({
     bestScore: number;
     perfected: boolean;
   } | null>(null);
-  const [mascotState, setMascotState] = useState<MascotState>("idle");
-  const mascotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (mascotTimerRef.current) clearTimeout(mascotTimerRef.current);
-    };
-  }, []);
-
   // La puntuación cuenta el primer intento de cada ejercicio; las repeticiones son práctica.
   const total = lesson.exercises.length;
   const currentStep = steps[step]!;
@@ -67,18 +59,11 @@ export function LessonRunner({
   const heartsLeft = Math.max(0, MAX_HEARTS - heartsUsed);
   const outOfHearts = heartsLeft === 0;
 
-  function triggerMascot(next: MascotState, durationMs: number) {
-    if (mascotTimerRef.current) clearTimeout(mascotTimerRef.current);
-    setMascotState(next);
-    mascotTimerRef.current = setTimeout(() => setMascotState("idle"), durationMs);
-  }
-
   function onAnswer(isCorrect: boolean) {
     if (!current) return;
     if (isCorrect) {
       if (!retrying) setCorrect((c) => c + 1);
       setFeedback({ kind: "correct", message: retrying ? "¡Ahora sí!" : "¡Correcto!" });
-      triggerMascot("correct", 2000);
     } else {
       // Los ejercicios de cámara no consumen corazones ni se repiten: el ruido óptico
       // puede provocar falsos negativos que frustrarían al estudiante sin motivo.
@@ -95,7 +80,6 @@ export function LessonRunner({
             ? "Repásalo en el glosario cuando acabes."
             : "Casi. Lo repetirás al final.",
       });
-      triggerMascot("incorrect", 2000);
     }
   }
 
@@ -104,7 +88,6 @@ export function LessonRunner({
     if (step + 1 < steps.length) {
       setStep(step + 1);
     } else {
-      triggerMascot("celebrate", 2500);
       finish();
     }
   }
@@ -146,6 +129,9 @@ export function LessonRunner({
     );
   }
 
+  // La mano solo asoma con el resultado: pulgar arriba o abajo.
+  const mood: HandMood = feedback?.kind === "correct" ? "correct" : feedback ? "incorrect" : "idle";
+
   return (
     <div className="space-y-6">
       <Header
@@ -156,8 +142,8 @@ export function LessonRunner({
       />
 
       {retrying && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-          Repaso: este lo fallaste antes.
+        <p className="chip bg-accent-100 text-accent-700 dark:bg-accent-700/30 dark:text-accent-100">
+          <Icon name="repeat" size={16} /> Repaso: este lo fallaste antes
         </p>
       )}
 
@@ -185,10 +171,14 @@ export function LessonRunner({
         />
       )}
 
-      <ThingMascot
-        state={mascotState}
-        className="fixed bottom-20 right-4 z-50 drop-shadow-lg"
-      />
+      <div
+        aria-hidden
+        className={`pointer-events-none fixed -bottom-2 left-[max(0rem,calc(50%-22.5rem))] z-50 transition-[transform,opacity] duration-300 ease-out ${
+          feedback ? "translate-y-0 opacity-100" : "translate-y-[110%] opacity-0"
+        }`}
+      >
+        <HandMascot mood={mood} size={140} />
+      </div>
     </div>
   );
 }
@@ -206,17 +196,13 @@ function Header({
 }) {
   const pct = Math.round((step / total) * 100);
   return (
-    <header className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/dashboard"
-          aria-label="Salir de la lección"
-          className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-100"
-        >
-          ✕
+    <header className="sticky top-0 z-30 -mx-4 space-y-1 bg-[color:var(--background)] px-4 pb-3 pt-3">
+      <div className="flex items-center gap-3">
+        <Link href="/dashboard" aria-label="Salir de la lección" className="icon-btn -ml-2">
+          <Icon name="close" size={22} />
         </Link>
         <div
-          className="h-2 flex-1 rounded-full bg-slate-200 dark:bg-slate-800 mx-4"
+          className="h-4 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
@@ -224,13 +210,16 @@ function Header({
           aria-label="Progreso de la lección"
         >
           <div
-            className="h-full rounded-full bg-brand-500 transition-all"
-            style={{ width: `${pct}%` }}
-          />
+            className="relative h-full rounded-full bg-petrol-500 transition-[width] duration-500 ease-out"
+            style={{ width: `${Math.max(pct, 4)}%` }}
+          >
+            {/* Brillo de la barra, como una ficha. */}
+            <span className="absolute inset-x-2 top-1 h-1 rounded-full bg-white/30" />
+          </div>
         </div>
         <HeartsBar hearts={heartsLeft} />
       </div>
-      <h1 className="text-lg font-semibold">{title}</h1>
+      <p className="truncate pl-10 text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
     </header>
   );
 }
@@ -344,25 +333,22 @@ function FeedbackBar({
   return (
     <div
       role="status"
-      className={`sticky bottom-0 -mx-4 rounded-t-2xl border-t p-4 shadow-inner ${
+      className={`fixed inset-x-0 bottom-0 z-40 border-t-2 pb-[env(safe-area-inset-bottom)] ${
         isCorrect
-          ? "border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950"
-          : "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950"
+          ? "border-petrol-200 bg-petrol-50 text-petrol-800 dark:border-petrol-800 dark:bg-petrol-950 dark:text-petrol-100"
+          : "border-ko-200 bg-ko-50 text-ko-700 dark:border-ko-800 dark:bg-ko-950 dark:text-ko-100"
       }`}
     >
-      <div className="flex items-center justify-between gap-4">
-        <p className="font-semibold">
-          {isCorrect ? "✅" : "❌"} {message}
-        </p>
+      <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-x-4 gap-y-3 py-4 pl-32 pr-4 sm:pl-36">
+        <p className="min-w-0 flex-1 font-display text-xl font-extrabold leading-tight">{message}</p>
         <button
           type="button"
           onClick={onNext}
           disabled={submitting}
-          className={`rounded-full px-6 py-2 font-semibold text-white shadow-sm disabled:opacity-60 ${
-            isCorrect ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
-          }`}
+          autoFocus
+          className={`${isCorrect ? "btn-ok" : "btn-ko"} w-full sm:w-auto sm:min-w-40`}
         >
-          {submitting ? "Guardando…" : isLast ? "Terminar" : "Siguiente"}
+          {submitting ? "Guardando…" : isLast ? "Terminar" : "Continuar"}
         </button>
       </div>
     </div>
@@ -371,18 +357,16 @@ function FeedbackBar({
 
 function OutOfHearts({ onExit }: { onExit: () => void }) {
   return (
-    <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
-      <div className="text-5xl">💔</div>
-      <h1 className="text-2xl font-bold">Te has quedado sin corazones</h1>
+    <div className="card mx-auto max-w-md space-y-4 p-8 text-center">
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-ko-50 text-ko-500 dark:bg-ko-950">
+        <Icon name="heart" size={44} />
+      </div>
+      <h1 className="text-3xl font-extrabold">Te has quedado sin corazones</h1>
       <p className="text-slate-600 dark:text-slate-400">
-        Los corazones se regenerarán en un rato. Vuelve al panel y repasa
-        lecciones que ya dominas para no perder la racha.
+        Los corazones se regeneran en un rato. Mientras, repasa las lecciones que ya dominas para no
+        perder la racha.
       </p>
-      <button
-        type="button"
-        onClick={onExit}
-        className="rounded-full bg-brand-600 px-6 py-2 font-semibold text-white hover:bg-brand-700"
-      >
+      <button type="button" onClick={onExit} className="btn-primary w-full">
         Volver al panel
       </button>
     </div>
@@ -399,26 +383,40 @@ function Result({
   onContinue: () => void;
 }) {
   return (
-    <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
-      <div className="text-5xl">{result.perfected ? "🏆" : "🎉"}</div>
-      <h1 className="text-2xl font-bold">
+    <div className="mx-auto max-w-md space-y-6 pt-4 text-center">
+      <div className="flex justify-center">
+        <HandMascot mood="celebrate" size={200} />
+      </div>
+      <h1 className="text-4xl font-extrabold text-brand-600 dark:text-brand-400">
         {result.perfected ? "¡Lección perfecta!" : "¡Lección completada!"}
       </h1>
-      <dl className="grid grid-cols-2 gap-2 text-left">
-        <dt className="text-slate-500">XP ganada</dt>
-        <dd className="text-right font-semibold">+{result.xp}</dd>
-        <dt className="text-slate-500">Puntuación</dt>
-        <dd className="text-right font-semibold">{result.bestScore}%</dd>
+      <dl className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border-2 border-accent-500 bg-accent-100 p-3 dark:bg-accent-700/20">
+          <dt className="font-display text-sm font-bold uppercase tracking-wider text-accent-700 dark:text-accent-100">
+            XP ganada
+          </dt>
+          <dd className="flex items-center justify-center gap-1.5 font-display text-3xl font-extrabold text-accent-700 dark:text-accent-100">
+            <Icon name="star" size={24} />+{result.xp}
+          </dd>
+        </div>
+        <div className="rounded-2xl border-2 border-petrol-400 bg-petrol-50 p-3 dark:bg-petrol-950">
+          <dt className="font-display text-sm font-bold uppercase tracking-wider text-petrol-700 dark:text-petrol-200">
+            Puntuación
+          </dt>
+          <dd className="font-display text-3xl font-extrabold text-petrol-700 dark:text-petrol-100">
+            {result.bestScore}%
+          </dd>
+        </div>
       </dl>
       {learned.length > 0 && (
         <div className="space-y-2 text-left">
-          <h2 className="text-sm font-semibold text-slate-500">Signos de esta lección</h2>
+          <h2 className="text-lg font-bold text-slate-600 dark:text-slate-300">Signos de esta lección</h2>
           <ul className="flex flex-wrap gap-2">
             {learned.map((s) => (
               <li key={s.id}>
                 <Link
                   href={`/glossary/${s.id}`}
-                  className="inline-block rounded-full border border-slate-200 px-3 py-1 text-sm hover:border-brand-400 dark:border-slate-700"
+                  className="chip border-2 border-slate-200 bg-white text-slate-700 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   {s.translation}
                 </Link>
@@ -427,11 +425,7 @@ function Result({
           </ul>
         </div>
       )}
-      <button
-        type="button"
-        onClick={onContinue}
-        className="w-full rounded-full bg-brand-600 px-6 py-2 font-semibold text-white hover:bg-brand-700"
-      >
+      <button type="button" onClick={onContinue} className="btn-primary w-full">
         Continuar
       </button>
     </div>

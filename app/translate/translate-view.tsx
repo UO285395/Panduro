@@ -379,7 +379,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               </div>
             )}
           </div>
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-sm text-ko-600">{error}</p>}
 
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {running && (
@@ -435,7 +435,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
                           <button
                             type="button"
                             onClick={() => edit(t, "")}
-                            className="block w-full rounded-lg px-2 py-1 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                            className="block w-full rounded-lg px-2 py-1 text-left text-ko-600 hover:bg-ko-50 dark:hover:bg-ko-950/40"
                           >
                             Quitar
                           </button>
@@ -502,7 +502,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               type="button"
               onClick={onSave}
               disabled={!text || saving}
-              className="rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+              className="rounded-full bg-petrol-600 px-4 py-2 text-sm font-semibold text-white hover:bg-petrol-700 disabled:opacity-60"
             >
               {saving ? "Guardando…" : "Guardar"}
             </button>

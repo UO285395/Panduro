@@ -123,7 +123,7 @@ export function HandTrackingView() {
         </p>
       )}
       {loadState === "error" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-ko-600">
           No se pudo cargar el modelo: {loadError}
         </p>
       )}
@@ -145,10 +145,10 @@ export function HandTrackingView() {
                   <div
                     className={`h-full rounded-full transition-all duration-150 ${
                       p.confidence >= 0.70
-                        ? "bg-green-500"
+                        ? "bg-petrol-500"
                         : p.confidence >= 0.40
                           ? "bg-amber-500"
-                          : "bg-red-500"
+                          : "bg-ko-500"
                     }`}
                     style={{ width: `${Math.round(p.confidence * 100)}%` }}
                   />

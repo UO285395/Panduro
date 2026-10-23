@@ -98,12 +98,12 @@ export function RegisterForm() {
       </label>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-ko-600" role="alert">
           {error}
         </p>
       )}
       {message && (
-        <p className="text-sm text-green-700" role="status">
+        <p className="text-sm text-petrol-700" role="status">
           {message}
         </p>
       )}

@@ -80,7 +80,7 @@ export function ImportPanel() {
           className="text-sm"
           aria-label="JSON exportado de SWL-LSE"
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-ko-600">{error}</p>}
       </div>
 
       {rows.length > 0 && (
@@ -123,7 +123,7 @@ export function ImportPanel() {
                             </option>
                           ))}
                         </select>
-                        {c && !c.result.ok && <p className="text-xs text-red-600">{c.result.error}</p>}
+                        {c && !c.result.ok && <p className="text-xs text-ko-600">{c.result.error}</p>}
                       </td>
                       <td className="p-2">
                         <button

@@ -235,14 +235,14 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
                 return (
                   <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
                     <span className="font-medium">{s.text}</span>
-                    <span className={`text-xs ${good ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-300"}`}>
+                    <span className={`text-xs ${good ? "text-petrol-700 dark:text-petrol-400" : "text-amber-700 dark:text-amber-300"}`}>
                       {s.recognized}/{s.total} tomas
                       {s.confusedWith && ` · se confunde con «${s.confusedWith}»`}
                     </span>
                     <button
                       type="button"
                       onClick={() => remove(s.id)}
-                      className="text-xs text-red-600 hover:underline"
+                      className="text-xs text-ko-600 hover:underline"
                     >
                       Borrar
                     </button>

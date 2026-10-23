@@ -1,22 +1,19 @@
+import { Icon } from "@/components/ui/Icon";
 import { MAX_HEARTS } from "@/lib/gamification/xp";
 
+/** Corazones que quedan: un corazón y el número, en coral (gris si no queda ninguno). */
 export function HeartsBar({ hearts }: { hearts: number }) {
   const clamped = Math.max(0, Math.min(MAX_HEARTS, hearts));
   return (
     <div
-      className="flex items-center gap-1"
+      className={`chip tabular-nums ${
+        clamped > 0 ? "bg-ko-50 text-ko-600 dark:bg-ko-950 dark:text-ko-300" : "bg-slate-100 text-slate-400 dark:bg-slate-800"
+      }`}
       role="status"
       aria-label={`${clamped} de ${MAX_HEARTS} corazones`}
     >
-      {Array.from({ length: MAX_HEARTS }, (_, i) => (
-        <span
-          key={i}
-          aria-hidden
-          className={`text-lg ${i < clamped ? "text-red-500" : "text-slate-300 dark:text-slate-600"}`}
-        >
-          ♥
-        </span>
-      ))}
+      <Icon name="heart" size={18} />
+      <span aria-hidden>{clamped}</span>
     </div>
   );
 }

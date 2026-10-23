@@ -137,10 +137,10 @@ export function SignWord({ exercise, sign, lessonSigns = [], onAnswer, disabled 
   return (
     <section className="space-y-4" aria-labelledby={`ex-${exercise.id}`}>
       <div className="space-y-2">
-        <h2 id={`ex-${exercise.id}`} className="text-lg font-semibold">
+        <h2 id={`ex-${exercise.id}`} className="exercise-title">
           {exercise.prompt}
         </h2>
-        <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className="card flex items-center gap-4 p-4">
           <div>
             <p className="font-semibold">{signLabel}</p>
             {sign?.description && (
@@ -181,7 +181,7 @@ export function SignWord({ exercise, sign, lessonSigns = [], onAnswer, disabled 
       {phase.kind === "evaluating" && (
         <div
           role="status"
-          className="rounded-lg border border-brand-300 bg-brand-50 p-3 text-sm text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-100"
+          className="rounded-2xl border-2 border-brand-200 bg-brand-50 p-3 text-sm text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-100"
         >
           Signa <b>{signLabel}</b>…{seen && <> Veo: <b>{seen}</b></>}
         </div>
@@ -189,10 +189,10 @@ export function SignWord({ exercise, sign, lessonSigns = [], onAnswer, disabled 
       {phase.kind === "done" && (
         <div
           role="status"
-          className={`rounded-lg border p-3 text-sm ${
+          className={`rounded-2xl border-2 p-3 text-sm ${
             phase.correct
-              ? "border-green-500 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-950 dark:text-green-100"
-              : "border-red-500 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-950 dark:text-red-100"
+              ? "border-petrol-500 bg-petrol-50 text-petrol-900 dark:border-petrol-700 dark:bg-petrol-950 dark:text-petrol-100"
+              : "border-ko-500 bg-ko-50 text-ko-900 dark:border-ko-700 dark:bg-ko-950 dark:text-ko-100"
           }`}
         >
           {phase.correct

@@ -75,7 +75,7 @@ export function StatsView({
             Sin datos
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-red-200 dark:bg-red-900/50" />
+            <span className="h-3 w-3 rounded-sm bg-ko-200 dark:bg-ko-900/50" />
             &lt;50%
           </span>
           <span className="flex items-center gap-1">
@@ -83,11 +83,11 @@ export function StatsView({
             50–69%
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-green-200 dark:bg-green-800/60" />
+            <span className="h-3 w-3 rounded-sm bg-petrol-200 dark:bg-petrol-800/60" />
             70–89%
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-green-500" />
+            <span className="h-3 w-3 rounded-sm bg-petrol-500" />
             ≥90%
           </span>
         </div>
@@ -136,7 +136,7 @@ function StatTile({
 }) {
   const colorClass = {
     brand: "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300",
-    green: "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300",
+    green: "bg-petrol-50 text-petrol-700 dark:bg-petrol-950/40 dark:text-petrol-300",
     amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
     orange: "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
   }[color];
@@ -152,8 +152,8 @@ function StatTile({
 function heatmapClass(score: number | null): string {
   if (score === null)
     return "bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500";
-  if (score >= 90) return "bg-green-500 text-white";
-  if (score >= 70) return "bg-green-200 text-green-800 dark:bg-green-800/60 dark:text-green-100";
+  if (score >= 90) return "bg-petrol-500 text-white";
+  if (score >= 70) return "bg-petrol-200 text-petrol-800 dark:bg-petrol-800/60 dark:text-petrol-100";
   if (score >= 50) return "bg-amber-200 text-amber-800 dark:bg-amber-700/60 dark:text-amber-100";
-  return "bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-100";
+  return "bg-ko-200 text-ko-800 dark:bg-ko-900/50 dark:text-ko-100";
 }

@@ -161,11 +161,11 @@ function QualityButton({
 }) {
   const cls =
     color === "red"
-      ? "bg-red-600 hover:bg-red-700"
+      ? "bg-ko-600 hover:bg-ko-700"
       : color === "amber"
         ? "bg-amber-500 hover:bg-amber-600"
         : color === "green"
-          ? "bg-green-600 hover:bg-green-700"
+          ? "bg-petrol-600 hover:bg-petrol-700"
           : "bg-brand-600 hover:bg-brand-700";
   return (
     <button

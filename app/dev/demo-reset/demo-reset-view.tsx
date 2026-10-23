@@ -29,13 +29,13 @@ export function DemoResetView() {
           resetDemo();
           setDone(true);
         }}
-        className="rounded-full bg-red-600 px-5 py-2 font-semibold text-white hover:bg-red-700"
+        className="rounded-full bg-ko-600 px-5 py-2 font-semibold text-white hover:bg-ko-700"
       >
         Vaciar mi progreso demo
       </button>
       {done && (
         <div role="status" className="space-y-3">
-          <p className="text-sm text-green-700">Datos borrados.</p>
+          <p className="text-sm text-petrol-700">Datos borrados.</p>
           <button
             type="button"
             onClick={() => router.replace("/")}

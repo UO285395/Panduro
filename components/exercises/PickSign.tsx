@@ -50,37 +50,47 @@ export function PickSign({ exercise, sign, options, onAnswer, disabled }: Props)
   return (
     <section className="space-y-5">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{exercise.prompt}</h2>
-        <p className="text-2xl font-bold text-brand-700 dark:text-brand-300">«{sign.translation}»</p>
+        <h2 className="exercise-title">{exercise.prompt}</h2>
+        <p className="font-display text-3xl font-extrabold text-brand-600 dark:text-brand-400">«{sign.translation}»</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
-        <div className="overflow-hidden rounded-2xl bg-brand-100 dark:bg-brand-900/40">
+        <div className="mx-auto overflow-hidden rounded-3xl bg-brand-100 dark:bg-brand-900/40">
           <AvatarPlayer clip={current?.avatarClip ?? null} size={260} />
         </div>
         <div className="space-y-2">
-          <p className="text-sm text-slate-500">Mira cada opción y elige la que signa «{sign.translation}».</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Toca cada opción para verla y elige la que signa «{sign.translation}».</p>
           <ul className="grid gap-2" aria-label="Opciones">
             {order.map((option, i) => {
               const isAnswer = option.id === sign.id;
-              const tone = revealed
+              const state = revealed
                 ? isAnswer
-                  ? "border-green-500 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100"
+                  ? "correct"
                   : picked === i
-                    ? "border-red-500 bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100"
-                    : "border-slate-200 dark:border-slate-800"
+                    ? "wrong"
+                    : "dim"
                 : viewing === i
-                  ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40"
-                  : "border-slate-200 hover:border-brand-400 dark:border-slate-800";
+                  ? "selected"
+                  : "idle";
               return (
                 <li key={option.id}>
                   <button
                     type="button"
                     onClick={() => setViewing(i)}
                     aria-pressed={viewing === i}
-                    className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left font-medium ${tone}`}
+                    data-state={state}
+                    className="choice justify-between"
                   >
-                    <span>▶ Opción {i + 1}</span>
-                    {revealed && <span className="text-sm">{option.translation}</span>}
+                    <span className="flex items-center gap-3">
+                      <span className="choice-key" aria-hidden>
+                        {i + 1}
+                      </span>
+                      Opción {i + 1}
+                    </span>
+                    {revealed ? (
+                      <span className="text-sm">{option.translation}</span>
+                    ) : (
+                      viewing === i && <span className="text-xs font-bold uppercase tracking-wider">Viendo</span>
+                    )}
                   </button>
                 </li>
               );
@@ -90,7 +100,7 @@ export function PickSign({ exercise, sign, options, onAnswer, disabled }: Props)
             type="button"
             onClick={choose}
             disabled={disabled || revealed}
-            className="w-full rounded-full bg-brand-600 px-6 py-2 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+            className="btn-primary w-full"
           >
             Es la opción {viewing + 1}
           </button>

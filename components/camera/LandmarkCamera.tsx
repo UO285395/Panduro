@@ -96,7 +96,7 @@ export function LandmarkCamera({ onFrame, prepare, onStart, stop, disabled }: Pr
           </div>
         )}
       </div>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-ko-600">{error}</p>}
       <p className="text-xs text-slate-500">
         La imagen no sale de tu dispositivo: el reconocimiento se hace en el navegador.
       </p>

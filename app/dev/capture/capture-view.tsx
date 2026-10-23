@@ -135,7 +135,7 @@ export function CaptureView() {
             <button
               type="button"
               onClick={clearAll}
-              className="rounded-full border border-red-300 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950"
+              className="rounded-full border border-ko-300 px-3 py-1 text-xs font-semibold text-ko-600 hover:bg-ko-50 dark:border-ko-800 dark:hover:bg-ko-950"
             >
               Vaciar
             </button>
@@ -155,7 +155,7 @@ export function CaptureView() {
                   <span
                     className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${
                       n >= 3
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200"
+                        ? "bg-petrol-100 text-petrol-800 dark:bg-petrol-900/40 dark:text-petrol-200"
                         : n > 0
                           ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
                           : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"

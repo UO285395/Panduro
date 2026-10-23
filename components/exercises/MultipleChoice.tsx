@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SignCard } from "@/components/sign/SignCard";
 import type { Exercise, Sign } from "@/lib/curriculum/schema";
 
@@ -20,32 +20,44 @@ export function MultipleChoice({ exercise, sign, onAnswer, disabled }: Props) {
     onAnswer(option === exercise.answer);
   }
 
+  // Las teclas 1-4 eligen la opción con ese número.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement)?.isContentEditable) return;
+      const option = exercise.options[Number(e.key) - 1];
+      if (option) choose(option);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   return (
     <section className="space-y-6">
-      <h2 className="text-lg font-semibold">{exercise.prompt}</h2>
+      <h2 className="exercise-title">{exercise.prompt}</h2>
       <SignCard sign={sign} hideAnswer={picked === null} />
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {exercise.options.map((option) => {
-          const isPicked = option === picked;
-          const isCorrect = option === exercise.answer;
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {exercise.options.map((option, i) => {
           const revealed = picked !== null;
+          const state = !revealed
+            ? "idle"
+            : option === exercise.answer
+              ? "correct"
+              : option === picked
+                ? "wrong"
+                : "dim";
           return (
             <li key={option}>
               <button
                 type="button"
                 onClick={() => choose(option)}
                 disabled={disabled || revealed}
-                aria-pressed={isPicked}
-                className={`w-full rounded-xl border px-4 py-3 text-left font-medium transition ${
-                  revealed
-                    ? isCorrect
-                      ? "border-green-500 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100"
-                      : isPicked
-                        ? "border-red-500 bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100"
-                        : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-                    : "border-slate-200 bg-white hover:border-brand-400 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                }`}
+                aria-pressed={option === picked}
+                data-state={state}
+                className="choice"
               >
+                <span className="choice-key" aria-hidden>
+                  {i + 1}
+                </span>
                 {option}
               </button>
             </li>

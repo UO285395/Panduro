@@ -12,9 +12,9 @@ export function DemoStartButton() {
         signInDemo();
         router.push("/dashboard");
       }}
-      className="rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-brand-700"
+      className="btn-primary px-7 py-3 text-xl"
     >
-      Entrar en modo demo
+      Empezar ahora
     </button>
   );
 }

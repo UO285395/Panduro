@@ -18,8 +18,19 @@ const POSE_TAU_MS = 90;
 const FRAME_RADIUS = 0.14;
 /** Giro de tres cuartos sobre el eje vertical. */
 const YAW = 0.3;
-/** Ángulos de un puño (MCP, PIP, DIP). */
-const FIST = [1.6, 1.85, 1.1] as const;
+/** Ángulos de un puño (MCP, PIP, DIP) del índice al meñique: el meñique cierra algo más. */
+const FIST = [
+  [1.5, 1.8, 1.05],
+  [1.58, 1.85, 1.1],
+  [1.62, 1.85, 1.1],
+  [1.66, 1.8, 1.05],
+] as const;
+/** Con la mano abierta, cada dedo algo más doblado que el anterior, como en reposo. */
+const CASCADE = [0.7, 1, 1.35, 1.7] as const;
+/** Lo que se juntan los dedos al cerrar el puño (fracción de su separación en reposo). */
+const CONVERGE = 0.85;
+/** Pulgar relajado: lo que se acerca a la palma desde su postura de reposo, muy abierta (rad). */
+const THUMB_RELAX = 0.35;
 
 type Props = {
   mood: HandMood;
@@ -229,36 +240,61 @@ function buildRig(THREE: Three, model: import("three").Object3D) {
   const band = tube(0.033, 0.031, -0.016, 0.004, CUFF_BAND);
   armature.add(cuff, band);
 
-  // Pulgar estirado a lo largo del puño (hacia L, un poco hacia los nudillos y la palma).
+  // Cada dedo se dobla en su propio plano (perpendicular a la palma y a su dirección): con un
+  // eje común, los que no apuntan como el corazón se cruzaban y asomaban del puño. Al cerrar,
+  // se juntan hacia el corazón deshaciendo parte de su separación en reposo.
+  const chains = fingers.map((chain, i) => {
+    const dir = chain[1]!.pos.clone().sub(chain[0]!.pos);
+    dir.addScaledVector(N, -dir.dot(N)).normalize();
+    const axis = new THREE.Vector3().crossVectors(dir, N).normalize();
+    if (axis.dot(curlAxis) < 0) axis.negate();
+    const splay = Math.atan2(dir.dot(L), dir.dot(F));
+    return { chain, axis, splay, fist: FIST[i]!, cascade: CASCADE[i]! };
+  });
+  const middleSplay = chains[1]!.splay;
+  // Girar alrededor de N en este sentido lleva F hacia L.
+  const towardL = Math.sign(new THREE.Vector3().crossVectors(N, F).dot(L)) || 1;
+
+  // Pulgar: relajado junto a la palma o estirado a lo largo del puño (hacia L, un poco hacia
+  // los nudillos y la palma).
   const thumbRest = thumb[3]!.pos.clone().sub(thumb[0]!.pos).normalize();
-  const thumbUp = L.clone().addScaledVector(F, 0.3).addScaledVector(N, 0.35).normalize();
+  // Hacia los dedos: el sentido del giro que acerca su dirección a F.
+  const relaxTo = (a: number) => new THREE.Quaternion().setFromAxisAngle(N, a);
+  const thumbRelax = [relaxTo(THUMB_RELAX), relaxTo(-THUMB_RELAX)].sort(
+    (a, b) => thumbRest.clone().applyQuaternion(b).dot(F) - thumbRest.clone().applyQuaternion(a).dot(F),
+  )[0]!;
+  const thumbUp = L.clone().addScaledVector(F, 0.3).addScaledVector(N, 0.3).normalize();
   const thumbAlign = new THREE.Quaternion().setFromUnitVectors(thumbRest, thumbUp);
 
   const q = new THREE.Quaternion();
   const qa = new THREE.Quaternion();
+  const qs = new THREE.Quaternion();
   const v = new THREE.Vector3();
-  const id = new THREE.Quaternion();
   const X = new THREE.Vector3(1, 0, 0);
   const Y = new THREE.Vector3(0, 1, 0);
   const Z = new THREE.Vector3(0, 0, 1);
   const offsetQuat = new THREE.Quaternion();
 
   function pose(p: { tilt: number; roll: number; curl: number; thumb: number; y: number; sway: number; spin: number }) {
-    for (const chain of fingers) {
+    for (const { chain, axis, splay, fist, cascade } of chains) {
+      // Abierta: algo de cascada; cerrada: el puño entero.
+      const curl = Math.min(1, p.curl * (cascade + (1 - cascade) * p.curl));
+      // Hacia el corazón, alrededor de la normal de la palma por el nudillo.
+      qs.setFromAxisAngle(N, -towardL * (splay - middleSplay) * CONVERGE * p.curl);
       let acc = 0;
       for (let k = 0; k < chain.length; k++) {
         const j = chain[k]!;
         if (k > 0) {
           const prev = chain[k - 1]!;
-          q.setFromAxisAngle(curlAxis, acc);
+          q.copy(qs).multiply(qa.setFromAxisAngle(axis, acc));
           v.copy(j.pos).sub(prev.pos).applyQuaternion(q);
           j.node.position.copy(prev.node.position).add(v);
         }
-        acc += (FIST[k] ?? 0) * p.curl;
-        j.node.quaternion.copy(q.setFromAxisAngle(curlAxis, acc)).multiply(j.quat);
+        acc += (fist[k] ?? 0) * curl;
+        j.node.quaternion.copy(qs).multiply(q.setFromAxisAngle(axis, acc)).multiply(j.quat);
       }
     }
-    q.slerpQuaternions(id, thumbAlign, p.thumb);
+    q.slerpQuaternions(thumbRelax, thumbAlign, p.thumb);
     for (const j of thumb) {
       v.copy(j.pos).sub(thumb[0]!.pos).applyQuaternion(q);
       j.node.position.copy(thumb[0]!.pos).add(v);

@@ -1,8 +1,16 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { loopDuration } from "@/lib/avatar/interpolate";
-import { loopBlink, restPalm, segmentDistance, unbendFingers } from "@/lib/avatar/vrmMapper";
-import type { AvatarClip } from "@/lib/curriculum/schema";
+import {
+  fistKnuckle,
+  fistWeights,
+  loopBlink,
+  pinchOutsideFist,
+  restPalm,
+  segmentDistance,
+  unbendFingers,
+} from "@/lib/avatar/vrmMapper";
+import type { AvatarClip, AvatarKeyframe } from "@/lib/curriculum/schema";
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
@@ -27,6 +35,49 @@ describe("segmentDistance: distancia entre dos falanges", () => {
 
   it("un segmento degenerado es un punto", () => {
     expect(segmentDistance(v(0, 2, 0), v(0, 2, 0), v(-1, 0, 0), v(1, 0, 0))).toBeCloseTo(2, 6);
+  });
+});
+
+describe("puño: dedos medidos que MediaPipe deja a medio cerrar", () => {
+  type Fingers = AvatarKeyframe["fingers"];
+  // NUM_1 del DILSE: índice estirado y los otros tres cerrados, con el nudillo corto.
+  const num1: Fingers = [
+    [0.16, 0.51, -0.28],
+    [0.12, 0.2, 0.56],
+    [-0.13, 0.82, 1.92],
+    [-0.06, 1.17, 1.69],
+    [-0.18, 0.98, 1.38],
+  ];
+
+  it("los dedos cerrados llevan el nudillo al de un puño; el estirado y el pulgar, no", () => {
+    const w = fistWeights(num1);
+    expect(w[0]).toBe(0);
+    expect(w[1]).toBe(0);
+    expect(w[2]).toBeCloseTo(1, 2);
+    expect(w[3]).toBeCloseTo(1, 2);
+    expect(fistKnuckle(0.82, w[2]!)).toBeCloseTo(1.45, 2);
+    expect(fistKnuckle(0.2, w[1]!)).toBe(0.2);
+  });
+
+  it("el meñique va con el anular cerrado aunque se mida menos doblado", () => {
+    expect(fistWeights(num1)[4]).toBeGreaterThan(0.95);
+    // Con el anular estirado, el mismo meñique solo se corrige por sí mismo.
+    const ringOut: Fingers = [num1[0]!, num1[1]!, num1[2]!, [0, 0.1, 0.1], num1[4]!];
+    expect(fistWeights(ringOut)[4]).toBeLessThan(0.6);
+  });
+
+  it("una garra o una C (poco cerradas en total) y los dedos no medidos quedan igual", () => {
+    expect(fistWeights([0, [0, 0.3, 1.4], [0, 0.6, 0.9], 0.5, { flex: 1 }])).toEqual([0, 0, 0, 0, 0]);
+    expect(fistKnuckle(1.6, 1)).toBe(1.6);
+  });
+
+  it("la pinza no saca del puño un dedo cerrado, pero la de verdad se queda", () => {
+    const [index, middle] = pinchOutsideFist([0, 0.98, 0, 0], num1);
+    expect(index).toBe(0);
+    expect(middle!).toBeLessThan(0.1);
+    // DAR: índice algo doblado tocando el pulgar.
+    const dar: Fingers = [[0, 0.5, 0.3], [0, 0.7, 0.9], [0, 0.8, 1.0], [0, 0.9, 1.0], [0, 0.9, 1.0]];
+    expect(pinchOutsideFist([0.9, 0.5, 0, 0], dar)).toEqual([0.9, 0.5, 0, 0]);
   });
 });
 

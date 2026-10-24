@@ -198,6 +198,25 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
   - En NARANJA la mano pasiva sale con los nudillos rectos (MediaPipe) y las garras se
     entrecruzan en vez de tocarse punta con punta.
 - Los gestos de la cara salen de las formas sueltas de VRoid por su nombre (ver arriba).
+- Dedos cerrados en puño. MediaPipe se queda corto en el nudillo de los dedos cerrados (se tapan
+  unos a otros): da unos 50° con la segunda falange ya doblada más de 100°, y el dedo quedaba
+  como un gancho que sobresalía del puño (el corazón y el meñique de NUM_1 y NUM_2, que en el
+  vídeo son un puño compacto con el dorso hacia quien mira). Ahora, cuanto más cerrado está un
+  dedo medido en total (nudillo + falange, de 2,0 a 2,7 rad), más se acerca su nudillo al de
+  un puño (1,45 rad; `fistWeights`, `fistKnuckle`). Una garra o una C, poco cerradas en
+  total, quedan como están. El meñique va con el anular: si el anular está en el puño y el
+  meñique doblado al menos 1,8-2,2 rad, se cierra con él, aunque MediaPipe lo vea más abierto.
+- El pulgar sobre un puño. La grabación marca como pinza el pulgar que descansa sobre los dedos
+  cerrados (las yemas quedan cerca), y al juntar las yemas el dedo salía del puño a buscar el
+  pulgar. Ahora el pulgar sigue yendo a los dedos que toca, pero los que están dentro del puño
+  (más de 2,4-2,8 rad en total) no se mueven hacia él (`pinchOutsideFist`): las pinzas de
+  verdad (DAR, CAFÉ, la O) cierran el dedo mucho menos. Comprobado frente al vídeo en NUM_1,
+  NUM_2, NO y DE ACUERDO, y sin cambios en los signos aprobados (NARIZ, ESPERAR y DESCUBRIR
+  quedan con los dedos cerrados más recogidos).
+- Con estos dos cambios, los contactos siguen igual de precisos: con la cara y el cuerpo (559)
+  la mediana sigue en 0,004 brazos y ya ninguno pasa de 0,1 (ROSA baja de 0,23 a 0,08); entre
+  manos (595), de frente, 0,001 y uno pasa de 0,05 (antes dos). Empeora un solo fotograma de
+  transición en MÓVIL (el pulgar llegando a la mejilla, 0,094) y otro en OJO (0,095).
 
 ## Con el modelo de MakeHuman: lo que cambió y lo que falta
 

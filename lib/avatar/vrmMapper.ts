@@ -871,9 +871,10 @@ const THUMB_BEND = 1.4;
  * ángulos medidos dejan las puntas separadas o cruzadas en una mano de otras proporciones
  * (este modelo tiene los dedos largos para su pulgar): el pulgar va hacia las yemas (IK por
  * CCD sobre sus tres huesos) y cada dedo tocado se dobla en sus bisagras hacia el pulgar,
- * por turnos, hasta que se encuentran. Con un peso parcial solo recorren esa parte.
+ * por turnos, hasta que se encuentran. Con un peso parcial solo recorren esa parte. Los dedos
+ * se mueven con `fingerTouch` (los del puño no salen a buscar el pulgar).
  */
-function closePinch(rig: VrmRig, side: Side, touch: ThumbTouch | undefined) {
+function closePinch(rig: VrmRig, side: Side, touch: ThumbTouch | undefined, fingerTouch = touch) {
   const strength = touch ? Math.max(...touch) : 0;
   const fingers = rig.arms[side].fingers;
   const node = (b: B) => rig.vrm.humanoid.getNormalizedBoneNode(b);
@@ -899,8 +900,10 @@ function closePinch(rig: VrmRig, side: Side, touch: ThumbTouch | undefined) {
       for (const b of [...fingers[0]!.bones].reverse()) ccdStep(node(b)!, tip(0), thumbWant);
     }
     for (const i of touched) {
+      const w = fingerTouch?.[i - 1] ?? 0;
+      if (w <= 0.02) continue;
       const f = fingers[i]!;
-      const want = aim(fingerTipNow(rig, side, i), fingerTipNow(rig, side, 0), touch[i - 1]!);
+      const want = aim(fingerTipNow(rig, side, i), fingerTipNow(rig, side, 0), w);
       for (let it = 0; it < 3; it++) {
         for (const b of [...f.bones].reverse()) ccdStep(node(b)!, tip(i), want, f.curlAxis);
       }
@@ -918,6 +921,56 @@ const SPREAD_GAIN = 1.3;
 
 /** Reparto de la flexión medida entre la falange media y la distal (el pulgar, a partes iguales). */
 const MEASURED_SPLIT = { finger: [1, 0.65], thumb: [0.5, 0.5] } as const;
+
+/**
+ * Nudillo de un dedo cerrado en puño. MediaPipe se queda corto en el nudillo de los dedos
+ * cerrados (se tapan unos a otros): da unos 50° cuando la segunda falange ya va doblada más de
+ * 100°, y el dedo queda como un gancho que sobresale en vez de recogido. Cuanto más cerrado
+ * está el dedo en total (nudillo + falange, en radianes, de `from` a `to`), más se acerca el
+ * nudillo a `el`. Una garra o una C, con el dedo poco doblado en total, quedan como están.
+ */
+const FIST = { el: 1.45, from: 2.0, to: 2.7 } as const;
+/**
+ * El meñique va con el anular: si el anular está en el puño, un meñique doblado al menos
+ * esto (rad) también lo está, aunque MediaPipe lo vea menos cerrado (asomaba en NUM_1).
+ */
+const PINKY_WITH_RING = { from: 1.8, to: 2.2 } as const;
+
+const ramp = (x: number, from: number, to: number) => {
+  const u = Math.min(1, Math.max(0, (x - from) / (to - from)));
+  return u * u * (3 - 2 * u);
+};
+
+/** Cuánto está cada dedo medido dentro del puño (0..1; el pulgar y los no medidos, 0). */
+export function fistWeights(fingers: Fingers): number[] {
+  const total = fingers.map((f, i) => (i > 0 && isMeasured(f) ? f[1] + f[2] : null));
+  const w = total.map((t) => (t === null ? 0 : ramp(t, FIST.from, FIST.to)));
+  const pinky = total[4];
+  if (pinky != null) w[4] = Math.max(w[4]!, w[3]! * ramp(pinky, PINKY_WITH_RING.from, PINKY_WITH_RING.to));
+  return w;
+}
+
+/** El nudillo de un dedo medido con su peso de puño (ver FIST). */
+export function fistKnuckle(el: number, weight: number): number {
+  return el >= FIST.el ? el : el + (FIST.el - el) * weight;
+}
+
+/**
+ * Un dedo así de cerrado (nudillo + falange, rad) está dentro del puño y el pulgar descansa
+ * encima: la grabación lo marca como pinza (las yemas quedan cerca), pero acercar su yema a
+ * la del pulgar lo sacaba del puño como un gancho (el corazón de NUM_1). Las pinzas de verdad
+ * (DAR, CAFÉ, la O) cierran el dedo mucho menos.
+ */
+const FIST_PINCH = { from: 2.4, to: 2.8 } as const;
+
+/** La pinza que queda en cada dedo quitando la de los que están dentro del puño. */
+export function pinchOutsideFist(touch: ThumbTouch, fingers: Fingers): ThumbTouch {
+  return touch.map((w, k) => {
+    const f = fingers[k + 1];
+    if (!f || !isMeasured(f)) return w;
+    return w * (1 - ramp(f[1] + f[2], FIST_PINCH.from, FIST_PINCH.to));
+  }) as ThumbTouch;
+}
 
 function poseFingers(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb) {
   const memo = rig.fingerMemo;
@@ -938,13 +991,15 @@ function poseFingersNow(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb
   const arm = rig.arms[side];
   const abdSign = side === "Right" ? 1 : -1;
   const middle = fingers[2]!;
+  const fist = fistWeights(fingers);
   arm.fingers.forEach((finger, i) => {
     const value = fingers[i]!;
     const curlAbout = (angle: number) => new THREE.Quaternion().setFromAxisAngle(finger.curlAxis, angle);
     if (isMeasured(value)) {
       // Medido: el primer hueso gira hasta el azimut y la elevación grabados (en el marco de
       // esta mano) y los otros dos doblan lo que dobló el dedo.
-      const [az0, el, bend] = value;
+      const [az0, el0, bend] = value;
+      const el = fistKnuckle(el0, fist[i]!);
       let az = az0;
       // Separados del corazón hacia su lado, algo más que el signante (ver SPREAD_GAIN).
       if (i !== 0 && i !== 2 && isMeasured(middle) && (az0 - middle[0]) * (i === 1 ? 1 : -1) > 0) {
@@ -966,8 +1021,10 @@ function poseFingersNow(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb
     setNorm(rig.vrm, finger.bones[2], curl(flex.distal));
   });
   if (thumb?.tip) reachThumbTip(rig, side, thumb.tip);
+  // El pulgar va a las yemas que toca, también a las de los dedos del puño (se apoya en él),
+  // pero esos dedos no salen a buscarlo (ver pinchOutsideFist).
   keepThumbOut(rig, side, thumb?.touch);
-  closePinch(rig, side, thumb?.touch);
+  closePinch(rig, side, thumb?.touch, thumb?.touch && pinchOutsideFist(thumb.touch, fingers));
 }
 
 /** Lo que el pulgar se puede meter en la palma o en un dedo sin que se note (en palmas). */

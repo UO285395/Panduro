@@ -148,8 +148,8 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
   const pct = (n: number, d: number) => (d ? Math.round((100 * n) / d) : 0);
 
   return (
-    <details className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
-      <summary className="cursor-pointer font-semibold">
+    <details className="card p-4 text-sm">
+      <summary className="cursor-pointer font-display text-base font-bold">
         Enseñar tus signos {signs.length > 0 && `(${signs.length})`}
       </summary>
       <div className="mt-3 space-y-4">
@@ -163,7 +163,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
           <div className="space-y-2">
             <label className="block space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <span className="eyebrow">
                 Palabra que se escribirá
               </span>
               <input
@@ -172,7 +172,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
                 list="teach-options"
                 maxLength={40}
                 placeholder="Hola"
-                className="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 dark:border-slate-700"
+                className="input py-2 text-base"
               />
               <datalist id="teach-options">
                 {signOptions.map((o) => (
@@ -184,7 +184,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
               {Array.from({ length: Math.max(TAKES_SUGGESTED, takes.length) }, (_, i) => (
                 <span
                   key={i}
-                  className={`h-3 w-3 rounded-full ${i < takes.length ? "bg-brand-600" : "bg-slate-200 dark:bg-slate-700"}`}
+                  className={`h-3 w-3 rounded-full ${i < takes.length ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
                 />
               ))}
             </div>
@@ -193,7 +193,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
                 type="button"
                 onClick={recordTake}
                 disabled={!running || recording}
-                className="rounded-full bg-brand-600 px-4 py-1.5 font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+                className="btn-primary btn-sm"
               >
                 {recording ? "Grabando…" : "Grabar una toma"}
               </button>
@@ -201,12 +201,12 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
                 type="button"
                 onClick={save}
                 disabled={takes.length < MIN_PROTOTYPES_PER_SIGN || !text.trim()}
-                className="rounded-full border border-slate-300 px-4 py-1.5 font-semibold disabled:opacity-50 dark:border-slate-700"
+                className="btn-secondary btn-sm"
               >
                 Guardar
               </button>
               {(takes.length > 0 || recording) && (
-                <button type="button" onClick={discard} className="text-slate-500 hover:underline">
+                <button type="button" onClick={discard} className="font-semibold text-slate-500 hover:underline">
                   {recording && takes.length === 0 ? "Cancelar" : "Descartar tomas"}
                 </button>
               )}
@@ -217,7 +217,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
           {guideClip && (
             <div className="space-y-1">
               <p className="text-xs text-slate-500">Referencia del curso</p>
-              <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="overflow-hidden rounded-3xl bg-brand-100 dark:bg-brand-900/40">
                 <AvatarPlayer clip={guideClip} size={160} />
               </div>
             </div>
@@ -226,7 +226,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
 
         {signs.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <h3 className="eyebrow">
               Tus signos · fiabilidad con tus propias tomas
             </h3>
             <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -235,7 +235,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
                 return (
                   <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
                     <span className="font-medium">{s.text}</span>
-                    <span className={`text-xs ${good ? "text-petrol-700 dark:text-petrol-400" : "text-amber-700 dark:text-amber-300"}`}>
+                    <span className={`text-xs ${good ? "text-petrol-700 dark:text-petrol-300" : "text-accent-700 dark:text-accent-100"}`}>
                       {s.recognized}/{s.total} tomas
                       {s.confusedWith && ` · se confunde con «${s.confusedWith}»`}
                     </span>
@@ -258,8 +258,8 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
         )}
 
         {signs.length >= 2 && (
-          <div className="space-y-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="space-y-2 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+            <h3 className="eyebrow">
               Prueba de secuencias
             </h3>
             {sequence ? (
@@ -271,7 +271,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
                 <button
                   type="button"
                   onClick={check}
-                  className="rounded-full bg-brand-600 px-4 py-1.5 font-semibold text-white hover:bg-brand-700"
+                  className="btn-primary btn-sm"
                 >
                   Comprobar
                 </button>
@@ -281,7 +281,7 @@ export function TeachPanel({ recognizer, running, signOptions, words, clearTrans
                 type="button"
                 onClick={newSequence}
                 disabled={!running}
-                className="rounded-full border border-slate-300 px-4 py-1.5 font-semibold disabled:opacity-50 dark:border-slate-700"
+                className="btn-secondary btn-sm"
               >
                 Probar una secuencia de {SEQUENCE_LENGTH} signos
               </button>

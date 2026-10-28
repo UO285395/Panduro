@@ -63,47 +63,51 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
-      <label className="block space-y-1">
-        <span className="text-sm font-medium">Nombre</span>
+      <label className="block space-y-1.5">
+        <span className="font-display text-base font-bold">Nombre</span>
         <input
           type="text"
           autoComplete="name"
           required
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="input"
         />
       </label>
-      <label className="block space-y-1">
-        <span className="text-sm font-medium">Email</span>
+      <label className="block space-y-1.5">
+        <span className="font-display text-base font-bold">Email</span>
         <input
           type="email"
           autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="input"
         />
       </label>
-      <label className="block space-y-1">
-        <span className="text-sm font-medium">Contraseña</span>
+      <label className="block space-y-1.5">
+        <span className="font-display text-base font-bold">Contraseña</span>
         <input
           type="password"
           autoComplete="new-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          aria-describedby="password-hint"
+          className="input"
         />
+        <span id="password-hint" className="block text-sm text-slate-500 dark:text-slate-400">
+          Mínimo 8 caracteres.
+        </span>
       </label>
 
       {error && (
-        <p className="text-sm text-ko-600" role="alert">
+        <p className="rounded-2xl bg-ko-50 px-4 py-2.5 text-sm font-medium text-ko-700 dark:bg-ko-950 dark:text-ko-200" role="alert">
           {error}
         </p>
       )}
       {message && (
-        <p className="text-sm text-petrol-700" role="status">
+        <p className="rounded-2xl bg-petrol-50 px-4 py-2.5 text-sm font-medium text-petrol-700 dark:bg-petrol-950 dark:text-petrol-200" role="status">
           {message}
         </p>
       )}
@@ -111,7 +115,7 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+        className="btn-primary w-full"
       >
         {loading ? "Creando cuenta…" : "Crear cuenta"}
       </button>

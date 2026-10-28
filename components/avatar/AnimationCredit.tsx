@@ -12,7 +12,7 @@ export function AnimationCredit({
 }) {
   if (!credit) {
     return (
-      <p className="text-[11px] leading-snug text-amber-700 dark:text-amber-400">
+      <p className="text-[11px] leading-snug text-accent-700 dark:text-accent-100">
         Animación aproximada: este signo aún no tiene un vídeo de referencia y
         puede no ser exactamente como se signa.
       </p>

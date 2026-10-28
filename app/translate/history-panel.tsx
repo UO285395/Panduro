@@ -16,9 +16,9 @@ export function HistoryPanel({ entries }: { entries: TranslationRow[] }) {
       {entries.map((e) => (
         <li
           key={String(e.id)}
-          className="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+          className="card rounded-2xl p-3 text-sm"
         >
-          <p className="font-medium">{e.text}</p>
+          <p className="font-display text-base font-bold">{e.text}</p>
           <p className="mt-1 text-xs text-slate-500">
             {new Date(e.createdAt).toLocaleString("es-ES")} · {e.cardIds.length}{" "}
             signo{e.cardIds.length === 1 ? "" : "s"}

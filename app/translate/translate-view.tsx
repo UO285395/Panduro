@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RecognitionUpdate } from "@/lib/esku/application/use-cases/RecognizeSignsUseCase";
 import { createGloss, type SignCandidate } from "@/lib/esku/domain/recognition/value-objects/Gloss";
 import type { Transcript } from "@/lib/esku/domain/transcript/entities/Transcript";
 import { useSignClip } from "@/lib/avatar/useSignClip";
+import { Icon } from "@/components/ui/Icon";
 import { drawFrame } from "@/lib/recognition/drawFrame";
 import { createRecognizer, VOCABULARY_MANIFEST_URL, type Recognizer } from "@/lib/recognition/engine";
 import {
@@ -288,11 +290,17 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
   const running = status === "running";
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
-      <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">Práctica libre</p>
-        <h1 className="text-2xl font-bold">Traductor de LSE</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+    <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6">
+      <header className="space-y-2">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 font-display font-bold text-brand-600 hover:underline dark:text-brand-400"
+        >
+          <Icon name="arrow" size={16} className="rotate-180" /> Panel
+        </Link>
+        <p className="eyebrow">Práctica libre</p>
+        <h1 className="text-4xl font-extrabold">Traductor de LSE</h1>
+        <p className="max-w-2xl text-slate-600 dark:text-slate-400">
           El texto se escribe cuando cada signo termina. Reconoce el alfabeto dactilológico y{" "}
           {vocabulary.length || 286} signos del ámbito sanitario (lista abajo).
         </p>
@@ -300,7 +308,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
 
       <div
         role="note"
-        className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+        className="rounded-2xl bg-accent-100 px-4 py-3 text-sm text-accent-700 dark:bg-accent-700/20 dark:text-accent-100"
       >
         Útil, no infalible. Escribe una secuencia de signos, no una traducción gramatical
         («yo cabeza dolor», no «me duele la cabeza»). Aciertos medidos: ~70 % de los signos a la
@@ -308,8 +316,8 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-xs font-semibold uppercase tracking-wider text-slate-500">Qué vas a signar</legend>
-        <div role="radiogroup" className="inline-flex rounded-full border border-slate-300 p-1 dark:border-slate-700">
+        <legend className="eyebrow">Qué vas a signar</legend>
+        <div role="radiogroup" className="inline-flex flex-wrap rounded-2xl bg-slate-100 p-1 dark:bg-slate-800">
           {MODES.map((m) => (
             <button
               key={m.id}
@@ -317,22 +325,22 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               role="radio"
               aria-checked={mode === m.id}
               onClick={() => changeMode(m.id)}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+              className={`rounded-xl px-4 py-1.5 font-display font-bold transition ${
                 mode === m.id
-                  ? "bg-brand-600 text-white"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                  ? "bg-white text-brand-600 shadow-sm dark:bg-slate-900 dark:text-brand-400"
+                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
               }`}
             >
               {m.label}
             </button>
           ))}
         </div>
-        <p className="text-xs text-slate-500">{MODES.find((m) => m.id === mode)?.hint}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{MODES.find((m) => m.id === mode)?.hint}</p>
       </fieldset>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-2xl bg-slate-900">
+          <div className="relative overflow-hidden rounded-3xl bg-slate-900">
             <video
               ref={videoRef}
               playsInline
@@ -348,13 +356,13 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               <div className="pointer-events-none absolute left-3 top-3 flex gap-2 text-xs font-semibold">
                 {mode !== "letters" && (
                   <span
-                    className={`rounded-full px-2.5 py-1 ${signing ? "bg-brand-600 text-white" : "bg-black/50 text-white/80"}`}
+                    className={`rounded-full px-2.5 py-1 ${signing ? "bg-brand-500 text-white" : "bg-black/50 text-white/80"}`}
                   >
                     {signing ? "● Signando…" : "Listo para el siguiente signo"}
                   </span>
                 )}
                 {fps !== null && (
-                  <span className={`rounded-full px-2.5 py-1 ${fps < LOW_FPS ? "bg-amber-500 text-black" : "bg-black/50 text-white/80"}`}>
+                  <span className={`rounded-full px-2.5 py-1 ${fps < LOW_FPS ? "bg-accent-500 text-black" : "bg-black/50 text-white/80"}`}>
                     {fps} fps
                   </span>
                 )}
@@ -370,37 +378,41 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
                     <button
                       type="button"
                       onClick={start}
-                      className="rounded-full bg-brand-600 px-5 py-2 font-semibold text-white hover:bg-brand-700"
+                      className="btn-primary"
                     >
-                      Empezar cámara
+                      <Icon name="camera" size={20} /> Empezar cámara
                     </button>
                   </>
                 )}
               </div>
             )}
           </div>
-          {error && <p role="alert" className="text-sm text-ko-600">{error}</p>}
+          {error && (
+            <p role="alert" className="rounded-2xl bg-ko-50 px-4 py-2.5 text-sm font-medium text-ko-700 dark:bg-ko-950 dark:text-ko-200">
+              {error}
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {running && (
-              <button type="button" onClick={stop} className="text-slate-500 hover:underline">
+              <button type="button" onClick={stop} className="font-semibold text-slate-500 hover:text-slate-800 hover:underline dark:hover:text-slate-200">
                 Detener cámara
               </button>
             )}
-            <button type="button" onClick={switchCamera} className="text-slate-500 hover:underline">
+            <button type="button" onClick={switchCamera} className="font-semibold text-slate-500 hover:text-slate-800 hover:underline dark:hover:text-slate-200">
               {rearCamera ? "Usar cámara frontal" : "Usar cámara trasera (leer a otra persona)"}
             </button>
           </div>
 
           <section
             aria-live="polite"
-            className="min-h-[6rem] space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+            className="card min-h-[6rem] space-y-3 p-5"
           >
-            <p className="text-xs uppercase tracking-wider text-slate-500">Transcripción</p>
+            <p className="eyebrow">Transcripción</p>
             {tokens.length === 0 ? (
               <p className="text-lg font-medium">…</p>
             ) : (
-              <ul className="flex flex-wrap gap-2 text-lg font-medium">
+              <ul className="flex flex-wrap gap-2 font-display text-2xl font-bold">
                 {tokens.map((t, i) => {
                   const options = t.kind === "word" ? (alternatives.get(t.key) ?? []) : [];
                   const open = openToken === t.key;
@@ -447,7 +459,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               </ul>
             )}
             {feedback && (
-              <p className={`text-sm ${feedback.tone === "warn" ? "text-amber-700 dark:text-amber-300" : "text-slate-500"}`}>
+              <p className={`text-sm ${feedback.tone === "warn" ? "text-accent-700 dark:text-accent-100" : "text-slate-500"}`}>
                 {feedback.text}
               </p>
             )}
@@ -466,7 +478,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               </div>
             )}
             {running && fps !== null && fps < LOW_FPS && (
-              <p className="text-xs text-amber-700 dark:text-amber-300">
+              <p className="text-xs text-accent-700 dark:text-accent-100">
                 La cámara va a {fps} fps: con tan pocos fotogramas los signos se cortan mal. Cierra
                 otras pestañas o aplicaciones, o usa un dispositivo más potente.
               </p>
@@ -478,7 +490,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               type="button"
               onClick={() => recognizerRef.current?.recognize.undo()}
               disabled={!text}
-              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              className="btn-secondary btn-sm"
             >
               Deshacer último
             </button>
@@ -486,7 +498,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               type="button"
               onClick={clearAll}
               disabled={!text}
-              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              className="btn-secondary btn-sm"
             >
               Nueva frase
             </button>
@@ -494,7 +506,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               type="button"
               onClick={onCopy}
               disabled={!text}
-              className="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+              className="btn-primary btn-sm"
             >
               Copiar
             </button>
@@ -502,7 +514,7 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
               type="button"
               onClick={onSave}
               disabled={!text || saving}
-              className="rounded-full bg-petrol-600 px-4 py-2 text-sm font-semibold text-white hover:bg-petrol-700 disabled:opacity-60"
+              className="btn-ok btn-sm"
             >
               {saving ? "Guardando…" : "Guardar"}
             </button>
@@ -517,8 +529,8 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
             clearTranscript={clearAll}
           />
 
-          <details className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
-            <summary className="cursor-pointer font-semibold">Cómo encadenar varios signos o letras</summary>
+          <details className="card p-4 text-sm">
+            <summary className="cursor-pointer font-display text-base font-bold">Cómo encadenar varios signos o letras</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
               <li>
                 Elige el modo: <strong>Signos</strong> para frases, <strong>Deletreo</strong> para
@@ -536,8 +548,8 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
             </ul>
           </details>
 
-          <details className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
-            <summary className="cursor-pointer font-semibold">
+          <details className="card p-4 text-sm">
+            <summary className="cursor-pointer font-display text-base font-bold">
               Signos que reconoce ({vocabulary.length} + alfabeto)
             </summary>
             <p className="mt-2 leading-relaxed text-slate-600 dark:text-slate-300">
@@ -549,16 +561,16 @@ export function TranslateView({ initialHistory, demo, signIds = [], signOptions 
         <aside className="space-y-4">
           {lastWordClip && (
             <div className="space-y-1">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <h2 className="eyebrow">
                 Así se signa «{lastWord?.text}»
               </h2>
-              <div className="overflow-hidden rounded-xl border border-brand-200 dark:border-brand-800">
+              <div className="overflow-hidden rounded-3xl bg-brand-100 dark:bg-brand-900/40">
                 <AvatarPlayer clip={lastWordClip} size={260} />
               </div>
             </div>
           )}
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold">Historial</h2>
+            <h2 className="eyebrow">Historial</h2>
             <HistoryPanel entries={history} />
             {demo && (
               <p className="text-xs text-slate-500">(Modo demo · las traducciones viven en este navegador.)</p>

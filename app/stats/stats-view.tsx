@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 const LETTERS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split("");
 
@@ -21,39 +22,42 @@ export function StatsView({
   totalLessons,
   letterScores,
 }: Props) {
+  const pct = (n: number) => (totalLessons > 0 ? Math.round((n / totalLessons) * 100) : 0);
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 space-y-8">
-      <header className="space-y-1">
-        <Link href="/dashboard" className="text-xs text-brand-600 hover:underline">
-          ← Panel
+    <main className="mx-auto max-w-3xl space-y-8 px-4 py-6 sm:px-6">
+      <header className="space-y-3">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 font-display font-bold text-brand-600 hover:underline dark:text-brand-400"
+        >
+          <Icon name="arrow" size={16} className="rotate-180" /> Panel
         </Link>
-        <h1 className="text-2xl font-bold">Mis estadísticas</h1>
+        <h1 className="text-4xl font-extrabold">Mis estadísticas</h1>
       </header>
 
-      {/* Summary row */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatTile label="XP total" value={xpTotal.toString()} color="brand" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatTile icon="star" label="XP total" value={xpTotal.toString()} tone="brand" />
         <StatTile
+          icon="flame"
           label="Racha"
           value={`${streakDays} día${streakDays !== 1 ? "s" : ""}`}
-          color="orange"
+          tone="accent"
         />
-        <StatTile
-          label="Lecciones"
-          value={`${completedCount}/${totalLessons}`}
-          color="green"
-        />
-        <StatTile
-          label="Perfeccionadas"
-          value={perfectedCount.toString()}
-          color="amber"
-        />
+        <StatTile icon="check" label="Lecciones" value={`${completedCount}/${totalLessons}`} tone="petrol" />
+        <StatTile icon="trophy" label="Perfectas" value={perfectedCount.toString()} tone="accent" />
       </div>
 
-      {/* Letter heatmap */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-          Dactilología · precisión por letra
+      <section className="card space-y-4 p-5" aria-labelledby="progreso">
+        <h2 id="progreso" className="eyebrow">
+          Progreso del currículo
+        </h2>
+        <Bar label="Completadas" value={completedCount} total={totalLessons} pct={pct(completedCount)} tone="bg-petrol-500" />
+        <Bar label="Perfectas" value={perfectedCount} total={totalLessons} pct={pct(perfectedCount)} tone="bg-accent-500" />
+      </section>
+
+      <section className="card space-y-4 p-5" aria-labelledby="letras">
+        <h2 id="letras" className="eyebrow">
+          Dactilología · acierto por letra
         </h2>
         <div className="grid grid-cols-7 gap-1.5 sm:grid-cols-9">
           {LETTERS.map((letter) => {
@@ -61,99 +65,80 @@ export function StatsView({
             return (
               <div
                 key={letter}
-                title={score !== null ? `${letter}: ${score}%` : `${letter}: sin datos`}
-                className={`flex aspect-square items-center justify-center rounded-lg text-sm font-bold ${heatmapClass(score)}`}
+                title={score !== null ? `${letter}: ${score} %` : `${letter}: sin datos`}
+                className={`flex aspect-square items-center justify-center rounded-xl font-display text-lg font-extrabold ${heatmapClass(score)}`}
               >
                 {letter}
               </div>
             );
           })}
         </div>
-        <div className="flex items-center gap-3 text-xs text-slate-500">
-          <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-slate-200 dark:bg-slate-700" />
-            Sin datos
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-ko-200 dark:bg-ko-900/50" />
-            &lt;50%
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-amber-200 dark:bg-amber-800/60" />
-            50–69%
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-petrol-200 dark:bg-petrol-800/60" />
-            70–89%
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-petrol-500" />
-            ≥90%
-          </span>
-        </div>
-      </section>
-
-      {/* Progress bar */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-          Progreso del currículo
-        </h2>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Completadas</span>
-            <span className="font-semibold">{completedCount} / {totalLessons}</span>
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-            <div
-              className="h-full rounded-full bg-brand-600 transition-all duration-500"
-              style={{ width: `${totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Perfeccionadas</span>
-            <span className="font-semibold text-amber-600 dark:text-amber-400">{perfectedCount} / {totalLessons}</span>
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-            <div
-              className="h-full rounded-full bg-amber-500 transition-all duration-500"
-              style={{ width: `${totalLessons > 0 ? Math.round((perfectedCount / totalLessons) * 100) : 0}%` }}
-            />
-          </div>
-        </div>
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+          {[
+            ["bg-slate-100 dark:bg-slate-800", "Sin datos"],
+            ["bg-ko-200 dark:bg-ko-900", "Menos del 50 %"],
+            ["bg-accent-100 dark:bg-accent-700/50", "50–69 %"],
+            ["bg-petrol-200 dark:bg-petrol-800", "70–89 %"],
+            ["bg-petrol-500", "90 % o más"],
+          ].map(([tone, label]) => (
+            <li key={label} className="flex items-center gap-1.5">
+              <span className={`h-3.5 w-3.5 rounded-md ${tone}`} />
+              {label}
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );
 }
 
+function Bar({ label, value, total, pct, tone }: { label: string; value: number; total: number; pct: number; tone: string }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="font-display font-bold tabular-nums">
+          {value} / {total}
+        </span>
+      </div>
+      <div className="h-4 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+        <div className={`h-full rounded-full transition-[width] duration-500 ${tone}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function StatTile({
+  icon,
   label,
   value,
-  color,
+  tone,
 }: {
+  icon: IconName;
   label: string;
   value: string;
-  color: "brand" | "green" | "amber" | "orange";
+  tone: "brand" | "petrol" | "accent";
 }) {
-  const colorClass = {
-    brand: "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300",
-    green: "bg-petrol-50 text-petrol-700 dark:bg-petrol-950/40 dark:text-petrol-300",
-    amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
-    orange: "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
-  }[color];
+  const toneClass = {
+    brand: "bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-200",
+    petrol: "bg-petrol-50 text-petrol-700 dark:bg-petrol-950 dark:text-petrol-200",
+    accent: "bg-accent-100 text-accent-700 dark:bg-accent-700/20 dark:text-accent-100",
+  }[tone];
 
   return (
-    <div className={`rounded-2xl p-4 ${colorClass}`}>
-      <p className="text-xs font-medium opacity-75">{label}</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
+    <div className={`rounded-3xl p-4 ${toneClass}`}>
+      <p className="flex items-center gap-1.5 text-sm font-semibold opacity-80">
+        <Icon name={icon} size={16} /> {label}
+      </p>
+      <p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{value}</p>
     </div>
   );
 }
 
 function heatmapClass(score: number | null): string {
-  if (score === null)
-    return "bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500";
+  if (score === null) return "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500";
   if (score >= 90) return "bg-petrol-500 text-white";
-  if (score >= 70) return "bg-petrol-200 text-petrol-800 dark:bg-petrol-800/60 dark:text-petrol-100";
-  if (score >= 50) return "bg-amber-200 text-amber-800 dark:bg-amber-700/60 dark:text-amber-100";
-  return "bg-ko-200 text-ko-800 dark:bg-ko-900/50 dark:text-ko-100";
+  if (score >= 70) return "bg-petrol-200 text-petrol-800 dark:bg-petrol-800 dark:text-petrol-100";
+  if (score >= 50) return "bg-accent-100 text-accent-700 dark:bg-accent-700/50 dark:text-accent-100";
+  return "bg-ko-200 text-ko-800 dark:bg-ko-900 dark:text-ko-100";
 }

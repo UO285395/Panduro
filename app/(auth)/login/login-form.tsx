@@ -55,31 +55,31 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
-      <label className="block space-y-1">
-        <span className="text-sm font-medium">Email</span>
+      <label className="block space-y-1.5">
+        <span className="font-display text-base font-bold">Email</span>
         <input
           type="email"
           autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="input"
         />
       </label>
-      <label className="block space-y-1">
-        <span className="text-sm font-medium">Contraseña</span>
+      <label className="block space-y-1.5">
+        <span className="font-display text-base font-bold">Contraseña</span>
         <input
           type="password"
           autoComplete="current-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="input"
         />
       </label>
 
       {error && (
-        <p className="text-sm text-ko-600" role="alert">
+        <p className="rounded-2xl bg-ko-50 px-4 py-2.5 text-sm font-medium text-ko-700 dark:bg-ko-950 dark:text-ko-200" role="alert">
           {error}
         </p>
       )}
@@ -87,20 +87,20 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+        className="btn-primary w-full"
       >
         {loading ? "Entrando…" : "Entrar"}
       </button>
 
-      <div className="relative py-2 text-center text-xs text-slate-500">
-        <span className="bg-white px-2 dark:bg-transparent">o</span>
-        <div className="absolute inset-x-0 top-1/2 -z-10 h-px bg-slate-200 dark:bg-slate-700" />
+      <div className="flex items-center gap-3 py-1 text-sm text-slate-400" aria-hidden>
+        <span className="h-0.5 flex-1 rounded-full bg-slate-200 dark:bg-slate-700" />o
+        <span className="h-0.5 flex-1 rounded-full bg-slate-200 dark:bg-slate-700" />
       </div>
 
       <button
         type="button"
         onClick={onGoogle}
-        className="w-full rounded-full border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+        className="btn-secondary w-full"
       >
         Continuar con Google
       </button>

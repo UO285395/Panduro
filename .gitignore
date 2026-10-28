@@ -34,6 +34,8 @@ public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
 public/worker-*.js
+public/fallback-*.js
+public/fallback-*.js.map
 
 # Avatares VRM (licencia de terceros), salvo el de Panduro (CC0, scripts/avatar/build.sh)
 public/avatars/*.vrm

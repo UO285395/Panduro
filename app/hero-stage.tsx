@@ -55,7 +55,7 @@ export function HeroStage({ signs }: { signs: HeroSign[] }) {
   return (
     <div className="relative mx-auto w-full max-w-[26rem]">
       <div className="overflow-hidden rounded-[2rem] border-4 border-white bg-brand-100 shadow-[0_10px_0_0] shadow-brand-200 dark:border-slate-800 dark:bg-brand-900/40 dark:shadow-slate-950">
-        <div className="flex aspect-square items-center justify-center [&_canvas]:!h-full [&_canvas]:!w-full">
+        <div className="flex aspect-square items-center justify-center [&_.avatar-host]:!h-full [&_.avatar-host]:!w-full">
           {clip || Object.keys(clips).length ? (
             <AvatarPlayer clip={clip} label={current.word} size={400} />
           ) : (

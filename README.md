@@ -158,6 +158,21 @@ da una vuelta al terminar la lección. Las poses son funciones puras en
 `lib/mascot/handPose.ts`; para verla, `/dev/mascota`. El feedback de la lección es discreto:
 cambia el color y asoma la mano, sin sonidos ni confeti.
 
+## Sin conexión (PWA)
+
+`pnpm build` genera el service worker (`next-pwa`; en `pnpm dev` está desactivado), que se
+registra desde `app/providers.tsx`: next-pwa 5 solo lo inyecta en las páginas de `pages/`, no
+en las de `app/`. Al instalarse guarda el avatar, la mano y los modelos de reconocimiento
+(`public/`); después, las animaciones de los signos (`/api/clips/…`) y las páginas que se van
+visitando, también al navegar dentro de la app. Una página no visitada muestra `/offline`.
+`app-build-manifest.json` queda fuera de la precaché: Next no lo sirve y con un solo 404 la
+instalación fallaba entera.
+
+El avatar se carga una sola vez por página: al desmontarse (en cada paso de una lección) su
+escenario —el contexto WebGL, la escena y el VRM ya medido— vuelve a una reserva y lo recoge
+el siguiente (`components/avatar/ThreeAvatarPlayer.tsx`). Antes cada paso volvía a cargarlo
+todo y dejaba el contexto WebGL anterior sin liberar.
+
 ## Corpus semilla del clasificador
 
 El clasificador k-NN reconoce desde el minuto uno con **plantillas sintéticas plausibles** para las **12 letras más distintivas** (A, B, C, F, I, L, O, P, U, V, W, Y) y **6 signos léxicos** (HOLA, ADIOS, GRACIAS, SI, NO, BIEN), tres muestras por cada uno. Las plantillas viven en `content/signs/fingerspelling.json` y `content/signs/lexicon.json`, marcadas con `templateSource: "synthetic"`.

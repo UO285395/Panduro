@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { AvatarClip } from "@/lib/curriculum/schema";
 import { SIGN_PLAYBACK_RATE, sampleLoop } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
@@ -46,13 +46,16 @@ type Props = {
 };
 
 /**
- * Avatar 3D — rig procedimental de alta calidad.
- * Palma elipsoidal, dedos con LatheGeometry cónica + nudillos,
- * iluminación de 4 puntos con hemisférica.
+ * Avatar 3D: el VRM de Panduro o, si no carga, el rig procedimental.
+ *
+ * Lo caro de montar —el contexto WebGL con sus sombreadores compilados, la escena y el VRM
+ * cargado y medido— vive en un escenario que se reutiliza: al desmontarse el avatar (en cada
+ * paso de una lección) su lienzo vuelve a una reserva y el siguiente lo recoge, en vez de
+ * cargarlo y medirlo todo otra vez (unos segundos en un móvil) y dejar el contexto anterior
+ * sin liberar.
  */
 export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [mode, setMode] = useState<"procedural" | "vrm">("procedural");
+  const hostRef = useRef<HTMLDivElement | null>(null);
 
   // Cambiar de clip o recibir callbacks nuevos no debe reconstruir la escena
   // ni volver a cargar el VRM: el bucle lee siempre el clip vigente.
@@ -66,370 +69,445 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
   }, [clip]);
 
   useEffect(() => {
-    let disposed = false;
-    let raf = 0;
-
-    (async () => {
-      if (!canvasRef.current) return;
-      let THREE: typeof import("three");
-      try {
-        THREE = await import("three");
-      } catch {
-        callbacksRef.current.onFailed?.();
+    let cancelled = false;
+    let release: (() => void) | null = null;
+    acquireStage().then((stage) => {
+      const host = hostRef.current;
+      if (!stage) {
+        if (!cancelled) callbacksRef.current.onFailed?.();
         return;
       }
-      if (disposed) return;
-
-      const canvas = canvasRef.current;
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(size, size, false);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFShadowMap;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.08;
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-      const scene = new THREE.Scene();
-
-      // Fondo estudio 512×512: gradiente cálido + bokeh central + viñeta fotográfica.
-      const BG = 512;
-      const gradCanvas = document.createElement("canvas");
-      gradCanvas.width = BG; gradCanvas.height = BG;
-      const gctx = gradCanvas.getContext("2d")!;
-      // Gradiente base diagonal — evita el look plano de un gradiente puro vertical.
-      const bgBase = gctx.createLinearGradient(0, 0, BG, BG);
-      bgBase.addColorStop(0.00, "#f8eede");
-      bgBase.addColorStop(0.50, "#ffe8ca");
-      bgBase.addColorStop(1.00, "#f0d8b8");
-      gctx.fillStyle = bgBase;
-      gctx.fillRect(0, 0, BG, BG);
-      // Bokeh central — halo suave detrás del sujeto como un softbox en el fondo.
-      const bokeh = gctx.createRadialGradient(BG * 0.52, BG * 0.44, 0, BG * 0.52, BG * 0.44, BG * 0.42);
-      bokeh.addColorStop(0, "rgba(255,252,240,0.72)");
-      bokeh.addColorStop(1, "rgba(255,252,240,0.00)");
-      gctx.fillStyle = bokeh;
-      gctx.fillRect(0, 0, BG, BG);
-      // Viñeta fotográfica — oscurece las esquinas suavemente.
-      const vig = gctx.createRadialGradient(BG / 2, BG / 2, BG * 0.22, BG / 2, BG / 2, BG * 0.82);
-      vig.addColorStop(0, "rgba(0,0,0,0)");
-      vig.addColorStop(1, "rgba(30,10,0,0.28)");
-      gctx.fillStyle = vig;
-      gctx.fillRect(0, 0, BG, BG);
-      const bgTex = new THREE.CanvasTexture(gradCanvas);
-      bgTex.minFilter = THREE.LinearFilter;
-      scene.background = bgTex;
-
-      // IBL 1024×512 — studio three-point: softbox superior + key window lateral.
-      const EW = 1024, EH = 512;
-      const envCanvas2d = document.createElement("canvas");
-      envCanvas2d.width = EW; envCanvas2d.height = EH;
-      const e2d = envCanvas2d.getContext("2d")!;
-      // Fondo base — gradiente vertical cielo→suelo.
-      const eGrad = e2d.createLinearGradient(0, 0, 0, EH);
-      eGrad.addColorStop(0.00, "#dde8f8");
-      eGrad.addColorStop(0.35, "#f8f4ec");
-      eGrad.addColorStop(0.65, "#ead4a0");
-      eGrad.addColorStop(1.00, "#7a5830");
-      e2d.fillStyle = eGrad;
-      e2d.fillRect(0, 0, EW, EH);
-      // Key window cálido — halo elíptico a la derecha (simulando luz de estudio).
-      const kGrad = e2d.createRadialGradient(EW * 0.72, EH * 0.35, 0, EW * 0.72, EH * 0.35, EW * 0.32);
-      kGrad.addColorStop(0, "rgba(255,245,210,0.82)");
-      kGrad.addColorStop(1, "rgba(255,245,210,0.00)");
-      e2d.fillStyle = kGrad;
-      e2d.fillRect(0, 0, EW, EH);
-      // Fill frío desde la izquierda.
-      const fGrad = e2d.createRadialGradient(EW * 0.10, EH * 0.42, 0, EW * 0.10, EH * 0.42, EW * 0.28);
-      fGrad.addColorStop(0, "rgba(190,215,240,0.50)");
-      fGrad.addColorStop(1, "rgba(190,215,240,0.00)");
-      e2d.fillStyle = fGrad;
-      e2d.fillRect(0, 0, EW, EH);
-      const envTex = new THREE.CanvasTexture(envCanvas2d);
-      envTex.mapping = THREE.EquirectangularReflectionMapping;
-      const pmrem = new THREE.PMREMGenerator(renderer);
-      scene.environment = pmrem.fromEquirectangular(envTex).texture;
-      envTex.dispose();
-      pmrem.dispose();
-
-      // Plano de suelo para recibir sombras (invisible excepto sombras).
-      const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(2, 2),
-        new THREE.ShadowMaterial({ opacity: 0.18 }),
-      );
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso - 0.02;
-      floor.receiveShadow = true;
-      scene.add(floor);
-
-      // Cámara centrada — muestra ambos brazos simétricamente.
-      const camera = new THREE.PerspectiveCamera(26, 1, 0.01, 10);
-      camera.position.set(0, 0.86, 1.7);
-      camera.lookAt(0, 0.78, 0);
-
-      // ── Iluminación de 4 puntos ──────────────────────────────────────────
-      // Hemisférica suave (cielo cálido / suelo frío) como ambient.
-      scene.add(new THREE.HemisphereLight(0xfff0e0, 0x806040, 0.50));
-
-      // Key: luz principal desde arriba-derecha-delante.
-      const key = new THREE.DirectionalLight(0xfffaf0, 1.20);
-      key.position.set(1.2, 3.0, 2.5);
-      key.castShadow = true;
-      key.shadow.mapSize.set(2048, 2048);
-      key.shadow.camera.near = 0.5;
-      key.shadow.camera.far = 6;
-      key.shadow.camera.left = key.shadow.camera.bottom = -0.4;
-      key.shadow.camera.right = key.shadow.camera.top = 0.4;
-      key.shadow.radius = 6;
-      key.shadow.bias = -0.0008;
-      scene.add(key);
-
-      // Fill: suave desde la izquierda, reduce sombras duras.
-      const fill = new THREE.DirectionalLight(0xd0e8ff, 0.40);
-      fill.position.set(-1.5, 1.5, 1.5);
-      scene.add(fill);
-
-      // Rim: luz de contorno principal desde detrás-arriba-izquierda.
-      // Intensidad aumentada para separar mejor la silueta del fondo neutro.
-      const rim = new THREE.DirectionalLight(0xffe8cc, 0.58);
-      rim.position.set(-0.3, 2.5, -2.2);
-      scene.add(rim);
-      // Rim frío secundario desde la derecha — da profundidad y separación adicional.
-      const rimCool = new THREE.DirectionalLight(0xc8e8ff, 0.22);
-      rimCool.position.set(0.6, 1.8, -1.8);
-      scene.add(rimCool);
-
-      // Micro-fill: luz frontal cercana para iluminar el detalle de la piel.
-      const micro = new THREE.DirectionalLight(0xffffff, 0.20);
-      micro.position.set(0.0, 0.0, 3.0);
-      scene.add(micro);
-
-      // Up-fill: rebote cálido desde el suelo — ilumina la palma por debajo.
-      const upFill = new THREE.DirectionalLight(0xffa050, 0.14);
-      upFill.position.set(0.0, -1.5, 1.0);
-      scene.add(upFill);
-
-      // Spot facial: PointLight sobre el rostro para iluminar ojos y expresión.
-      const faceSpot = new THREE.PointLight(0xfff8f0, 0.55, 1.2);
-      faceSpot.position.set(0.1, 0.96, 0.55);
-      scene.add(faceSpot);
-
-      // Mapa de normales procedural: fBm 4-octavas 128×128 para poros realistas.
-      // Cada octava suma sinusoides ortogonales con amplitud ÷2 y frecuencia ×2.
-      const SZ = 128;
-      const normCanvas = document.createElement("canvas");
-      normCanvas.width = SZ; normCanvas.height = SZ;
-      const nctx = normCanvas.getContext("2d")!;
-      const normImgd = nctx.createImageData(SZ, SZ);
-      for (let pi = 0; pi < SZ * SZ; pi++) {
-        const px = (pi % SZ) / SZ, py = Math.floor(pi / SZ) / SZ;
-        let nx = 0, ny = 0, amp = 1, freq = 4;
-        for (let oct = 0; oct < 4; oct++) {
-          nx += Math.sin(px * freq * 6.28 + py * freq * 3.14) * amp;
-          ny += Math.sin(py * freq * 6.28 + px * freq * 3.14) * amp;
-          amp *= 0.50; freq *= 2.10;
-        }
-        normImgd.data[pi * 4]     = Math.round(128 + nx * 20);
-        normImgd.data[pi * 4 + 1] = Math.round(128 + ny * 20);
-        normImgd.data[pi * 4 + 2] = 255;
-        normImgd.data[pi * 4 + 3] = 255;
+      if (cancelled || !host) {
+        releaseStage(stage);
+        return;
       }
-      nctx.putImageData(normImgd, 0, 0);
-      const skinNormTex = new THREE.CanvasTexture(normCanvas);
-      skinNormTex.wrapS = skinNormTex.wrapT = THREE.RepeatWrapping;
-      skinNormTex.repeat.set(14, 14);
-
-      // Mapa de rugosidad procedural: ruido de 3 octavas que rompe la uniformidad
-      // del especular y simula la variación natural de los poros de la piel.
-      // Three.js usa el canal G del roughnessMap: 0=liso, 255=rugoso.
-      const roughCanvas = document.createElement("canvas");
-      roughCanvas.width = SZ; roughCanvas.height = SZ;
-      const rctx = roughCanvas.getContext("2d")!;
-      const roughImgd = rctx.createImageData(SZ, SZ);
-      for (let pi = 0; pi < SZ * SZ; pi++) {
-        const px = (pi % SZ) / SZ, py = Math.floor(pi / SZ) / SZ;
-        let v = 0, ramp = 1, rfreq = 3;
-        for (let oct = 0; oct < 3; oct++) {
-          v += Math.sin(px * rfreq * 7.12 + py * rfreq * 2.88) * ramp;
-          v += Math.cos(px * rfreq * 3.44 + py * rfreq * 5.76) * ramp * 0.5;
-          ramp *= 0.55; rfreq *= 2.05;
-        }
-        // Centrado en 168 (≈0.66 roughness) con variación ±32 (±0.125 roughness)
-        const g = Math.max(0, Math.min(255, Math.round(168 + v * 22)));
-        roughImgd.data[pi * 4]     = 255;
-        roughImgd.data[pi * 4 + 1] = g;
-        roughImgd.data[pi * 4 + 2] = 255;
-        roughImgd.data[pi * 4 + 3] = 255;
-      }
-      rctx.putImageData(roughImgd, 0, 0);
-      const skinRoughTex = new THREE.CanvasTexture(roughCanvas);
-      skinRoughTex.wrapS = skinRoughTex.wrapT = THREE.RepeatWrapping;
-      skinRoughTex.repeat.set(14, 14);
-
-      // Intentar cargar VRM; si no está disponible, usar el rig procedimental.
-      const loaded = await loadPanduroVrm();
-
-      if (loaded && !disposed) {
-        const { scene: vrmScene, vrm } = loaded as {
-          scene: import("three").Group;
-          vrm: import("@pixiv/three-vrm").VRM;
-        };
-        const rig = createVrmRigWithHands(vrm);
-        addHandOutline(vrm, HAND_OUTLINE_WIDTH * rig.armLen);
-        vrmScene.rotation.y = rig.facingY;
-        scene.add(vrmScene);
-        vrmScene.updateMatrixWorld(true);
-        setMode("vrm");
-        callbacksRef.current.onReady?.("vrm");
-
-        // Escena limpia estilo referencia (fondo blanco, softbox frontal)
-        scene.background = new THREE.Color(0xffffff);
-        const softbox = new THREE.DirectionalLight(0xffffff, 0.85);
-        softbox.position.set(0, 1.5, 2.0);
-        scene.add(softbox);
-
-        // Encuadre a partir de la caja del modelo (vale para cualquier escala). En reposo, del
-        // pecho a la cabeza; con un signo, lo más cerca que deja lo que ocupan la cabeza, los
-        // hombros y las manos durante el signo, sin alejarse más que antes.
-        const box = new THREE.Box3().setFromObject(vrmScene);
-        const bCenter = box.getCenter(new THREE.Vector3());
-        const bSize = box.getSize(new THREE.Vector3());
-        camera.fov = 28;
-        camera.updateProjectionMatrix();
-        const tanHalf = Math.tan(((camera.fov / 2) * Math.PI) / 180);
-        type Framing = { pos: import("three").Vector3; look: import("three").Vector3 };
-        const at = (cy: number, dist: number): Framing => ({
-          pos: new THREE.Vector3(bCenter.x, cy, bCenter.z + dist),
-          look: new THREE.Vector3(bCenter.x, cy, bCenter.z),
-        });
-        const idleMin = box.min.y + bSize.y * 0.42;
-        const idleMax = box.max.y + bSize.y * 0.03;
-        const idle = at((idleMin + idleMax) / 2, ((idleMax - idleMin) / 2 / tanHalf) * 1.12);
-        const widest = ((box.max.y + bSize.y * 0.05 - (box.min.y + bSize.y * 0.4)) / 2 / tanHalf) * 1.25;
-        // Lo que se ve siempre: la cabeza (sin las puntas del pelo) y los hombros.
-        const toWorld = vrm.humanoid.normalizedHumanBonesRoot.matrixWorld;
-        const headTop = rig.eyes.clone().addScaledVector(rig.up, HEAD_TOP * rig.face.topU).applyMatrix4(toWorld);
-        const always = new THREE.Box3()
-          .expandByPoint(headTop)
-          .expandByPoint(rig.arms.Right.shoulder.clone().applyMatrix4(toWorld))
-          .expandByPoint(rig.arms.Left.shoulder.clone().applyMatrix4(toWorld));
-        const framingOf = (clip: AvatarClip): Framing => {
-          const region = signBounds(rig, clip).union(always);
-          const size = region.getSize(new THREE.Vector3());
-          region.expandByVector(size.multiplyScalar(FRAME_MARGIN / 2));
-          const halfW = Math.max(region.max.x - bCenter.x, bCenter.x - region.min.x);
-          const halfH = (region.max.y - region.min.y) / 2;
-          const front = Math.max(0, region.max.z - bCenter.z);
-          const dist = Math.min(widest, Math.max(halfW, halfH) / tanHalf + front);
-          return at((region.min.y + region.max.y) / 2, dist);
-        };
-        let framedFor: AvatarClip | null | undefined;
-        let target = idle;
-        const cam = { pos: idle.pos.clone(), look: idle.look.clone() };
-        camera.position.copy(cam.pos);
-        camera.lookAt(cam.look);
-
-        const clock = new THREE.Clock();
-        // Al cambiar de signo (o de signo a reposo) se funde la pose anterior
-        // con la nueva en lugar de saltar.
-        let shown: typeof clipRef.current.clip | undefined;
-        let fade: { from: ReturnType<typeof snapshotPose>; at: number } | null = null;
-        // El giro del cuerpo (signos grabados de tres cuartos), fundido igual que la pose.
-        let yawFrom = 0;
-        let yaw = 0;
-
-        const loop = () => {
-          if (disposed) return;
-          const { clip: active, startedAt } = clipRef.current;
-          const now = performance.now();
-          if (active !== shown) {
-            if (shown !== undefined) fade = { from: snapshotPose(rig), at: now };
-            yawFrom = yaw;
-            shown = active;
-          }
-          // Después de guardar la pose para el fundido: medir el signo la cambia.
-          const first = framedFor === undefined;
-          if (active !== framedFor) {
-            target = active ? framingOf(active) : idle;
-            framedFor = active;
-          }
-          const delta = clock.getDelta();
-          // Al cargar, directamente al encuadre del signo; después, sin saltos.
-          const ease = first ? 1 : 1 - Math.exp((-1000 * delta) / CAMERA_EASE_MS);
-          cam.pos.lerp(target.pos, ease);
-          cam.look.lerp(target.look, ease);
-          camera.position.copy(cam.pos);
-          camera.lookAt(cam.look);
-          const dt = (now - startedAt) * SIGN_PLAYBACK_RATE;
-          // Rotaciones normalizadas ANTES de vrm.update(), que las pasa a los
-          // huesos reales en el mismo frame.
-          if (active) {
-            const clip = resolveClip(rig, active);
-            applyVrmKeyframe(rig, sampleLoop(clip, dt), dt, loopBlink(clip, dt));
-          } else {
-            applyVrmIdle(rig, dt);
-          }
-          const yawTo = active?.bodyYaw ?? 0;
-          yaw = yawTo;
-          if (fade) {
-            const u = (now - fade.at) / CLIP_FADE_MS;
-            if (u >= 1) fade = null;
-            else {
-              const s = u * u * (3 - 2 * u);
-              blendFromSnapshot(rig, fade.from, s);
-              yaw = yawFrom + (yawTo - yawFrom) * s;
-            }
-          }
-          turnBody(rig, yaw);
-          vrm.update(delta);
-          renderer.render(scene, camera);
-          raf = requestAnimationFrame(loop);
-        };
-        loop();
-      } else {
-        // Fallback: rig procedimental
-        const rig = buildProceduralRig(THREE, skinNormTex, skinRoughTex);
-        scene.add(rig.group);
-        callbacksRef.current.onReady?.("procedural");
-
-        const loop = () => {
-          if (disposed) return;
-          const { clip: active, startedAt } = clipRef.current;
-          const dt = (performance.now() - startedAt) * SIGN_PLAYBACK_RATE;
-          const kf = active ? sampleLoop(active, dt) : null;
-          if (kf) {
-            const poseR = poseFromKeyframe(kf);
-            const poseL = poseFromKeyframeLeft(kf);
-            rig.apply(poseR, poseL, dt);
-          } else {
-            rig.applyIdle(dt);
-          }
-          renderer.render(scene, camera);
-          raf = requestAnimationFrame(loop);
-        };
-        loop();
-      }
-
-      return () => { renderer.dispose(); };
-    })();
-
+      stage.resize(size);
+      host.appendChild(stage.canvas);
+      const stop = stage.run(clipRef);
+      callbacksRef.current.onReady?.(stage.mode);
+      release = () => {
+        stop();
+        stage.canvas.remove();
+        releaseStage(stage);
+      };
+    });
     return () => {
-      disposed = true;
-      if (raf) cancelAnimationFrame(raf);
+      cancelled = true;
+      release?.();
     };
   }, [size]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={size}
-      height={size}
-      data-avatar-status={mode}
+    <div
+      ref={hostRef}
       aria-hidden
-      className="rounded-xl"
+      className="avatar-host overflow-hidden rounded-xl"
       style={{ width: size, height: size }}
     />
   );
+}
+
+type ClipRef = { current: { clip: AvatarClip | null; startedAt: number } };
+
+type Stage = {
+  canvas: HTMLCanvasElement;
+  mode: "procedural" | "vrm";
+  resize: (size: number) => void;
+  /** Anima el avatar con el clip vigente hasta que se llame a lo que devuelve. */
+  run: (clipRef: ClipRef) => () => void;
+  dispose: () => void;
+};
+
+/** Escenarios libres que se guardan, y cuánto tiempo sin usarse antes de liberarlos. */
+const MAX_IDLE_STAGES = 2;
+const IDLE_STAGE_MS = 120_000;
+const idleStages: { stage: Stage; timer: ReturnType<typeof setTimeout> }[] = [];
+
+async function acquireStage(): Promise<Stage | null> {
+  const free = idleStages.pop();
+  if (free) {
+    clearTimeout(free.timer);
+    return free.stage;
+  }
+  try {
+    return await buildStage();
+  } catch {
+    return null;
+  }
+}
+
+function releaseStage(stage: Stage) {
+  const entry = {
+    stage,
+    timer: setTimeout(() => {
+      const i = idleStages.indexOf(entry);
+      if (i >= 0) idleStages.splice(i, 1);
+      stage.dispose();
+    }, IDLE_STAGE_MS),
+  };
+  idleStages.push(entry);
+  while (idleStages.length > MAX_IDLE_STAGES) {
+    const old = idleStages.shift()!;
+    clearTimeout(old.timer);
+    old.stage.dispose();
+  }
+}
+
+/** Monta un escenario: contexto WebGL, escena, luces y el VRM (o el rig procedimental). */
+async function buildStage(): Promise<Stage> {
+  const THREE = await import("three");
+  const canvas = document.createElement("canvas");
+  canvas.className = "block h-full w-full";
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  const scene = new THREE.Scene();
+
+  // Fondo estudio 512×512: gradiente cálido + bokeh central + viñeta fotográfica.
+  const BG = 512;
+  const gradCanvas = document.createElement("canvas");
+  gradCanvas.width = BG; gradCanvas.height = BG;
+  const gctx = gradCanvas.getContext("2d")!;
+  // Gradiente base diagonal — evita el look plano de un gradiente puro vertical.
+  const bgBase = gctx.createLinearGradient(0, 0, BG, BG);
+  bgBase.addColorStop(0.00, "#f8eede");
+  bgBase.addColorStop(0.50, "#ffe8ca");
+  bgBase.addColorStop(1.00, "#f0d8b8");
+  gctx.fillStyle = bgBase;
+  gctx.fillRect(0, 0, BG, BG);
+  // Bokeh central — halo suave detrás del sujeto como un softbox en el fondo.
+  const bokeh = gctx.createRadialGradient(BG * 0.52, BG * 0.44, 0, BG * 0.52, BG * 0.44, BG * 0.42);
+  bokeh.addColorStop(0, "rgba(255,252,240,0.72)");
+  bokeh.addColorStop(1, "rgba(255,252,240,0.00)");
+  gctx.fillStyle = bokeh;
+  gctx.fillRect(0, 0, BG, BG);
+  // Viñeta fotográfica — oscurece las esquinas suavemente.
+  const vig = gctx.createRadialGradient(BG / 2, BG / 2, BG * 0.22, BG / 2, BG / 2, BG * 0.82);
+  vig.addColorStop(0, "rgba(0,0,0,0)");
+  vig.addColorStop(1, "rgba(30,10,0,0.28)");
+  gctx.fillStyle = vig;
+  gctx.fillRect(0, 0, BG, BG);
+  const bgTex = new THREE.CanvasTexture(gradCanvas);
+  bgTex.minFilter = THREE.LinearFilter;
+  scene.background = bgTex;
+
+  // IBL 1024×512 — studio three-point: softbox superior + key window lateral.
+  const EW = 1024, EH = 512;
+  const envCanvas2d = document.createElement("canvas");
+  envCanvas2d.width = EW; envCanvas2d.height = EH;
+  const e2d = envCanvas2d.getContext("2d")!;
+  // Fondo base — gradiente vertical cielo→suelo.
+  const eGrad = e2d.createLinearGradient(0, 0, 0, EH);
+  eGrad.addColorStop(0.00, "#dde8f8");
+  eGrad.addColorStop(0.35, "#f8f4ec");
+  eGrad.addColorStop(0.65, "#ead4a0");
+  eGrad.addColorStop(1.00, "#7a5830");
+  e2d.fillStyle = eGrad;
+  e2d.fillRect(0, 0, EW, EH);
+  // Key window cálido — halo elíptico a la derecha (simulando luz de estudio).
+  const kGrad = e2d.createRadialGradient(EW * 0.72, EH * 0.35, 0, EW * 0.72, EH * 0.35, EW * 0.32);
+  kGrad.addColorStop(0, "rgba(255,245,210,0.82)");
+  kGrad.addColorStop(1, "rgba(255,245,210,0.00)");
+  e2d.fillStyle = kGrad;
+  e2d.fillRect(0, 0, EW, EH);
+  // Fill frío desde la izquierda.
+  const fGrad = e2d.createRadialGradient(EW * 0.10, EH * 0.42, 0, EW * 0.10, EH * 0.42, EW * 0.28);
+  fGrad.addColorStop(0, "rgba(190,215,240,0.50)");
+  fGrad.addColorStop(1, "rgba(190,215,240,0.00)");
+  e2d.fillStyle = fGrad;
+  e2d.fillRect(0, 0, EW, EH);
+  const envTex = new THREE.CanvasTexture(envCanvas2d);
+  envTex.mapping = THREE.EquirectangularReflectionMapping;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromEquirectangular(envTex).texture;
+  envTex.dispose();
+  pmrem.dispose();
+
+  // Plano de suelo para recibir sombras (invisible excepto sombras).
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 2),
+    new THREE.ShadowMaterial({ opacity: 0.18 }),
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = SHOULDER_HEIGHT - BONE_LENGTHS.torso - 0.02;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // Cámara centrada — muestra ambos brazos simétricamente.
+  const camera = new THREE.PerspectiveCamera(26, 1, 0.01, 10);
+  camera.position.set(0, 0.86, 1.7);
+  camera.lookAt(0, 0.78, 0);
+
+  // ── Iluminación de 4 puntos ──────────────────────────────────────────
+  // Hemisférica suave (cielo cálido / suelo frío) como ambient.
+  scene.add(new THREE.HemisphereLight(0xfff0e0, 0x806040, 0.50));
+
+  // Key: luz principal desde arriba-derecha-delante.
+  const key = new THREE.DirectionalLight(0xfffaf0, 1.20);
+  key.position.set(1.2, 3.0, 2.5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.near = 0.5;
+  key.shadow.camera.far = 6;
+  key.shadow.camera.left = key.shadow.camera.bottom = -0.4;
+  key.shadow.camera.right = key.shadow.camera.top = 0.4;
+  key.shadow.radius = 6;
+  key.shadow.bias = -0.0008;
+  scene.add(key);
+
+  // Fill: suave desde la izquierda, reduce sombras duras.
+  const fill = new THREE.DirectionalLight(0xd0e8ff, 0.40);
+  fill.position.set(-1.5, 1.5, 1.5);
+  scene.add(fill);
+
+  // Rim: luz de contorno principal desde detrás-arriba-izquierda.
+  // Intensidad aumentada para separar mejor la silueta del fondo neutro.
+  const rim = new THREE.DirectionalLight(0xffe8cc, 0.58);
+  rim.position.set(-0.3, 2.5, -2.2);
+  scene.add(rim);
+  // Rim frío secundario desde la derecha — da profundidad y separación adicional.
+  const rimCool = new THREE.DirectionalLight(0xc8e8ff, 0.22);
+  rimCool.position.set(0.6, 1.8, -1.8);
+  scene.add(rimCool);
+
+  // Micro-fill: luz frontal cercana para iluminar el detalle de la piel.
+  const micro = new THREE.DirectionalLight(0xffffff, 0.20);
+  micro.position.set(0.0, 0.0, 3.0);
+  scene.add(micro);
+
+  // Up-fill: rebote cálido desde el suelo — ilumina la palma por debajo.
+  const upFill = new THREE.DirectionalLight(0xffa050, 0.14);
+  upFill.position.set(0.0, -1.5, 1.0);
+  scene.add(upFill);
+
+  // Spot facial: PointLight sobre el rostro para iluminar ojos y expresión.
+  const faceSpot = new THREE.PointLight(0xfff8f0, 0.55, 1.2);
+  faceSpot.position.set(0.1, 0.96, 0.55);
+  scene.add(faceSpot);
+
+  const resize = (size: number) => renderer.setSize(size, size, false);
+  const dispose = () => {
+    renderer.dispose();
+    renderer.forceContextLoss();
+  };
+
+  // Intentar cargar VRM; si no está disponible, usar el rig procedimental.
+  const loaded = await loadPanduroVrm();
+
+  if (loaded) {
+    const { scene: vrmScene, vrm } = loaded as {
+      scene: import("three").Group;
+      vrm: import("@pixiv/three-vrm").VRM;
+    };
+    const rig = createVrmRigWithHands(vrm);
+    addHandOutline(vrm, HAND_OUTLINE_WIDTH * rig.armLen);
+    vrmScene.rotation.y = rig.facingY;
+    scene.add(vrmScene);
+    vrmScene.updateMatrixWorld(true);
+
+    // Escena limpia estilo referencia (fondo blanco, softbox frontal)
+    scene.background = new THREE.Color(0xffffff);
+    const softbox = new THREE.DirectionalLight(0xffffff, 0.85);
+    softbox.position.set(0, 1.5, 2.0);
+    scene.add(softbox);
+
+    // Encuadre a partir de la caja del modelo (vale para cualquier escala). En reposo, del
+    // pecho a la cabeza; con un signo, lo más cerca que deja lo que ocupan la cabeza, los
+    // hombros y las manos durante el signo, sin alejarse más que antes.
+    const box = new THREE.Box3().setFromObject(vrmScene);
+    const bCenter = box.getCenter(new THREE.Vector3());
+    const bSize = box.getSize(new THREE.Vector3());
+    camera.fov = 28;
+    camera.updateProjectionMatrix();
+    const tanHalf = Math.tan(((camera.fov / 2) * Math.PI) / 180);
+    type Framing = { pos: import("three").Vector3; look: import("three").Vector3 };
+    const at = (cy: number, dist: number): Framing => ({
+      pos: new THREE.Vector3(bCenter.x, cy, bCenter.z + dist),
+      look: new THREE.Vector3(bCenter.x, cy, bCenter.z),
+    });
+    const idleMin = box.min.y + bSize.y * 0.42;
+    const idleMax = box.max.y + bSize.y * 0.03;
+    const idle = at((idleMin + idleMax) / 2, ((idleMax - idleMin) / 2 / tanHalf) * 1.12);
+    const widest = ((box.max.y + bSize.y * 0.05 - (box.min.y + bSize.y * 0.4)) / 2 / tanHalf) * 1.25;
+    // Lo que se ve siempre: la cabeza (sin las puntas del pelo) y los hombros.
+    const toWorld = vrm.humanoid.normalizedHumanBonesRoot.matrixWorld;
+    const headTop = rig.eyes.clone().addScaledVector(rig.up, HEAD_TOP * rig.face.topU).applyMatrix4(toWorld);
+    const always = new THREE.Box3()
+      .expandByPoint(headTop)
+      .expandByPoint(rig.arms.Right.shoulder.clone().applyMatrix4(toWorld))
+      .expandByPoint(rig.arms.Left.shoulder.clone().applyMatrix4(toWorld));
+    const framingOf = (clip: AvatarClip): Framing => {
+      const region = signBounds(rig, clip).union(always);
+      const size = region.getSize(new THREE.Vector3());
+      region.expandByVector(size.multiplyScalar(FRAME_MARGIN / 2));
+      const halfW = Math.max(region.max.x - bCenter.x, bCenter.x - region.min.x);
+      const halfH = (region.max.y - region.min.y) / 2;
+      const front = Math.max(0, region.max.z - bCenter.z);
+      const dist = Math.min(widest, Math.max(halfW, halfH) / tanHalf + front);
+      return at((region.min.y + region.max.y) / 2, dist);
+    };
+
+    const run = (clipRef: ClipRef) => {
+      let stopped = false;
+      let raf = 0;
+      let framedFor: AvatarClip | null | undefined;
+      let target = idle;
+      const cam = { pos: idle.pos.clone(), look: idle.look.clone() };
+      camera.position.copy(cam.pos);
+      camera.lookAt(cam.look);
+
+      const clock = new THREE.Clock();
+      // Al cambiar de signo (o de signo a reposo) se funde la pose anterior
+      // con la nueva en lugar de saltar.
+      let shown: typeof clipRef.current.clip | undefined;
+      let fade: { from: ReturnType<typeof snapshotPose>; at: number } | null = null;
+      // El giro del cuerpo (signos grabados de tres cuartos), fundido igual que la pose.
+      let yawFrom = 0;
+      let yaw = 0;
+
+      const loop = () => {
+        if (stopped) return;
+        const { clip: active, startedAt } = clipRef.current;
+        const now = performance.now();
+        if (active !== shown) {
+          if (shown !== undefined) fade = { from: snapshotPose(rig), at: now };
+          yawFrom = yaw;
+          shown = active;
+        }
+        // Después de guardar la pose para el fundido: medir el signo la cambia.
+        const first = framedFor === undefined;
+        if (active !== framedFor) {
+          target = active ? framingOf(active) : idle;
+          framedFor = active;
+        }
+        const delta = clock.getDelta();
+        // Al cargar, directamente al encuadre del signo; después, sin saltos.
+        const ease = first ? 1 : 1 - Math.exp((-1000 * delta) / CAMERA_EASE_MS);
+        cam.pos.lerp(target.pos, ease);
+        cam.look.lerp(target.look, ease);
+        camera.position.copy(cam.pos);
+        camera.lookAt(cam.look);
+        const dt = (now - startedAt) * SIGN_PLAYBACK_RATE;
+        // Rotaciones normalizadas ANTES de vrm.update(), que las pasa a los
+        // huesos reales en el mismo frame.
+        if (active) {
+          const clip = resolveClip(rig, active);
+          applyVrmKeyframe(rig, sampleLoop(clip, dt), dt, loopBlink(clip, dt));
+        } else {
+          applyVrmIdle(rig, dt);
+        }
+        const yawTo = active?.bodyYaw ?? 0;
+        yaw = yawTo;
+        if (fade) {
+          const u = (now - fade.at) / CLIP_FADE_MS;
+          if (u >= 1) fade = null;
+          else {
+            const s = u * u * (3 - 2 * u);
+            blendFromSnapshot(rig, fade.from, s);
+            yaw = yawFrom + (yawTo - yawFrom) * s;
+          }
+        }
+        turnBody(rig, yaw);
+        vrm.update(delta);
+        renderer.render(scene, camera);
+        raf = requestAnimationFrame(loop);
+      };
+      loop();
+      return () => {
+        stopped = true;
+        cancelAnimationFrame(raf);
+      };
+    };
+    canvas.dataset.avatarStatus = "vrm";
+    return { canvas, mode: "vrm", resize, run, dispose };
+  }
+
+  // Fallback: rig procedimental, con su piel de poros.
+  // Mapa de normales procedural: fBm 4-octavas 128×128 para poros realistas.
+  // Cada octava suma sinusoides ortogonales con amplitud ÷2 y frecuencia ×2.
+  const SZ = 128;
+  const normCanvas = document.createElement("canvas");
+  normCanvas.width = SZ; normCanvas.height = SZ;
+  const nctx = normCanvas.getContext("2d")!;
+  const normImgd = nctx.createImageData(SZ, SZ);
+  for (let pi = 0; pi < SZ * SZ; pi++) {
+    const px = (pi % SZ) / SZ, py = Math.floor(pi / SZ) / SZ;
+    let nx = 0, ny = 0, amp = 1, freq = 4;
+    for (let oct = 0; oct < 4; oct++) {
+      nx += Math.sin(px * freq * 6.28 + py * freq * 3.14) * amp;
+      ny += Math.sin(py * freq * 6.28 + px * freq * 3.14) * amp;
+      amp *= 0.50; freq *= 2.10;
+    }
+    normImgd.data[pi * 4]     = Math.round(128 + nx * 20);
+    normImgd.data[pi * 4 + 1] = Math.round(128 + ny * 20);
+    normImgd.data[pi * 4 + 2] = 255;
+    normImgd.data[pi * 4 + 3] = 255;
+  }
+  nctx.putImageData(normImgd, 0, 0);
+  const skinNormTex = new THREE.CanvasTexture(normCanvas);
+  skinNormTex.wrapS = skinNormTex.wrapT = THREE.RepeatWrapping;
+  skinNormTex.repeat.set(14, 14);
+
+  // Mapa de rugosidad procedural: ruido de 3 octavas que rompe la uniformidad
+  // del especular y simula la variación natural de los poros de la piel.
+  // Three.js usa el canal G del roughnessMap: 0=liso, 255=rugoso.
+  const roughCanvas = document.createElement("canvas");
+  roughCanvas.width = SZ; roughCanvas.height = SZ;
+  const rctx = roughCanvas.getContext("2d")!;
+  const roughImgd = rctx.createImageData(SZ, SZ);
+  for (let pi = 0; pi < SZ * SZ; pi++) {
+    const px = (pi % SZ) / SZ, py = Math.floor(pi / SZ) / SZ;
+    let v = 0, ramp = 1, rfreq = 3;
+    for (let oct = 0; oct < 3; oct++) {
+      v += Math.sin(px * rfreq * 7.12 + py * rfreq * 2.88) * ramp;
+      v += Math.cos(px * rfreq * 3.44 + py * rfreq * 5.76) * ramp * 0.5;
+      ramp *= 0.55; rfreq *= 2.05;
+    }
+    // Centrado en 168 (≈0.66 roughness) con variación ±32 (±0.125 roughness)
+    const g = Math.max(0, Math.min(255, Math.round(168 + v * 22)));
+    roughImgd.data[pi * 4]     = 255;
+    roughImgd.data[pi * 4 + 1] = g;
+    roughImgd.data[pi * 4 + 2] = 255;
+    roughImgd.data[pi * 4 + 3] = 255;
+  }
+  rctx.putImageData(roughImgd, 0, 0);
+  const skinRoughTex = new THREE.CanvasTexture(roughCanvas);
+  skinRoughTex.wrapS = skinRoughTex.wrapT = THREE.RepeatWrapping;
+  skinRoughTex.repeat.set(14, 14);
+
+  const rig = buildProceduralRig(THREE, skinNormTex, skinRoughTex);
+  scene.add(rig.group);
+  const run = (clipRef: ClipRef) => {
+    let stopped = false;
+    let raf = 0;
+    const loop = () => {
+      if (stopped) return;
+      const { clip: active, startedAt } = clipRef.current;
+      const dt = (performance.now() - startedAt) * SIGN_PLAYBACK_RATE;
+      const kf = active ? sampleLoop(active, dt) : null;
+      if (kf) {
+        const poseR = poseFromKeyframe(kf);
+        const poseL = poseFromKeyframeLeft(kf);
+        rig.apply(poseR, poseL, dt);
+      } else {
+        rig.applyIdle(dt);
+      }
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(raf);
+    };
+  };
+  canvas.dataset.avatarStatus = "procedural";
+  return { canvas, mode: "procedural", resize, run, dispose };
 }
 
 // ----------------------------------------------------------------------------

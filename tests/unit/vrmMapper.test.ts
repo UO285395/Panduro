@@ -9,6 +9,7 @@ import {
   restPalm,
   segmentDistance,
   unbendFingers,
+  untangledAzimuths,
 } from "@/lib/avatar/vrmMapper";
 import type { AvatarClip, AvatarKeyframe } from "@/lib/curriculum/schema";
 
@@ -78,6 +79,39 @@ describe("puño: dedos medidos que MediaPipe deja a medio cerrar", () => {
     // DAR: índice algo doblado tocando el pulgar.
     const dar: Fingers = [[0, 0.5, 0.3], [0, 0.7, 0.9], [0, 0.8, 1.0], [0, 0.9, 1.0], [0, 0.9, 1.0]];
     expect(pinchOutsideFist([0.9, 0.5, 0, 0], dar)).toEqual([0.9, 0.5, 0, 0]);
+  });
+});
+
+describe("untangledAzimuths: dedos vecinos sin cruzarse", () => {
+  type Fingers = AvatarKeyframe["fingers"];
+  // Del índice al meñique, cada vez más hacia el lado del meñique (azimut menor).
+  const rest = [0, 0.15, 0, -0.12, -0.25];
+
+  it("los dedos estirados y en orden quedan como se midieron", () => {
+    const open: Fingers = [0, [0.3, 0.1, 0], [0.05, 0.1, 0], [-0.2, 0.1, 0], [-0.4, 0.1, 0]];
+    expect(untangledAzimuths(open, rest)).toEqual([null, 0.3, 0.05, -0.2, -0.4]);
+  });
+
+  it("dos vecinos cruzados vuelven a su orden, con algo de separación", () => {
+    const crossed: Fingers = [0, [0.15, 0.1, 0], [0.25, 0.1, 0], [-0.12, 0.1, 0], [-0.25, 0.1, 0]];
+    const az = untangledAzimuths(crossed, rest) as number[];
+    expect(az[1]! - az[2]!).toBeGreaterThanOrEqual(0.5 * 0.15 - 1e-9);
+    expect(az[2]! - az[3]!).toBeGreaterThan(0);
+  });
+
+  it("un dedo doblado hacia la palma pierde su azimut medido y es él el que se aparta", () => {
+    // Anular cerrado (elevación 1,4) medido al otro lado del corazón, que está estirado.
+    const curled: Fingers = [0, [0.15, 0.1, 0], [-0.05, 0.1, 0], [0.4, 1.4, 1.6], [-0.25, 0.1, 0]];
+    const az = untangledAzimuths(curled, rest) as number[];
+    expect(az[3]!).toBeCloseTo(-0.12, 6);
+    expect(az[2]!).toBeCloseTo(-0.05, 6);
+  });
+
+  it("el pulgar y los dedos no medidos no tienen azimut", () => {
+    const az = untangledAzimuths([[0.2, 0.5, 0], 0.5, [0, 0.1, 0], { flex: 1 }, [-0.25, 0.1, 0]], rest);
+    expect(az[0]).toBeNull();
+    expect(az[1]).toBeNull();
+    expect(az[3]).toBeNull();
   });
 });
 

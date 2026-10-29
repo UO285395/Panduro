@@ -121,8 +121,9 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
 
 ## Al cambiar de modelo
 
-- Las manos se agrandan solas si son pequeñas para la cabeza y para el cuerpo
-  (`createVrmRigWithHands`, hasta `HAND_SCALE`): en un modelo anime sí, en este no.
+- Las manos se ajustan solas a la cabeza y al cuerpo (`createVrmRigWithHands`): se agrandan
+  si son pequeñas, hasta `HAND_SCALE` (un modelo anime), y se reducen si son grandes, hasta
+  `HAND_MIN_SCALE` (este).
 - Revisar `SPREAD_GAIN` (`lib/avatar/vrmMapper.ts`), la mano pasiva de las frases
   (`PASSIVE_REST` en `lib/avatar/compose.ts`) y el contorno de las manos
   (`lib/avatar/handOutline.ts`).
@@ -217,6 +218,30 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
   la mediana sigue en 0,004 brazos y ya ninguno pasa de 0,1 (ROSA baja de 0,23 a 0,08); entre
   manos (595), de frente, 0,001 y uno pasa de 0,05 (antes dos). Empeora un solo fotograma de
   transición en MÓVIL (el pulgar llegando a la mejilla, 0,094) y otro en OJO (0,095).
+- Manos más pequeñas. Las de este modelo medían un 28 % más de lo que les toca para su torso
+  (`handReach` 0,160 frente a 0,63 veces el pecho-boca, 0,125) y se veían enormes. Ahora se
+  reducen al 85 % (`HAND_MIN_SCALE`; más, y en los primeros planos frente al vídeo ya parecían
+  de niño), y el contorno con ellas (`rig.handScale`).
+- Dedos que tiemblan. MediaPipe mide cada fotograma por separado y los ángulos de los dedos
+  van y vuelven de uno al siguiente; a veces la mano entera «se abre» un solo fotograma
+  (ESPERAR a los 200 ms). Ahora los dedos medidos y el pulgar pasan por una mediana de tres
+  fotogramas y una media gaussiana corta (70 ms; `lib/avatar/steadyFingers.ts`): la segunda
+  diferencia entre fotogramas, en el 10 % peor, baja de 0,34 a 0,17 rad, y en el 1 % peor de
+  0,91 a 0,40. Un cambio de forma que dura dos fotogramas o más (abrir y cerrar la mano de
+  CONFERENCIA) se queda, algo más suave.
+- Dedos que se cruzan. El 16 % de los pares de dedos vecinos de las grabaciones quedaban uno
+  al otro lado del otro, sobre todo los doblados (su primera falange apenas se ve en el plano
+  de la palma y MediaPipe le da casi cualquier dirección), y en el avatar se atravesaban. Ahora
+  el azimut de un dedo doblado hacia la palma pasa al de reposo (de 0,6 a 1,3 rad de
+  elevación) y dos vecinos más juntos que la mitad de su separación en reposo se apartan, más
+  el dedo del que menos se fía uno (`untangledAzimuths`). Medido con las cápsulas de los
+  dedos en un cuarto de los signos (1241 fotogramas): lo que se mete un dedo en el de al lado,
+  en el 10 % peor, baja de 0,77 a 0,20 radios de dedo, y los fotogramas con un dedo metido
+  más de un radio, del 7 % al 0,2 %.
+- Con estos tres cambios, los contactos con la cara y el cuerpo siguen igual (mediana 0,004
+  brazos, ninguno pasa de 0,1). Entre manos, de frente, la mediana sigue en 0,001 y pasan de
+  0,05 tres (antes uno), todos por poco y en el último fotograma de un contacto o al apartar
+  las manos (DERECHO, INTERPRETE_LS, SOLIDARIO: 0,05-0,06).
 
 ## Con el modelo de MakeHuman: lo que cambió y lo que falta
 

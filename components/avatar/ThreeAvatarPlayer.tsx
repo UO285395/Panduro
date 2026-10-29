@@ -305,7 +305,8 @@ async function buildStage(): Promise<Stage> {
       vrm: import("@pixiv/three-vrm").VRM;
     };
     const rig = createVrmRigWithHands(vrm);
-    addHandOutline(vrm, HAND_OUTLINE_WIDTH * rig.armLen);
+    // El contorno, a escala de la mano: en unas manos reducidas no se ve más grueso.
+    addHandOutline(vrm, HAND_OUTLINE_WIDTH * rig.armLen * rig.handScale);
     vrmScene.rotation.y = rig.facingY;
     scene.add(vrmScene);
     vrmScene.updateMatrixWorld(true);

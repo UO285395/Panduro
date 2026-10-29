@@ -18,6 +18,7 @@ import {
 } from "./bodyPoints";
 import { HAND_OUTLINE_WIDTH } from "./handOutline";
 import { LOOP_HOLD_MS, loopDuration, returnPath, sampleClip, type LoopingClip } from "./interpolate";
+import { steadyFingers } from "./steadyFingers";
 import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST, Y_MOUTH, Y_PER_FACE } from "./pose";
 
 /**
@@ -125,6 +126,8 @@ export type VrmRig = {
   handShape: { finger: number; palm: number };
   /** Lo más lejos de la muñeca que llega la mano (la punta de un dedo estirado), en el modelo. */
   handReach: number;
+  /** Cuánto se han agrandado (>1) o reducido (<1) las manos del modelo (`createVrmRigWithHands`). */
+  handScale: number;
   /** Expresión del modelo (y peso máximo) para cada gesto de la cara que puede hacer. */
   expressions: Partial<Record<keyof Expressions, [string, number]>>;
   /** Todas las expresiones que toca el mapper, parpadeo incluido. */
@@ -310,6 +313,7 @@ export function createVrmRig(vrm: VRM): VrmRig {
     head,
     handShape: measureHandShape(vrm),
     handReach,
+    handScale: 1,
     ...faceExpressions(vrm),
     resolved: new WeakMap(),
     bounds: new WeakMap(),
@@ -321,6 +325,13 @@ export function createVrmRig(vrm: VRM): VrmRig {
  * y, del tamaño del reproductor, no se distinguía la forma de la mano.
  */
 export const HAND_SCALE = 1.15;
+
+/**
+ * Lo más que se reducen. Las del modelo de Panduro, con su torso corto de dibujo, eran un 28 %
+ * más largas que las de una persona frente al tramo del pecho a la boca, que es donde se signa,
+ * y se veían enormes; más pequeñas que esto ya no se distingue bien la forma de la mano.
+ */
+export const HAND_MIN_SCALE = 0.85;
 
 /**
  * Largo de la mano (muñeca a yema) frente a la cabeza con el pelo (barbilla a coronilla) en una
@@ -338,25 +349,28 @@ const HAND_TO_TORSO = 0.63;
 
 /**
  * El rig del modelo, con las manos agrandadas si las tiene pequeñas para la cabeza y para el
- * cuerpo (ver `HAND_TO_HEAD` y `HAND_TO_TORSO`).
+ * cuerpo (ver `HAND_TO_HEAD` y `HAND_TO_TORSO`), o reducidas si son grandes (hasta
+ * `HAND_MIN_SCALE`).
  */
 export function createVrmRigWithHands(vrm: VRM): VrmRig {
   const natural = createVrmRig(vrm);
   const head = natural.body.top.p[1] - natural.body.chin.p[1];
   const torso = natural.mouthY - natural.chestY;
   const want = Math.min(HAND_TO_HEAD * head, HAND_TO_TORSO * torso);
-  const scale = Math.min(HAND_SCALE, Math.max(1, want / natural.handReach));
-  if (scale < 1.01) return natural;
-  enlargeHands(vrm, scale);
-  return createVrmRig(vrm);
+  const scale = Math.min(HAND_SCALE, Math.max(HAND_MIN_SCALE, want / natural.handReach));
+  if (Math.abs(scale - 1) < 0.01) return natural;
+  scaleHands(vrm, scale);
+  const rig = createVrmRig(vrm);
+  rig.handScale = scale;
+  return rig;
 }
 
 /**
- * Agranda las manos del modelo (la mano y sus dedos): la real, que es la que se ve, y la
- * normalizada, con la que el mapper mide contactos y colisiones. Antes de `createVrmRig`, que
- * así mide las yemas, el alcance y el grosor de la mano ya agrandada.
+ * Agranda o reduce las manos del modelo (la mano y sus dedos): la real, que es la que se ve, y
+ * la normalizada, con la que el mapper mide contactos y colisiones. Antes de `createVrmRig`,
+ * que así mide las yemas, el alcance y el grosor de la mano ya escalada.
  */
-export function enlargeHands(vrm: VRM, scale: number) {
+export function scaleHands(vrm: VRM, scale: number) {
   for (const b of [B.RightHand, B.LeftHand]) {
     vrm.humanoid.getNormalizedBoneNode(b)?.scale.multiplyScalar(scale);
     vrm.humanoid.getRawBoneNode(b)?.scale.multiplyScalar(scale);
@@ -972,6 +986,52 @@ export function pinchOutsideFist(touch: ThumbTouch, fingers: Fingers): ThumbTouc
   }) as ThumbTouch;
 }
 
+/**
+ * Hasta dónde se fía uno del azimut medido de un dedo, según su elevación (rad): doblado hacia
+ * la palma, su primera falange apenas se ve en el plano de la palma y MediaPipe le da casi
+ * cualquier dirección. Entre `from` y `to`, el azimut va pasando al de reposo del modelo.
+ */
+const AZ_TRUST = { from: 0.6, to: 1.3 } as const;
+/** Lo que se deja, como mínimo, entre dos dedos vecinos: esta fracción de su separación en reposo. */
+const MIN_FAN = 0.5;
+
+/**
+ * Los azimuts de los cuatro dedos largos (índice 1 a 4; el pulgar y los no medidos, null),
+ * sin cruces. Las grabaciones dejaban un 16 % de los pares de dedos vecinos al otro lado uno de
+ * otro (sobre todo los doblados) y en el avatar se atravesaban; en una mano los dedos están
+ * siempre en orden. Si dos vecinos quedan más juntos que `MIN_FAN` de su separación en reposo,
+ * se apartan, más el dedo del que menos se fía uno.
+ */
+export function untangledAzimuths(fingers: Fingers, restAz: readonly number[]): (number | null)[] {
+  const az: (number | null)[] = [null];
+  const trust: number[] = [0];
+  for (let i = 1; i < 5; i++) {
+    const f = fingers[i];
+    if (!f || !isMeasured(f)) {
+      az.push(null);
+      trust.push(0);
+      continue;
+    }
+    const t = 1 - ramp(f[1], AZ_TRUST.from, AZ_TRUST.to);
+    az.push(restAz[i]! + (f[0] - restAz[i]!) * t);
+    trust.push(t);
+  }
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 1; i < 4; i++) {
+      const a = az[i];
+      const b = az[i + 1];
+      if (a == null || b == null) continue;
+      const deficit = Math.max(0, restAz[i]! - restAz[i + 1]!) * MIN_FAN - (a - b);
+      if (deficit <= 0) continue;
+      const ma = 1.05 - trust[i]!;
+      const mb = 1.05 - trust[i + 1]!;
+      az[i] = a + (deficit * ma) / (ma + mb);
+      az[i + 1] = b - (deficit * mb) / (ma + mb);
+    }
+  }
+  return az;
+}
+
 function poseFingers(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb) {
   const memo = rig.fingerMemo;
   if (!memo) return poseFingersNow(rig, side, fingers, thumb);
@@ -990,20 +1050,22 @@ function poseFingers(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb) {
 function poseFingersNow(rig: VrmRig, side: Side, fingers: Fingers, thumb?: Thumb) {
   const arm = rig.arms[side];
   const abdSign = side === "Right" ? 1 : -1;
-  const middle = fingers[2]!;
   const fist = fistWeights(fingers);
+  const azs = untangledAzimuths(fingers, arm.fingers.map((f) => f.restAz));
+  const middleAz = azs[2];
   arm.fingers.forEach((finger, i) => {
     const value = fingers[i]!;
     const curlAbout = (angle: number) => new THREE.Quaternion().setFromAxisAngle(finger.curlAxis, angle);
     if (isMeasured(value)) {
       // Medido: el primer hueso gira hasta el azimut y la elevación grabados (en el marco de
       // esta mano) y los otros dos doblan lo que dobló el dedo.
-      const [az0, el0, bend] = value;
+      const [, el0, bend] = value;
       const el = fistKnuckle(el0, fist[i]!);
+      const az0 = azs[i] ?? value[0];
       let az = az0;
       // Separados del corazón hacia su lado, algo más que el signante (ver SPREAD_GAIN).
-      if (i !== 0 && i !== 2 && isMeasured(middle) && (az0 - middle[0]) * (i === 1 ? 1 : -1) > 0) {
-        az = middle[0] + (az0 - middle[0]) * SPREAD_GAIN;
+      if (i !== 0 && i !== 2 && middleAz != null && (az0 - middleAz) * (i === 1 ? 1 : -1) > 0) {
+        az = middleAz + (az0 - middleAz) * SPREAD_GAIN;
       }
       const [m, d] = i === 0 ? MEASURED_SPLIT.thumb : MEASURED_SPLIT.finger;
       const spread = new THREE.Quaternion().setFromAxisAngle(arm.palmRest, (az - finger.restAz) * arm.azSign);
@@ -1556,7 +1618,7 @@ export function resolveClip(rig: VrmRig, clip: AvatarClip): LoopingClip {
 }
 
 function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
-  const clip = facingCamera(chinsFromBelow(earsFromBehind(bothHandsTouch(unbentTowardCamera(input)))));
+  const clip = facingCamera(chinsFromBelow(earsFromBehind(bothHandsTouch(unbentTowardCamera(steadyFingers(input))))));
   const resolved: AvatarClip = {
     ...clip,
     keyframes: centeredHands(rig, clip).map((kf) => {

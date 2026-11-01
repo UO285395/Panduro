@@ -710,7 +710,7 @@ const FINGER_RADIUS = 0.1;
  * pulgar (base, nudillo, falange y punta), 5-20 los otros dedos de cuatro en cuatro, y 21 el
  * centro de la palma.
  */
-function handJointWorld(rig: VrmRig, side: Side, k: number): THREE.Vector3 {
+export function handJointWorld(rig: VrmRig, side: Side, k: number): THREE.Vector3 {
   const h = rig.vrm.humanoid;
   const wrist = h.getNormalizedBoneNode(ARM[side].hand)!.getWorldPosition(new THREE.Vector3());
   if (k === 0) return wrist;

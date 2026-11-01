@@ -138,6 +138,12 @@ valorar, `←` `→` para moverse, `N` al siguiente sin revisar, `S` para la vel
 se guarda en el navegador; **Exportar** descarga un JSON con todo (e **Importar** junta el de
 otra persona o de otro equipo). Ese archivo es el que dice qué signos corregir.
 
+Por defecto los signos salen ordenados de más a menos dudosos, según una comparación automática
+del avatar con el vídeo (`content/signs/audit.json`): en cada signo, un aviso dice qué se aparta
+(la posición, la forma o la orientación de cada mano) y hacia qué segundo. Se rehace con
+`/dev/auditar` y `scripts/audit_signs.py`; cómo funciona y qué no ve, en
+[`docs/avatar.md`](./docs/avatar.md#comparación-automática-con-el-vídeo).
+
 Los vídeos salen de `data/dilse/videos` si se han descargado (`scripts/dilse_download.py`, solo
 en desarrollo) y, si no, de la web del DILSE (los enlaces están en
 `content/signs/dilse-videos.json`, que se rehace con `node scripts/dilse-video-urls.mjs`).

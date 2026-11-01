@@ -131,6 +131,55 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
   TELÉFONO, PADRE, OREJA, ESCUCHAR, PENSAR, LLUVIA, GRACIAS, BIEN, NARIZ, DESCUBRIR, 18) y los
   que tocan la cabeza.
 - Añadir el modelo, su autor y su licencia a `CREDITS.md`.
+- Repetir la comparación automática con los vídeos (abajo) y mirar lo que suba en la lista.
+
+## Comparación automática con el vídeo
+
+Para que la revisión con alguien que signa (`/dev/revisar`) empiece por lo que más
+probablemente esté mal, el avatar se compara con el vídeo del DILSE del que salió cada signo:
+
+1. `/dev/auditar` («Empezar») hace cada signo grabado con el modelo, sin pintarlo, y guarda el
+   esqueleto cada 40 ms: las 21 articulaciones de MediaPipe de cada mano
+   (`handJointWorld`), hombros, codos, muñecas y la cara (`lib/avatar/skeleton.ts`). Tarda unos
+   minutos; «Descargar» da `esqueletos-avatar.json`.
+2. `.venv/bin/python scripts/audit_signs.py esqueletos-avatar.json` lo compara con los
+   landmarks de los vídeos (`data/dilse/landmarks.json`) y escribe `content/signs/audit.json`.
+3. `/dev/revisar` pone primero los que más se apartan, con un aviso de qué mirar: «Orientación
+   de la palma de la otra mano, 2,3 veces lo habitual, hacia los 0,6 s».
+
+Se compara, fotograma a fotograma y alineando los dos en el tiempo con DTW, lo que se ve al
+ponerlos uno al lado del otro: dónde está la mano (respecto a los hombros y la boca y, junto a
+la cara, en coordenadas de cara, porque la cabeza de dibujo es más grande), su forma (los
+ángulos de los dedos, en 3D) y hacia dónde mira (la palma y la dirección de la mano). Cada
+medida se da en veces la que no supera el 75 % de los signos. Las manos que MediaPipe da
+reflejadas no cuentan (como en la captura), un signante zurdo se compara en espejo (el avatar
+lo hace como diestro) y, mientras la mano toca algo, su orientación cuenta la mitad: el avatar
+la gira a propósito para que el contacto quede bien (PENSAR, CÓMO).
+
+Lo que no ve: un error de MediaPipe que el avatar copia (los dos coinciden, pero con el vídeo
+mal medido), ni lo que se cambia a propósito respecto al vídeo (la mano al lado de la cara de
+PRESENTAR y PROPONER sale como posición). Es un orden para revisar, no un veredicto.
+
+También avisa de los signos cuyo vídeo descargado es el mismo archivo que el de otros (35): a
+veces es el mismo signo (HIJO e HIJA, CALOR y VERANO), pero conviene comprobar JUSTICIA,
+COMPARAR, EVALUAR y METÁFORA, o ARQUITECTURA, INGENIERO y PLANIFICADO.
+
+Primera pasada (noviembre de 2026), con 321 signos:
+
+- Los 16 aprobados quedan del puesto 50 para abajo (2,1 como mucho); el aviso fuerte de
+  `/dev/revisar` (2,5) marca 25 signos y ninguno de ellos.
+- Arriba, y comprobado frente al vídeo: LEVANTARSE (la mano pasiva, que MediaPipe da reflejada,
+  y las «piernas» que no se apoyan en la palma), SIEMPRE, FORMAL, MIÉRCOLES y QUIÉN (las manos
+  bajas con los dedos colgando), AYUDAR y LIBRO (las palmas hacia arriba con los dedos
+  encogidos), ROPA (la palma hacia la cámara en vez de hacia el cuerpo) y BLANCO (la mano a un
+  lado en vez de en el pecho).
+- Con los dedos hacia la cámara MediaPipe se inventa la flexión, como con la palma de frente
+  (`unbendFingers`), pero enderezarlos en general cambiaba 226 signos, entre ellos casi todos
+  los aprobados: queda para la revisión.
+- Los clips son casi todos de la conversión del 30 de septiembre, anterior a los últimos
+  cambios de la captura. Volver a convertirlos apenas cambia lo que se ve: mejora la puntuación
+  de 19 y empeora la de 6, y LEVANTARSE y GRIS pierden contactos con la otra mano. Se quedan
+  como estaban.
 
 ## Con el modelo de VRoid
 

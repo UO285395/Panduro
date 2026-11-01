@@ -19,6 +19,19 @@ export type ReviewSign = {
   approved: boolean;
   /** Vídeos del DILSE, en orden (las frases, uno por signo). */
   video: { id: string; url: string }[];
+  /** Lo que más se aparta del vídeo según la comparación automática, si se ha hecho. */
+  audit: SignAudit | null;
+};
+
+/** Ver scripts/audit_signs.py: cada medida, en veces lo que no supera el 75 % de los signos. */
+export type SignAudit = {
+  rank: number;
+  score: number;
+  checks: { aspect: "pos" | "shape" | "orient"; hand: "dom" | "pas"; ratio: number; at: number }[];
+  /** Parte del signo en que MediaPipe vio bien la mano en el vídeo (con poco, la comparación vale menos). */
+  seen: number;
+  /** Signos con el mismo archivo de vídeo del DILSE. */
+  sameVideo?: string[];
 };
 
 type Verdict = "ok" | "doubt" | "bad";
@@ -26,6 +39,7 @@ type Review = { verdict: Verdict; issues: string[]; note: string; at: string };
 type Reviews = Record<string, Review>;
 type Filter = "all" | "pending" | Verdict | "approved";
 type Speed = 1 | 0.5;
+type Order = "audit" | "course";
 
 const STORAGE_KEY = "panduro.revisar.v1";
 const REVIEWER_KEY = "panduro.revisar.reviewer";
@@ -80,6 +94,23 @@ const FILTERS: { id: Filter; label: string }[] = [
 
 const DOT: Record<Verdict, string> = { ok: "bg-petrol-500", doubt: "bg-amber-500", bad: "bg-ko-500" };
 
+/**
+ * Desde esta puntuación de la comparación automática, el signo se marca para mirarlo primero:
+ * el 8 % de los signos, y ninguno de los que ya se habían dado por buenos (como mucho, 2,1).
+ */
+const SUSPECT_SCORE = 2.5;
+
+const ASPECT: Record<SignAudit["checks"][number]["aspect"], string> = {
+  pos: "Posición",
+  shape: "Forma de la mano",
+  orient: "Orientación de la palma",
+};
+
+/** Los signos en el orden de la comparación automática (los que más se apartan, primero). */
+function byAudit(signs: ReviewSign[]): ReviewSign[] {
+  return [...signs].sort((a, b) => (a.audit?.rank ?? Infinity) - (b.audit?.rank ?? Infinity));
+}
+
 function loadJson<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -112,6 +143,9 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
   const [reviewer, setReviewer] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  const hasAudit = signs.some((s) => s.audit);
+  const [order, setOrder] = useState<Order>(hasAudit ? "audit" : "course");
+  const ordered = useMemo(() => (order === "audit" ? byAudit(signs) : signs), [signs, order]);
   const [query, setQuery] = useState("");
   const [currentId, setCurrentId] = useState(signs[0]?.id ?? "");
   const [speed, setSpeed] = useState<Speed>(1);
@@ -126,10 +160,10 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
     setReviewer(loadJson<string>(REVIEWER_KEY, ""));
     // El signo pedido (?sign=ID, desde el glosario) o, si no, el primero sin revisar.
     const asked = new URLSearchParams(window.location.search).get("sign");
-    const first = signs.find((s) => s.id === asked) ?? signs.find((s) => !saved[s.id]);
+    const first = signs.find((s) => s.id === asked) ?? (hasAudit ? byAudit(signs) : signs).find((s) => !saved[s.id]);
     if (first) setCurrentId(first.id);
     setLoaded(true);
-  }, [signs]);
+  }, [signs, hasAudit]);
 
   useEffect(() => {
     if (loaded) saveJson(STORAGE_KEY, reviews);
@@ -145,7 +179,7 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
       .toLowerCase()
       .normalize("NFD")
       .replace(/[̀-ͯ]/g, "");
-    return signs.filter((s) => {
+    return ordered.filter((s) => {
       const r = reviews[s.id];
       if (filter === "pending" && r) return false;
       if ((filter === "ok" || filter === "doubt" || filter === "bad") && r?.verdict !== filter) return false;
@@ -154,7 +188,7 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
       const text = `${s.id} ${s.translation}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
       return text.includes(q);
     });
-  }, [signs, reviews, filter, query]);
+  }, [ordered, reviews, filter, query]);
 
   const current = signs.find((s) => s.id === currentId) ?? signs[0];
   const review = current ? reviews[current.id] : undefined;
@@ -171,21 +205,21 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
 
   const go = useCallback(
     (delta: number) => {
-      const list = visible.length ? visible : signs;
+      const list = visible.length ? visible : ordered;
       const i = list.findIndex((s) => s.id === currentId);
       const next = list[Math.min(list.length - 1, Math.max(0, (i < 0 ? 0 : i) + delta))];
       if (next) setCurrentId(next.id);
     },
-    [visible, signs, currentId],
+    [visible, ordered, currentId],
   );
 
   const goPending = useCallback(() => {
-    const i = signs.findIndex((s) => s.id === currentId);
-    const after = [...signs.slice(i + 1), ...signs.slice(0, i + 1)];
+    const i = ordered.findIndex((s) => s.id === currentId);
+    const after = [...ordered.slice(i + 1), ...ordered.slice(0, i + 1)];
     const next = after.find((s) => !reviews[s.id] && s.id !== currentId);
     if (next) setCurrentId(next.id);
     else setMessage("No quedan signos sin revisar.");
-  }, [signs, currentId, reviews]);
+  }, [ordered, currentId, reviews]);
 
   const update = useCallback(
     (patch: Partial<Review>) => {
@@ -386,6 +420,19 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
               </button>
             ))}
           </div>
+          {hasAudit && (
+            <label className="flex items-center gap-2 text-xs text-slate-500">
+              Orden
+              <select
+                value={order}
+                onChange={(e) => setOrder(e.target.value as Order)}
+                className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-transparent px-2 py-1 dark:border-slate-700"
+              >
+                <option value="audit">Más dudosos primero</option>
+                <option value="course">Del curso</option>
+              </select>
+            </label>
+          )}
           <p className="text-xs text-slate-500">{visible.length} signos</p>
           {/* En pantallas pequeñas, un desplegable en vez de la lista. */}
           <select
@@ -419,6 +466,14 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
                       }`}
                     />
                     <span className="truncate">{s.translation}</span>
+                    {s.audit && s.audit.score >= SUSPECT_SCORE && (
+                      <span
+                        title="La comparación automática ve diferencias con el vídeo"
+                        className="shrink-0 rounded bg-ko-100 px-1 text-[10px] font-bold text-ko-700 dark:bg-ko-900/40 dark:text-ko-300"
+                      >
+                        !
+                      </span>
+                    )}
                     <span className="ml-auto shrink-0 text-[10px] text-slate-400">{s.levelId}</span>
                   </button>
                 </li>
@@ -492,6 +547,10 @@ export function ReviewView({ signs }: { signs: ReviewSign[] }) {
               <figcaption className="text-xs text-slate-500">Avatar de Panduro</figcaption>
             </figure>
           </div>
+
+          {current.audit && (current.audit.checks.length > 0 || current.audit.sameVideo) && (
+            <AuditNote audit={current.audit} approved={current.approved} />
+          )}
 
           {current.description && (
             <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
@@ -668,4 +727,46 @@ function SignAvatar({ id, speed }: { id: string; speed: Speed }) {
   const shown = useMemo(() => (clip ? atSpeed(clip, speed) : null), [clip, speed]);
   if (error) return <p className="p-6 text-sm text-ko-600">No se ha podido cargar la animación.</p>;
   return <AvatarPlayer clip={shown} size={320} label={id} />;
+}
+
+/**
+ * Lo que la comparación automática ve distinto del vídeo en este signo, para mirarlo con
+ * atención (no es un veredicto: el vídeo mal medido lo copia igual el avatar, y algunas
+ * diferencias son a propósito, como la mano junto a la cara en PRESENTAR).
+ */
+function AuditNote({ audit, approved }: { audit: SignAudit; approved: boolean }) {
+  const strong = audit.score >= SUSPECT_SCORE;
+  return (
+    <div
+      className={`space-y-1 rounded-xl border p-3 text-sm ${
+        strong
+          ? "border-ko-200 bg-ko-50 text-ko-900 dark:border-ko-900 dark:bg-ko-950/40 dark:text-ko-100"
+          : "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+      }`}
+    >
+      <p className="font-semibold">
+        {strong ? "Mira con atención" : audit.checks.length ? "Diferencias con el vídeo" : "Comprueba el vídeo"}
+        <span className="ml-2 text-xs font-normal opacity-70">
+          n.º {audit.rank} en la comparación automática{approved ? " · aprobado antes" : ""}
+        </span>
+      </p>
+      <ul className="space-y-0.5">
+        {audit.checks.map((c) => (
+          <li key={`${c.hand}.${c.aspect}`}>
+            {ASPECT[c.aspect]} de la {c.hand === "dom" ? "mano dominante" : "otra mano"}:{" "}
+            <span className="tabular-nums">{c.ratio.toFixed(1).replace(".", ",")}</span> veces lo habitual, sobre todo
+            hacia los <span className="tabular-nums">{(c.at / 1000).toFixed(1).replace(".", ",")} s</span>
+          </li>
+        ))}
+      </ul>
+      {audit.sameVideo && (
+        <p>
+          El DILSE da el mismo vídeo para {audit.sameVideo.join(", ")}: comprueba que es el signo de esta palabra.
+        </p>
+      )}
+      {audit.seen < 0.6 && (
+        <p className="text-xs opacity-80">En buena parte del vídeo no se ve bien la mano: la comparación vale menos.</p>
+      )}
+    </div>
+  );
 }

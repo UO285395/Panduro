@@ -158,11 +158,18 @@ texto. Las piezas comunes (`.btn-primary`, `.btn-secondary`, `.btn-ok`/`.btn-ko`
 `.chip`, `.input`, `.choice` con `data-state`) están en `app/globals.css`; los iconos, en
 `components/ui/Icon.tsx`.
 
-La mascota es una **mano 3D** (`components/mascot/HandMascot.tsx`, modelo «generic-hand» de
-WebXR Input Profiles, MIT): saluda en reposo, levanta el pulgar al acertar, lo baja al fallar y
-da una vuelta al terminar la lección. Las poses son funciones puras en
-`lib/mascot/handPose.ts`; para verla, `/dev/mascota`. El feedback de la lección es discreto:
-cambia el color y asoma la mano, sin sonidos ni confeti.
+La mascota es una **mano 3D** de dibujo que flota con su puño de sudadera
+(`components/mascot/HandMascot.tsx`; el modelo es «generic-hand» de WebXR Input Profiles, MIT,
+con los dedos engordados y acortados). En reposo saluda de vez en cuando y tamborilea; al
+acertar coge impulso, sale hacia quien mira y saca el pulgar; al fallar gira hacia el otro lado
+con el pulgar abajo y niega despacio; y al terminar la lección salta con una vuelta y **aplaude
+como se aplaude en lengua de signos**: la mano en alto, abierta, girando la muñeca. El
+movimiento está en `lib/mascot/handPose.ts`, sin three.js y con pruebas: `handTarget` dice a
+dónde va cada parte en cada instante (los dedos se cierran uno detrás de otro, el pulgar sale el
+último) y `stepHand` la lleva con muelles, que dan el rebote, hacen que la mano se quede atrás
+respecto a la manga cuando gira deprisa y permiten cortar un gesto con otro sin saltos. Con
+«movimiento reducido» en el sistema, solo cambia de postura. Para verla, `/dev/mascota`. El
+feedback de la lección es discreto: cambia el color y asoma la mano, sin sonidos ni confeti.
 
 ## Sin conexión (PWA)
 

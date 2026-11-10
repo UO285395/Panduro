@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { approach, handPose, type HandMood } from "@/lib/mascot/handPose";
+import { IDLE_GREETING_MS, handTarget, restAt, stepHand, type HandMood, type HandPose } from "@/lib/mascot/handPose";
 
 export type { HandMood };
 
@@ -12,12 +12,18 @@ const CUFF = 0xf26a1b;
 const CUFF_BAND = 0xffc9a6;
 /** Tinta petróleo del contorno (en lineal, como lo espera OutlineEffect). */
 const INK: [number, number, number] = [0.007, 0.019, 0.024];
-/** Constante de tiempo del paso entre poses (ms). */
-const POSE_TAU_MS = 90;
-/** Medio lado del encuadre, en metros del modelo (la mano mide unos 19 cm). */
-const FRAME_RADIUS = 0.14;
+/** Medio lado del encuadre, en metros del modelo (la mano mide unos 18 cm). */
+const FRAME_RADIUS = 0.155;
+/** Alto de la mano (m): la unidad de los desplazamientos de la pose. */
+const HAND_HEIGHT = 0.18;
 /** Giro de tres cuartos sobre el eje vertical. */
 const YAW = 0.3;
+/**
+ * Proporciones de dibujo: los dedos del modelo, de persona, se hacen más gordos y algo más
+ * cortos (cada articulación tiene −Z a lo largo de su hueso, así que basta con su escala).
+ */
+const FINGER = { thick: 1.42, length: 0.86 };
+const THUMB = { thick: 1.38, length: 0.9 };
 /** Ángulos de un puño (MCP, PIP, DIP) del índice al meñique: el meñique cierra algo más. */
 const FIST = [
   [1.5, 1.8, 1.05],
@@ -25,12 +31,14 @@ const FIST = [
   [1.62, 1.85, 1.1],
   [1.66, 1.8, 1.05],
 ] as const;
-/** Con la mano abierta, cada dedo algo más doblado que el anterior, como en reposo. */
-const CASCADE = [0.7, 1, 1.35, 1.7] as const;
 /** Lo que se juntan los dedos al cerrar el puño (fracción de su separación en reposo). */
 const CONVERGE = 0.85;
-/** Pulgar relajado: lo que se acerca a la palma desde su postura de reposo, muy abierta (rad). */
-const THUMB_RELAX = 0.35;
+/** Lo que se abre cada dedo, del índice al meñique, con los dedos en abanico (rad, hacia el índice). */
+const FAN = [0.24, 0.04, -0.14, -0.32] as const;
+/** Lo que se endereza el pulgar del modelo, que en reposo viene doblado. */
+const THUMB_STRAIGHT = 0.75;
+/** Con el pulgar arriba, la última falange se dobla un poco hacia atrás (rad). */
+const THUMB_BACK = 0.28;
 
 type Props = {
   mood: HandMood;
@@ -41,16 +49,22 @@ type Props = {
 
 /**
  * La mascota: una mano 3D con contorno de dibujo. Saluda en reposo, pone el pulgar arriba
- * al acertar y abajo al fallar, y celebra al terminar la lección. Es decorativa: si no hay
- * WebGL o el modelo no carga, no ocupa sitio.
+ * al acertar y abajo al fallar, y celebra al terminar la lección (lib/mascot/handPose.ts).
+ * Es decorativa: si no hay WebGL o el modelo no carga, no ocupa sitio.
  */
 export function HandMascot({ mood, size = 120, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const moodRef = useRef({ mood, since: 0 });
+  // Recién montada y en reposo, saluda enseguida.
+  const moodRef = useRef({ mood, since: -IDLE_GREETING_MS, fresh: true });
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    moodRef.current = { mood, since: performance.now() };
+    const m = moodRef.current;
+    if (m.fresh) {
+      moodRef.current = { mood, since: performance.now() - (mood === "idle" ? IDLE_GREETING_MS : 0), fresh: false };
+    } else if (m.mood !== mood) {
+      moodRef.current = { mood, since: performance.now(), fresh: false };
+    }
   }, [mood]);
 
   useEffect(() => {
@@ -80,29 +94,27 @@ export function HandMascot({ mood, size = 120, className }: Props) {
         scene.add(key);
 
         const rig = buildRig(THREE, hand);
-        scene.add(rig.pivot);
+        scene.add(rig.root);
 
         const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 10);
         camera.position.set(0, 0, FRAME_RADIUS / Math.sin(THREE.MathUtils.degToRad(15)));
         camera.lookAt(0, 0, 0);
 
         const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-        const cur = { tilt: -Math.PI / 2, roll: 0, curl: 0.12, thumb: 0 };
         let last = performance.now();
+        const first = moodRef.current;
+        // Empieza ya en su pose: lo que se anima es lo que viene después.
+        const state = restAt(handTarget(first.mood, last - first.since, last, still));
         const loop = () => {
           if (disposed) return;
           const now = performance.now();
-          const dt = Math.min(100, now - last);
+          const dt = now - last;
           last = now;
           const { mood: m, since } = moodRef.current;
-          const target = handPose(m, now - since, now, still);
-          cur.tilt = approach(cur.tilt, target.tilt, dt, POSE_TAU_MS);
-          cur.roll = approach(cur.roll, target.roll, dt, POSE_TAU_MS);
-          cur.curl = approach(cur.curl, target.curl, dt, POSE_TAU_MS);
-          cur.thumb = approach(cur.thumb, target.thumb, dt, POSE_TAU_MS);
+          stepHand(state, handTarget(m, now - since, now, still), dt, still);
           // Fuera de la pantalla (p. ej. escondida bajo el borde en la lección) no se dibuja.
           if (visible) {
-            rig.pose({ ...cur, y: target.y, sway: target.sway, spin: target.spin });
+            rig.pose(state.pos);
             effect.render(scene, camera);
           }
           raf = requestAnimationFrame(loop);
@@ -191,6 +203,8 @@ function buildRig(THREE: Three, model: import("three").Object3D) {
     ["phalanx-proximal", "phalanx-intermediate", "phalanx-distal", "tip"].map((p) => joint(`${f}-finger-${p}`)),
   );
   const thumb = ["metacarpal", "phalanx-proximal", "phalanx-distal", "tip"].map((p) => joint(`thumb-${p}`));
+  for (const chain of fingers) for (const j of chain) j.node.scale.set(FINGER.thick, FINGER.thick, FINGER.length);
+  for (const j of thumb) j.node.scale.set(THUMB.thick, THUMB.thick, THUMB.length);
 
   // Ejes de la mano: hacia los nudillos (F), del meñique al índice (L) y la normal de la palma (N).
   const W = wrist.pos;
@@ -207,13 +221,22 @@ function buildRig(THREE: Three, model: import("three").Object3D) {
   const toView = new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(L, N), L, N).transpose();
   const base = new THREE.Quaternion().setFromRotationMatrix(toView);
 
-  // Gira alrededor de la palma, algo hacia la muñeca para que la manga también quepa.
+  // root (posición y achatado, en la pantalla) → pivot (giros, alrededor de la palma) →
+  // offset → la manga y, girando sobre la muñeca, la mano.
   const center = W.clone().lerp(fingers[1]![0]!.pos, 0.3);
+  const inner = new THREE.Group();
+  inner.position.copy(W).negate();
+  inner.add(model);
+  const wristGroup = new THREE.Group();
+  wristGroup.position.copy(W);
+  wristGroup.add(inner);
   const offset = new THREE.Group();
   offset.position.copy(center).negate();
-  offset.add(model);
+  offset.add(wristGroup);
   const pivot = new THREE.Group();
   pivot.add(offset);
+  const root = new THREE.Group();
+  root.add(pivot);
 
   // Material de dibujo: tres tonos.
   const ramp = new THREE.DataTexture(new Uint8Array([150, 210, 255]), 3, 1, THREE.RedFormat);
@@ -224,21 +247,29 @@ function buildRig(THREE: Three, model: import("three").Object3D) {
     if ((o as import("three").Mesh).isMesh) (o as import("three").Mesh).material = skin;
   });
 
-  // Manga mandarina con el puño elástico más claro, a lo largo del antebrazo.
+  // Puño de sudadera: el elástico, más claro, y un trozo de manga mandarina de final redondo
+  // (la mano flota, como las de los dibujos). Perfiles (radio, a lo largo del antebrazo desde
+  // la muñeca) que giran alrededor del antebrazo.
   const sleeveBasis = new THREE.Matrix4().makeBasis(L, F, new THREE.Vector3().crossVectors(L, F));
-  const tube = (r0: number, r1: number, from: number, to: number, color: number) => {
+  const lathe = (profile: [number, number][], color: number) => {
     const mesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(r1, r0, to - from, 32),
-      new THREE.MeshToonMaterial({ color, gradientMap: ramp }),
+      new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), 40),
+      new THREE.MeshToonMaterial({ color, gradientMap: ramp, side: THREE.DoubleSide }),
     );
     mesh.quaternion.setFromRotationMatrix(sleeveBasis);
-    mesh.scale.set(1.2, 1, 0.8);
-    mesh.position.copy(W).addScaledVector(F, (from + to) / 2);
+    mesh.scale.set(1.2, 1, 0.82);
+    mesh.position.copy(W);
     return mesh;
   };
-  const cuff = tube(0.036, 0.034, -0.085, -0.014, CUFF);
-  const band = tube(0.033, 0.031, -0.016, 0.004, CUFF_BAND);
-  armature.add(cuff, band);
+  const band = lathe(
+    [[0.026, 0.008], [0.033, 0.0075], [0.0365, 0.003], [0.037, -0.009], [0.0355, -0.015], [0.03, -0.017]],
+    CUFF_BAND,
+  );
+  const cuff = lathe(
+    [[0.03, -0.012], [0.038, -0.015], [0.04, -0.026], [0.0395, -0.04], [0.0365, -0.051], [0.03, -0.059], [0.02, -0.0645], [0.008, -0.067], [0, -0.0675]],
+    CUFF,
+  );
+  offset.add(cuff, band);
 
   // Cada dedo se dobla en su propio plano (perpendicular a la palma y a su dirección): con un
   // eje común, los que no apuntan como el corazón se cruzaban y asomaban del puño. Al cerrar,
@@ -249,57 +280,85 @@ function buildRig(THREE: Three, model: import("three").Object3D) {
     const axis = new THREE.Vector3().crossVectors(dir, N).normalize();
     if (axis.dot(curlAxis) < 0) axis.negate();
     const splay = Math.atan2(dir.dot(L), dir.dot(F));
-    return { chain, axis, splay, fist: FIST[i]!, cascade: CASCADE[i]! };
+    return { chain, axis, splay, fist: FIST[i]!, fan: FAN[i]!, key: FINGERS[i]! };
   });
   const middleSplay = chains[1]!.splay;
   // Girar alrededor de N en este sentido lleva F hacia L.
   const towardL = Math.sign(new THREE.Vector3().crossVectors(N, F).dot(L)) || 1;
 
-  // Pulgar: relajado junto a la palma o estirado a lo largo del puño (hacia L, un poco hacia
-  // los nudillos y la palma).
+  // Pulgar: abierto a un lado de la mano o estirado hacia arriba (hacia L, un poco hacia los
+  // nudillos y la palma). El del modelo viene doblado: cada tramo se endereza hacia la
+  // dirección del pulgar entero.
   const thumbRest = thumb[3]!.pos.clone().sub(thumb[0]!.pos).normalize();
-  // Hacia los dedos: el sentido del giro que acerca su dirección a F.
-  const relaxTo = (a: number) => new THREE.Quaternion().setFromAxisAngle(N, a);
-  const thumbRelax = [relaxTo(THUMB_RELAX), relaxTo(-THUMB_RELAX)].sort(
-    (a, b) => thumbRest.clone().applyQuaternion(b).dot(F) - thumbRest.clone().applyQuaternion(a).dot(F),
-  )[0]!;
-  const thumbUp = L.clone().addScaledVector(F, 0.3).addScaledVector(N, 0.3).normalize();
-  const thumbAlign = new THREE.Quaternion().setFromUnitVectors(thumbRest, thumbUp);
+  const thumbTo = (l: number, f: number, n: number) =>
+    new THREE.Quaternion().setFromUnitVectors(
+      thumbRest,
+      L.clone().multiplyScalar(l).addScaledVector(F, f).addScaledVector(N, n).normalize(),
+    );
+  const thumbOpen = thumbTo(0.62, 0.78, 0.14);
+  const thumbUp = thumbTo(1, 0.2, 0.2);
+  const identity = new THREE.Quaternion();
+  const thumbStraight = thumb.slice(0, 3).map((j, k) =>
+    identity.clone().slerp(
+      new THREE.Quaternion().setFromUnitVectors(thumb[k + 1]!.pos.clone().sub(j.pos).normalize(), thumbRest),
+      THUMB_STRAIGHT,
+    ),
+  );
+  // Hacia atrás: lejos de los nudillos.
+  const thumbBackAxis = new THREE.Vector3().crossVectors(L, F).normalize().negate();
 
   const q = new THREE.Quaternion();
   const qa = new THREE.Quaternion();
   const qs = new THREE.Quaternion();
+  const qt = new THREE.Quaternion();
   const v = new THREE.Vector3();
   const X = new THREE.Vector3(1, 0, 0);
   const Y = new THREE.Vector3(0, 1, 0);
   const Z = new THREE.Vector3(0, 0, 1);
-  const offsetQuat = new THREE.Quaternion();
 
-  function pose(p: { tilt: number; roll: number; curl: number; thumb: number; y: number; sway: number; spin: number }) {
-    for (const { chain, axis, splay, fist, cascade } of chains) {
-      // Abierta: algo de cascada; cerrada: el puño entero.
-      const curl = Math.min(1, p.curl * (cascade + (1 - cascade) * p.curl));
-      // Hacia el corazón, alrededor de la normal de la palma por el nudillo.
-      qs.setFromAxisAngle(N, -towardL * (splay - middleSplay) * CONVERGE * p.curl);
+  function pose(p: HandPose) {
+    let closed = 0;
+    for (const { chain, axis, splay, fist, fan, key } of chains) {
+      const curl = Math.min(1.08, Math.max(-0.08, p[key]));
+      closed += curl / chains.length;
+      // Alrededor de la normal de la palma por el nudillo: hacia el corazón al cerrar y en
+      // abanico al abrir.
+      qs.setFromAxisAngle(N, towardL * (-(splay - middleSplay) * CONVERGE * curl + fan * p.spread * (1 - Math.max(0, curl))));
       let acc = 0;
       for (let k = 0; k < chain.length; k++) {
         const j = chain[k]!;
         if (k > 0) {
           const prev = chain[k - 1]!;
           q.copy(qs).multiply(qa.setFromAxisAngle(axis, acc));
-          v.copy(j.pos).sub(prev.pos).applyQuaternion(q);
+          v.copy(j.pos).sub(prev.pos).multiplyScalar(FINGER.length).applyQuaternion(q);
           j.node.position.copy(prev.node.position).add(v);
         }
         acc += (fist[k] ?? 0) * curl;
         j.node.quaternion.copy(qs).multiply(q.setFromAxisAngle(axis, acc)).multiply(j.quat);
       }
     }
-    q.slerpQuaternions(thumbRelax, thumbAlign, p.thumb);
-    for (const j of thumb) {
-      v.copy(j.pos).sub(thumb[0]!.pos).applyQuaternion(q);
-      j.node.position.copy(thumb[0]!.pos).add(v);
+
+    const up = Math.min(1.2, Math.max(-0.2, p.thumb));
+    qt.slerpQuaternions(thumbOpen, thumbUp, up);
+    for (let k = 0; k < thumb.length; k++) {
+      const j = thumb[k]!;
+      const seg = Math.min(k, 2);
+      q.copy(qt).multiply(thumbStraight[seg]!);
+      if (seg === 2) q.premultiply(qa.setFromAxisAngle(thumbBackAxis, THUMB_BACK * Math.max(0, up)));
+      if (k > 0) {
+        // El tramo anterior lleva esta articulación; ella gira con el suyo.
+        const prev = thumb[k - 1]!;
+        qa.copy(qt).multiply(thumbStraight[k - 1]!);
+        v.copy(j.pos).sub(prev.pos).multiplyScalar(THUMB.length).applyQuaternion(qa);
+        j.node.position.copy(prev.node.position).add(v);
+      } else {
+        j.node.position.copy(j.pos);
+      }
       j.node.quaternion.copy(q).multiply(j.quat);
     }
+
+    // La normal de la palma es la de la pantalla en la pose base: mismo sentido que `tilt`.
+    wristGroup.quaternion.setFromAxisAngle(N, p.wrist);
 
     // Tres cuartos para que se vea el volumen; luego el plano, el antebrazo y la base.
     pivot.quaternion
@@ -307,13 +366,18 @@ function buildRig(THREE: Three, model: import("three").Object3D) {
       .multiply(qa.setFromAxisAngle(Z, p.tilt + p.sway))
       .multiply(q.setFromAxisAngle(X, p.roll))
       .multiply(base);
-    // La mano abierta es más larga: se baja a lo largo de los dedos para que quepan.
-    v.copy(F).applyQuaternion(offsetQuat.copy(pivot.quaternion));
-    pivot.position.set(0, p.y * 0.19, 0).addScaledVector(v, -0.04 * (1 - p.curl));
+    // La mano abierta es más larga: se baja a lo largo de los dedos para que quepa.
+    v.copy(F).applyQuaternion(pivot.quaternion);
+    root.position
+      .set(p.x * HAND_HEIGHT, (p.y + p.bob) * HAND_HEIGHT, p.z * HAND_HEIGHT)
+      .addScaledVector(v, -0.035 * (1 - Math.min(1, Math.max(0, closed))));
+    const tall = 1 - Math.min(0.3, Math.max(-0.3, p.squash));
+    const wide = 1 / Math.sqrt(tall);
+    root.scale.set(wide, tall, wide);
   }
 
   return {
-    pivot,
+    root,
     pose,
     dispose() {
       skin.dispose();

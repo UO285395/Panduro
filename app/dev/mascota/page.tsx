@@ -10,7 +10,8 @@ export default function Page() {
         <h1 className="text-2xl font-bold">Mascota</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           La mano de la app y sus reacciones: saluda en reposo, pulgar arriba al acertar, pulgar
-          abajo al fallar y una vuelta al terminar la lección.
+          abajo al fallar y, al terminar la lección, un salto con vuelta y el aplauso de la lengua
+          de signos (la mano en alto, abierta, girando la muñeca).
         </p>
       </header>
       <MascotPreview />

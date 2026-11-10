@@ -173,11 +173,11 @@ export function LessonRunner({
 
       <div
         aria-hidden
-        className={`pointer-events-none fixed -bottom-2 left-[max(0rem,calc(50%-22.5rem))] z-50 transition-[transform,opacity] duration-300 ease-out ${
+        className={`pointer-events-none fixed -bottom-1 left-[max(-0.875rem,calc(50%-23.375rem))] z-50 transition-[transform,opacity] duration-300 ease-out ${
           feedback ? "translate-y-0 opacity-100" : "translate-y-[110%] opacity-0"
         }`}
       >
-        <HandMascot mood={mood} size={140} />
+        <HandMascot mood={mood} size={168} />
       </div>
     </div>
   );

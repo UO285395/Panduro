@@ -5,12 +5,15 @@ import type { AvatarClip } from "@/lib/curriculum/schema";
 import { SIGN_PLAYBACK_RATE, sampleLoop } from "@/lib/avatar/interpolate";
 import { poseFromKeyframe, poseFromKeyframeLeft, type FingerPose, type Pose } from "@/lib/avatar/pose";
 import { loadPanduroVrm } from "@/lib/avatar/loadVrm";
+import { NO_LEAN, easeLean, idleHeadAt, signLean } from "@/lib/avatar/life";
 import {
+  applyLife,
   applyVrmIdle,
   applyVrmKeyframe,
   blendFromSnapshot,
   createVrmRigWithHands,
   loopBlink,
+  resetLife,
   resolveClip,
   signBounds,
   snapshotPose,
@@ -370,11 +373,16 @@ async function buildStage(): Promise<Stage> {
       // El giro del cuerpo (signos grabados de tres cuartos), fundido igual que la pose.
       let yawFrom = 0;
       let yaw = 0;
+      // El tronco acompaña al signo con algo de retraso (ver lib/avatar/life).
+      let lean = NO_LEAN;
+      const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
       const loop = () => {
         if (stopped) return;
         const { clip: active, startedAt } = clipRef.current;
         const now = performance.now();
+        // Lo que se mide de un signo (contactos, encuadre) se mide con el tronco en reposo.
+        resetLife(rig);
         if (active !== shown) {
           if (shown !== undefined) fade = { from: snapshotPose(rig), at: now };
           yawFrom = yaw;
@@ -396,11 +404,17 @@ async function buildStage(): Promise<Stage> {
         const dt = (now - startedAt) * SIGN_PLAYBACK_RATE;
         // Rotaciones normalizadas ANTES de vrm.update(), que las pasa a los
         // huesos reales en el mismo frame.
+        let head: [number, number, number] | undefined;
         if (active) {
           const clip = resolveClip(rig, active);
-          applyVrmKeyframe(rig, sampleLoop(clip, dt), dt, loopBlink(clip, dt));
+          const kf = sampleLoop(clip, dt);
+          applyVrmKeyframe(rig, kf, dt, loopBlink(clip, dt));
+          head = kf.head;
+          lean = easeLean(lean, signLean(kf), delta * 1000);
         } else {
-          applyVrmIdle(rig, dt);
+          head = still ? undefined : idleHeadAt(now);
+          applyVrmIdle(rig, dt, head);
+          lean = easeLean(lean, NO_LEAN, delta * 1000);
         }
         const yawTo = active?.bodyYaw ?? 0;
         yaw = yawTo;
@@ -414,6 +428,7 @@ async function buildStage(): Promise<Stage> {
           }
         }
         turnBody(rig, yaw);
+        applyLife(rig, now, lean, head, yaw, still);
         vrm.update(delta);
         renderer.render(scene, camera);
         raf = requestAnimationFrame(loop);

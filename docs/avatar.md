@@ -133,6 +133,22 @@ que deje ver las orejas, ropa con las muñecas a la vista y exportar en VRM 1.0 
 - Añadir el modelo, su autor y su licencia a `CREDITS.md`.
 - Repetir la comparación automática con los vídeos (abajo) y mirar lo que suba en la lista.
 
+## El cuerpo vivo
+
+Además de lo que dice el signo (brazos, dedos, cabeza y cara), el avatar respira, cambia el
+peso de un pie a otro, acompaña con el tronco hacia donde van las manos (con algo de retraso),
+mueve un poco la cabeza cuando no signa y mantiene la mirada en quien aprende aunque gire la
+cabeza o el cuerpo, con algún vistazo corto a un lado. El pelo y los cordones de la sudadera,
+que son muelles del modelo, se mueven con todo ello. Las cuentas están en `lib/avatar/life.ts`
+(sin three.js, con pruebas) y `applyLife` las aplica al modelo después de posar el signo.
+
+Todo lo del tronco va por debajo del pecho (columna, pecho y caderas), así que la cabeza, los
+hombros y los brazos se mueven juntos y las manos quedan donde estaban respecto a la cara y al
+cuerpo: los contactos no cambian. Por eso mismo, antes de resolver un signo o de medir su
+encuadre el tronco vuelve al reposo (`resetLife`). Los ojos del modelo solo giraban 8° con la
+mirada muy desviada; ahora giran lo que se les pide (hasta 14° de lado y 6° en vertical, que
+más esconde el iris bajo el párpado). Con «movimiento reducido» en el sistema, solo la mirada.
+
 ## Comparación automática con el vídeo
 
 Para que la revisión con alguien que signa (`/dev/revisar`) empiece por lo que más

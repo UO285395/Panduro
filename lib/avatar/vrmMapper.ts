@@ -18,6 +18,7 @@ import {
 } from "./bodyPoints";
 import { HAND_OUTLINE_WIDTH } from "./handOutline";
 import { LOOP_HOLD_MS, loopDuration, returnPath, sampleClip, type LoopingClip } from "./interpolate";
+import { BREATH, breathAt, GAZE_MAX, gazeFor, glanceAt, swayAt, type Lean } from "./life";
 import { steadyFingers } from "./steadyFingers";
 import { distributeFlex, getFingerAbduction, getFingerFlex, isMeasured, Y_CHEST, Y_MOUTH, Y_PER_FACE } from "./pose";
 
@@ -2731,13 +2732,93 @@ export function applyVrmKeyframe(rig: VrmRig, kf: AvatarKeyframe, tMs: number, b
   }
 }
 
-/** Reposo: brazos caídos junto al cuerpo, palmas hacia los muslos. */
-export function applyVrmIdle(rig: VrmRig, tMs: number) {
-  poseHead(rig, undefined);
+/** Reposo: brazos caídos junto al cuerpo, palmas hacia los muslos. `head`: la cabeza, si se mueve. */
+export function applyVrmIdle(rig: VrmRig, tMs: number, head?: Vec3) {
+  poseHead(rig, head);
   setExpressions(rig, undefined, blinkAt(tMs));
   for (const side of ["Right", "Left"] as const) {
     poseArm(rig, side, idleGoal(rig, side, tMs));
     poseFingers(rig, side, RELAXED);
+  }
+}
+
+// --- Vida: respiración, tronco y mirada (ver ./life) -------------------------
+
+/** Huesos del tronco, por debajo de los hombros y de la cabeza: lo que mueven va todo junto. */
+const TRUNK = [B.Spine, B.Chest, B.UpperChest] as const;
+const HIPS_REST = new WeakMap<VrmRig, THREE.Vector3>();
+/** Sentido de los ángulos de VRMLookAt (grados) respecto a los de `gazeFor`. */
+const LOOK_SIGN = { yaw: -1, pitch: 1 };
+
+/** Giro `angle` que lleva el eje `from` hacia `toward` (perpendiculares). */
+const tipToward = (from: THREE.Vector3, toward: THREE.Vector3, angle: number) =>
+  new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3().crossVectors(from, toward).normalize(), angle);
+
+/**
+ * Deja el tronco como en reposo. Antes de resolver un signo o de medir lo que ocupa: los
+ * contactos se calculan con el cuerpo así, y `applyLife` lo mueve después todo junto.
+ */
+export function resetLife(rig: VrmRig) {
+  const h = rig.vrm.humanoid;
+  for (const b of TRUNK) h.getNormalizedBoneNode(b)?.quaternion.identity();
+  const rest = HIPS_REST.get(rig);
+  if (rest) h.getNormalizedBoneNode(B.Hips)?.position.copy(rest);
+}
+
+/**
+ * El cuerpo vivo en el instante `clockMs` (reloj de la página): respira, se mece, acompaña al
+ * signo con el tronco (`lean`, ya suavizado) y mira a quien aprende aunque la cabeza (`head`)
+ * o el cuerpo (`bodyYaw`) estén girados. Después de posar el signo o el reposo. Con `still`
+ * (movimiento reducido), solo la mirada.
+ */
+export function applyLife(rig: VrmRig, clockMs: number, lean: Lean, head: Vec3 | undefined, bodyYaw = 0, still = false) {
+  const h = rig.vrm.humanoid;
+  const { right, up, forward } = rig;
+  if (!still) {
+    const sway = swayAt(clockMs);
+    const breath = breathAt(clockMs);
+    const q = tipToward(forward, right, lean.yaw + sway.yaw)
+      .multiply(tipToward(up, forward, lean.pitch + sway.pitch))
+      .multiply(tipToward(up, right, lean.roll + sway.roll));
+    setNorm(rig.vrm, B.Spine, q);
+    // Al coger aire el pecho se abre (se echa atrás) y el cuerpo sube un poco.
+    const chest = h.getNormalizedBoneNode(B.UpperChest) ? B.UpperChest : B.Chest;
+    setNorm(rig.vrm, chest, tipToward(up, forward, -BREATH.chest * 0.5 * (breath + 1)));
+    const hips = h.getNormalizedBoneNode(B.Hips);
+    if (hips) {
+      let rest = HIPS_REST.get(rig);
+      if (!rest) HIPS_REST.set(rig, (rest = hips.position.clone()));
+      hips.position.copy(rest).addScaledVector(up, BREATH.rise * rig.armLen * breath);
+    }
+  }
+  const look = rig.vrm.lookAt;
+  if (look) {
+    openEyeRange(look);
+    const [yaw, pitch] = gazeFor(head, { ...lean, yaw: lean.yaw + bodyYaw }, still ? [0, 0] : glanceAt(clockMs));
+    look.autoUpdate = false;
+    look.yaw = LOOK_SIGN.yaw * THREE.MathUtils.radToDeg(yaw);
+    look.pitch = LOOK_SIGN.pitch * THREE.MathUtils.radToDeg(pitch);
+  }
+}
+
+const EYE_RANGE_SET = new WeakSet<object>();
+
+/**
+ * Los ojos del modelo giran, de serie, 8° como mucho y solo con la mirada muy desviada. Para
+ * que deshagan el giro de la cabeza tal cual, giran lo que se les pide hasta `GAZE_MAX`.
+ */
+function openEyeRange(look: NonNullable<VRM["lookAt"]>) {
+  if (EYE_RANGE_SET.has(look)) return;
+  EYE_RANGE_SET.add(look);
+  const max = THREE.MathUtils.radToDeg(GAZE_MAX);
+  type RangeMap = { inputMaxValue: number; outputScale: number };
+  const applier = look.applier as unknown as Record<string, RangeMap | undefined>;
+  for (const k of ["rangeMapHorizontalInner", "rangeMapHorizontalOuter", "rangeMapVerticalDown", "rangeMapVerticalUp"]) {
+    const map = applier[k];
+    if (map) {
+      map.inputMaxValue = max;
+      map.outputScale = max;
+    }
   }
 }
 

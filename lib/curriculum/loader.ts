@@ -1,5 +1,7 @@
 import capturedRaw from "@/content/signs/captured.json";
+import correctionsRaw from "@/content/signs/corrections.json";
 import { withFace } from "@/lib/avatar/compose";
+import { applyCorrections, type Corrections } from "@/lib/avatar/corrections";
 import { CapturedSignsSchema, type Level } from "./schema";
 import { curriculumQueries, parseLevels } from "./structure";
 
@@ -19,7 +21,9 @@ function loadAll(): Level[] {
     for (const sign of level.signs) {
       const rec = captured[sign.id];
       if (rec) {
-        sign.avatarClip = rec.avatarClip;
+        // Lo que el vídeo midió mal y se ha corregido a mano (ver lib/avatar/corrections).
+        const fix = (correctionsRaw as unknown as Corrections)[sign.id];
+        sign.avatarClip = fix ? applyCorrections(rec.avatarClip, fix.patches) : rec.avatarClip;
         sign.handedness = rec.avatarClip.handedness;
         if (rec.license) sign.animationCredit = { source: rec.source, license: rec.license, url: rec.url };
       }

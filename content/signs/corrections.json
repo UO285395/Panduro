@@ -1,0 +1,26 @@
+{
+  "AYUDAR": {
+    "why": "Las dos manos planas con la palma hacia arriba y los dedos hacia delante: de punta a la cámara, MediaPipe daba los dedos encogidos y, a ratos, la palma hacia abajo.",
+    "patches": [{ "from": 100, "to": 1150, "shape": "flat", "palmDir": [0, 1, 0.1], "pointDir": [0.25, -0.05, 1] }]
+  },
+  "LIBRO": {
+    "why": "Las palmas juntas se abren como un libro. De canto a la cámara, MediaPipe cruzaba las manos y encogía los dedos.",
+    "patches": [
+      { "to": 350, "shape": "flat", "palmDir": [-1, 0.1, 0], "pointDir": [0, 0.55, 0.85], "x": -0.215, "z": 0, "noContact": true },
+      { "from": 351, "to": 450, "shape": "flat", "palmDir": [-0.8, 0.6, 0], "pointDir": [0.1, 0.3, 0.95], "x": -0.19, "z": 0, "noContact": true },
+      { "from": 451, "shape": "flat", "palmDir": [-0.25, 0.95, 0.1], "pointDir": [0.25, 0.05, 1], "z": 0, "noContact": true }
+    ]
+  },
+  "SIEMPRE": {
+    "why": "El pulgar y el índice en anillo y los otros dedos abiertos, en las dos manos: con las manos bajas y pequeñas en la imagen, el anillo se perdía a mitad del signo.",
+    "patches": [{ "shape": "ring" }]
+  },
+  "FORMAL_C2": {
+    "why": "Como SIEMPRE: los anillos de pulgar e índice se perdían a ratos.",
+    "patches": [{ "shape": "ring" }]
+  },
+  "QUIEN": {
+    "why": "La mano doblada por los nudillos con los dedos juntos y rectos: salía con los dedos abiertos.",
+    "patches": [{ "from": 200, "to": 1150, "shape": "bent" }]
+  }
+}

@@ -149,6 +149,19 @@ encuadre el tronco vuelve al reposo (`resetLife`). Los ojos del modelo solo gira
 mirada muy desviada; ahora giran lo que se les pide (hasta 14° de lado y 6° en vertical, que
 más esconde el iris bajo el párpado). Con «movimiento reducido» en el sistema, solo la mirada.
 
+## Correcciones a mano
+
+Donde MediaPipe mide mal el vídeo —la mano de canto o con los dedos hacia la cámara, que da
+dedos encogidos y palmas que se dan la vuelta de un fotograma a otro— el signo se corrige
+mirando el vídeo, sin tocar la grabación: `content/signs/corrections.json` lleva, por signo, por
+qué y unos parches (`lib/avatar/corrections.ts`) que dicen en un tramo la forma de la mano
+(`flat`, `open`, `ring`, `bent`), hacia dónde mira la palma y apuntan los dedos, o dónde va la
+muñeca, para la mano dominante, la pasiva (en espejo) o las dos. Se aplican al cargar el
+currículo y solo a esos signos. Corregidos así: AYUDAR y LIBRO (palmas hacia arriba con los
+dedos hacia delante), SIEMPRE y FORMAL (los anillos de pulgar e índice) y QUIÉN (la mano doblada
+por los nudillos). Para añadir uno: mirar el vídeo en `/dev/revisar`, escribir el parche y
+comprobarlo ahí mismo.
+
 ## Comparación automática con el vídeo
 
 Para que la revisión con alguien que signa (`/dev/revisar`) empiece por lo que más

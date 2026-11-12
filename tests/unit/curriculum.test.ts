@@ -1,3 +1,5 @@
+import corrections from "@/content/signs/corrections.json";
+import { applyCorrections, type Corrections } from "@/lib/avatar/corrections";
 import { describe, expect, it } from "vitest";
 import captured from "@/content/signs/captured.json";
 import capturedTemplates from "@/content/signs/captured-templates.json";
@@ -89,8 +91,11 @@ describe("curriculum: schema + loader", () => {
     for (const [id, entry] of withLicense) {
       const sign = signs.find((s) => s.id === id);
       expect(sign, id).toBeDefined();
-      // Con el gesto de la cara de la descripción añadido (ver withFace).
-      expect(sign!.avatarClip).toEqual(sign!.face ? withFace(entry.avatarClip as AvatarClip, sign!.face) : entry.avatarClip);
+      // Con lo corregido a mano (ver lib/avatar/corrections) y el gesto de la cara de la
+      // descripción añadido (ver withFace).
+      const fix = (corrections as unknown as Corrections)[id];
+      const clip = fix ? applyCorrections(entry.avatarClip as AvatarClip, fix.patches) : (entry.avatarClip as AvatarClip);
+      expect(sign!.avatarClip).toEqual(sign!.face ? withFace(clip, sign!.face) : clip);
       expect(sign!.animationCredit?.license, id).toBe((entry as { license: string }).license);
       if ((entry as { source: string }).source.startsWith("DILSE")) {
         expect(sign!.animationCredit?.url, id).toMatch(/^https:\/\/fundacioncnse-dilse\.org\//);

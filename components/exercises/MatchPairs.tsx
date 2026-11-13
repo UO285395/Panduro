@@ -107,9 +107,9 @@ export function MatchPairs({ exercise, pairs, onAnswer, disabled }: Props) {
   return (
     <section className="space-y-4">
       <h2 className="exercise-title">{exercise.prompt}</h2>
-      <figure className="card flex flex-col items-center gap-2 p-4">
-        <div className="flex aspect-square w-full max-w-[240px] items-center justify-center overflow-hidden rounded-2xl bg-brand-100 dark:bg-brand-900/40">
-          <AvatarPlayer clip={playing?.avatarClip ?? null} size={240} />
+      <figure className="card flex flex-col items-center gap-2 overflow-hidden pb-3">
+        <div className="stage flex w-full items-center justify-center [--stage-max:17rem]">
+          <AvatarPlayer clip={playing?.avatarClip ?? null} size={340} />
         </div>
         <figcaption className="text-sm font-medium text-slate-600 dark:text-slate-300">
           <b className="font-display text-base">{playingLabel}</b> · toca otro signo para verlo

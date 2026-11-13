@@ -77,8 +77,8 @@ export function ReviewView({ cards, onAnswer, nextReviewDueAt }: Props) {
         {meta.kind === "sign" ? (
           shown ? (
             <div className="space-y-3">
-              <div className="mx-auto w-fit overflow-hidden rounded-3xl bg-brand-100 dark:bg-brand-900/40">
-                <AvatarPlayer clip={clip} label={meta.gloss} size={260} />
+              <div className="stage mx-auto w-full max-w-sm overflow-hidden rounded-3xl">
+                <AvatarPlayer clip={clip} label={meta.gloss} size={400} />
               </div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Glosa: {meta.gloss}</p>
             </div>

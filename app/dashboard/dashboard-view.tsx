@@ -1,5 +1,6 @@
 "use client";
 
+import { StyleSwitch } from "@/components/ui/StyleSwitch";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -211,7 +212,8 @@ function TopBar({ snapshot, onSignOut }: { snapshot: UserSnapshot; onSignOut?: (
           Panduro
         </span>
       </Link>
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+        <StyleSwitch />
         <span
           className={`chip ${
             snapshot.streakDays > 0

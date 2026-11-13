@@ -1,12 +1,14 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Paleta «Mandarina y petróleo»: mandarina de marca (botones, lo activo), azul petróleo para
- * el progreso y los aciertos, coral para los fallos, dorado para rachas y XP, y neutros que van de un crema cálido a una tinta verdosa. Los
- * neutros sustituyen a `slate`, así toda la app los usa sin tocar cada pantalla. El modo
- * oscuro sigue al sistema (`dark:`), con los mismos tonos del lado oscuro de la escala.
+ * Dos estilos que elige quien usa la app (components/ui/StyleSwitch): «Juego», de bloques de
+ * color y botones con relieve, y «Cuaderno», de papel y tinta. La marca (`brand`), el color de
+ * los aciertos (`petrol`) y los neutros (`slate`, que sustituye al de Tailwind) son variables
+ * que cambia cada estilo en app/globals.css; coral para los fallos y dorado para rachas y XP
+ * son los mismos en los dos. No hay modo oscuro: las clases `dark:` que quedan no se activan.
  */
 const config: Config = {
+  darkMode: ["selector", '[data-estilo="ninguno"]'],
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -16,43 +18,43 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: "#FFF4EC",
-          100: "#FFE6D3",
-          200: "#FFC9A6",
-          300: "#FFA470",
-          400: "#FA8540",
-          500: "#F26A1B",
-          600: "#D9590E",
-          700: "#B4470B",
-          800: "#8A3709",
-          900: "#6B2B08",
-          950: "#3D1804",
+          50: "rgb(var(--brand-50) / <alpha-value>)",
+          100: "rgb(var(--brand-100) / <alpha-value>)",
+          200: "rgb(var(--brand-200) / <alpha-value>)",
+          300: "rgb(var(--brand-300) / <alpha-value>)",
+          400: "rgb(var(--brand-400) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
+          800: "rgb(var(--brand-800) / <alpha-value>)",
+          900: "rgb(var(--brand-900) / <alpha-value>)",
+          950: "rgb(var(--brand-950) / <alpha-value>)",
         },
         petrol: {
-          50: "#EAF6F5",
-          100: "#D3EFEC",
-          200: "#A7DDD8",
-          300: "#6FC2BC",
-          400: "#37A19C",
-          500: "#138483",
-          600: "#0F6E6E",
-          700: "#0A5151",
-          800: "#083F40",
-          900: "#062F30",
-          950: "#031B1C",
+          50: "rgb(var(--petrol-50) / <alpha-value>)",
+          100: "rgb(var(--petrol-100) / <alpha-value>)",
+          200: "rgb(var(--petrol-200) / <alpha-value>)",
+          300: "rgb(var(--petrol-300) / <alpha-value>)",
+          400: "rgb(var(--petrol-400) / <alpha-value>)",
+          500: "rgb(var(--petrol-500) / <alpha-value>)",
+          600: "rgb(var(--petrol-600) / <alpha-value>)",
+          700: "rgb(var(--petrol-700) / <alpha-value>)",
+          800: "rgb(var(--petrol-800) / <alpha-value>)",
+          900: "rgb(var(--petrol-900) / <alpha-value>)",
+          950: "rgb(var(--petrol-950) / <alpha-value>)",
         },
         slate: {
-          50: "#FBF7F2",
-          100: "#F3ECE4",
-          200: "#E6DDD3",
-          300: "#CFC6BC",
-          400: "#9AA3A1",
-          500: "#6E7C7D",
-          600: "#4F6064",
-          700: "#384A4F",
-          800: "#22353A",
-          900: "#14262B",
-          950: "#0C1A1E",
+          50: "rgb(var(--slate-50) / <alpha-value>)",
+          100: "rgb(var(--slate-100) / <alpha-value>)",
+          200: "rgb(var(--slate-200) / <alpha-value>)",
+          300: "rgb(var(--slate-300) / <alpha-value>)",
+          400: "rgb(var(--slate-400) / <alpha-value>)",
+          500: "rgb(var(--slate-500) / <alpha-value>)",
+          600: "rgb(var(--slate-600) / <alpha-value>)",
+          700: "rgb(var(--slate-700) / <alpha-value>)",
+          800: "rgb(var(--slate-800) / <alpha-value>)",
+          900: "rgb(var(--slate-900) / <alpha-value>)",
+          950: "rgb(var(--slate-950) / <alpha-value>)",
         },
         // Fallos y avisos de error: coral, que no se confunde con la mandarina de la marca.
         ko: {
@@ -77,7 +79,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["'Lexend Variable'", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
-        display: ["'Baloo 2 Variable'", "'Lexend Variable'", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "'Lexend Variable'", "system-ui", "sans-serif"],
       },
       boxShadow: {
         // Botones con canto, como fichas que se pulsan.

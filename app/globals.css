@@ -1,22 +1,95 @@
 @import "@fontsource-variable/lexend";
 @import "@fontsource-variable/baloo-2";
+@import "@fontsource-variable/fraunces";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Dos estilos, a elegir (components/ui/StyleSwitch pone data-estilo en <html>):
+ * «Juego» (por defecto): bloques de color, formas gordas y botones con relieve.
+ * «Cuaderno»: papel, tinta, una serif y un solo acento; sin relieve y casi sin redondeo.
+ * Cada uno da sus colores a `brand`, `petrol` y `slate` (tailwind.config.ts) y su forma a las
+ * piezas comunes de abajo.
+ */
 :root {
-  /* Crema cálido y tinta petróleo (ver la paleta en tailwind.config.ts). */
-  --background: #fff8f1;
-  --foreground: #14262b;
+  color-scheme: light;
+  --background: #fff3e6;
+  --foreground: #3a1c05;
+  --font-display: "Baloo 2 Variable";
+  --brand-50: 255 244 236;
+  --brand-100: 255 230 211;
+  --brand-200: 255 201 166;
+  --brand-300: 255 164 112;
+  --brand-400: 255 138 61;
+  --brand-500: 242 106 27;
+  --brand-600: 217 89 14;
+  --brand-700: 180 71 11;
+  --brand-800: 138 55 9;
+  --brand-900: 107 43 8;
+  --brand-950: 61 24 4;
+  --petrol-50: 227 250 246;
+  --petrol-100: 197 243 236;
+  --petrol-200: 146 229 217;
+  --petrol-300: 86 207 192;
+  --petrol-400: 37 184 167;
+  --petrol-500: 18 165 148;
+  --petrol-600: 13 138 124;
+  --petrol-700: 11 116 104;
+  --petrol-800: 9 92 83;
+  --petrol-900: 7 72 64;
+  --petrol-950: 3 42 37;
+  --slate-50: 255 248 240;
+  --slate-100: 255 239 223;
+  --slate-200: 255 223 194;
+  --slate-300: 244 200 162;
+  --slate-400: 185 148 119;
+  --slate-500: 140 106 79;
+  --slate-600: 111 79 54;
+  --slate-700: 87 58 36;
+  --slate-800: 68 43 24;
+  --slate-900: 58 28 5;
+  --slate-950: 36 16 3;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0c1a1e;
-    --foreground: #f3ece4;
-    color-scheme: dark;
-  }
+:root[data-estilo="cuaderno"] {
+  --background: #fbf8f2;
+  --foreground: #1a1a18;
+  --font-display: "Fraunces Variable";
+  --brand-50: 251 241 234;
+  --brand-100: 246 223 208;
+  --brand-200: 236 191 163;
+  --brand-300: 223 152 113;
+  --brand-400: 208 112 63;
+  --brand-500: 194 65 12;
+  --brand-600: 168 54 10;
+  --brand-700: 138 44 9;
+  --brand-800: 107 35 8;
+  --brand-900: 79 26 6;
+  --brand-950: 46 15 3;
+  --petrol-50: 234 246 245;
+  --petrol-100: 211 239 236;
+  --petrol-200: 167 221 216;
+  --petrol-300: 111 194 188;
+  --petrol-400: 55 161 156;
+  --petrol-500: 19 132 131;
+  --petrol-600: 15 110 110;
+  --petrol-700: 10 81 81;
+  --petrol-800: 8 63 64;
+  --petrol-900: 6 47 48;
+  --petrol-950: 3 27 28;
+  --slate-50: 251 248 242;
+  --slate-100: 243 238 228;
+  --slate-200: 228 220 205;
+  --slate-300: 205 196 179;
+  --slate-400: 163 155 140;
+  --slate-500: 120 113 108;
+  --slate-600: 87 83 78;
+  --slate-700: 63 59 55;
+  --slate-800: 41 38 36;
+  --slate-900: 26 26 24;
+  --slate-950: 15 15 14;
 }
 
 html,
@@ -38,12 +111,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Titulares en Baloo 2: redondeada y con carácter. */
 h1,
 h2,
 h3 {
   font-family:
-    "Baloo 2 Variable",
+    var(--font-display),
     "Lexend Variable",
     system-ui,
     sans-serif;
@@ -115,6 +187,158 @@ button {
   .choice-key {
     @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current font-display text-sm font-bold opacity-60;
   }
+}
+
+/*
+ * El escenario del avatar (el lienzo es transparente): en Juego, un bloque mandarina con un
+ * círculo detrás del personaje; en Cuaderno, papel entre dos filetes de tinta.
+ */
+.avatar-host {
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(circle at 50% 46%, rgb(var(--brand-200)) 0 41%, transparent 41.4%),
+    rgb(var(--brand-400));
+}
+
+/*
+ * El mismo escenario a todo lo ancho de su caja (una tarjeta de ejercicio), con el avatar
+ * centrado y tan grande como quepa (hasta --stage-max).
+ */
+.stage {
+  background:
+    radial-gradient(circle closest-side at 50% 46%, rgb(var(--brand-200)) 0 82%, transparent 83%),
+    rgb(var(--brand-400));
+}
+.stage .avatar-host {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  margin-inline: auto;
+  width: min(100%, var(--stage-max, 24rem)) !important;
+  height: auto !important;
+  aspect-ratio: 1;
+}
+
+/* --- Cuaderno ------------------------------------------------------------- */
+:root[data-estilo="cuaderno"] .stage {
+  background: rgb(var(--slate-100));
+  border-block: 1.5px solid rgb(var(--slate-900));
+  border-radius: 0;
+}
+:root[data-estilo="cuaderno"] .stage .avatar-host {
+  border: 0;
+  background: none;
+}
+:root[data-estilo="cuaderno"] h1,
+:root[data-estilo="cuaderno"] h2,
+:root[data-estilo="cuaderno"] h3,
+:root[data-estilo="cuaderno"] .font-display {
+  letter-spacing: -0.01em;
+}
+/* Casi sin redondeo y sin relieve en toda la app. */
+:root[data-estilo="cuaderno"] :is(.rounded-xl, .rounded-2xl, .rounded-3xl, [class*="rounded-["]) {
+  border-radius: 6px;
+}
+:root[data-estilo="cuaderno"] :is(.shadow-press, .shadow-press-sm, [class*="shadow-[0_"]) {
+  box-shadow: none;
+}
+:root[data-estilo="cuaderno"] .avatar-host {
+  border-radius: 0;
+  background: rgb(var(--slate-100));
+  border-block: 1.5px solid rgb(var(--slate-900));
+}
+:root[data-estilo="cuaderno"] :is(.btn-primary, .btn-secondary, .btn-ok, .btn-ko) {
+  border-radius: 6px;
+  box-shadow: none;
+  font-family: "Lexend Variable", system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  padding-block: 0.8rem;
+  transform: none;
+}
+:root[data-estilo="cuaderno"] .btn-primary {
+  background: rgb(var(--slate-900));
+  color: rgb(var(--slate-50));
+}
+:root[data-estilo="cuaderno"] .btn-primary:hover {
+  background: rgb(var(--slate-700));
+}
+:root[data-estilo="cuaderno"] .btn-ok {
+  background: rgb(var(--petrol-600));
+}
+:root[data-estilo="cuaderno"] .btn-ko {
+  background: #b3261e;
+}
+:root[data-estilo="cuaderno"] .btn-secondary {
+  background: transparent;
+  border: 1.5px solid rgb(var(--slate-900));
+  color: rgb(var(--slate-900));
+}
+:root[data-estilo="cuaderno"] .btn-secondary:hover {
+  background: rgb(var(--slate-100));
+}
+:root[data-estilo="cuaderno"] .card {
+  border-radius: 6px;
+  border-color: rgb(var(--slate-300));
+  background: #fffdf9;
+}
+:root[data-estilo="cuaderno"] .eyebrow,
+:root[data-estilo="cuaderno"] .chip {
+  font-family: "Lexend Variable", system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+:root[data-estilo="cuaderno"] .chip {
+  border-radius: 4px;
+}
+:root[data-estilo="cuaderno"] .exercise-title {
+  font-weight: 700;
+}
+:root[data-estilo="cuaderno"] .input {
+  border-radius: 0;
+  border-width: 0 0 1.5px;
+  border-color: rgb(var(--slate-900));
+  background: transparent;
+  padding-inline: 0.25rem;
+  box-shadow: none;
+}
+/* Las opciones, como renglones: un filete debajo y un punto en la elegida. */
+:root[data-estilo="cuaderno"] .choice {
+  border-radius: 0;
+  border-width: 0 0 1px;
+  border-color: rgb(var(--slate-300));
+  background: transparent;
+  box-shadow: none;
+  font-weight: 500;
+  padding-inline: 0.25rem;
+  transform: none;
+}
+:root[data-estilo="cuaderno"] .choice:hover {
+  background: rgb(var(--slate-100));
+}
+:root[data-estilo="cuaderno"] .choice[data-state="selected"] {
+  color: rgb(var(--brand-500));
+  font-weight: 600;
+  border-color: rgb(var(--brand-500));
+}
+:root[data-estilo="cuaderno"] .choice[data-state="correct"] {
+  color: rgb(var(--petrol-600));
+  font-weight: 600;
+  border-color: rgb(var(--petrol-600));
+  background: rgb(var(--petrol-50));
+}
+:root[data-estilo="cuaderno"] .choice[data-state="wrong"] {
+  color: #b3261e;
+  border-color: #b3261e;
+  background: #fff1ef;
+}
+:root[data-estilo="cuaderno"] .choice-key {
+  border: 0;
+  font-family: "Fraunces Variable", serif;
+  font-weight: 500;
+  width: 1.25rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

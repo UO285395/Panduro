@@ -54,8 +54,8 @@ export function PickSign({ exercise, sign, options, onAnswer, disabled }: Props)
         <p className="font-display text-3xl font-extrabold text-brand-600 dark:text-brand-400">«{sign.translation}»</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
-        <div className="mx-auto overflow-hidden rounded-3xl bg-brand-100 dark:bg-brand-900/40">
-          <AvatarPlayer clip={current?.avatarClip ?? null} size={260} />
+        <div className="stage mx-auto w-full overflow-hidden rounded-3xl sm:w-80">
+          <AvatarPlayer clip={current?.avatarClip ?? null} size={400} />
         </div>
         <div className="space-y-2">
           <p className="text-sm text-slate-500 dark:text-slate-400">Toca cada opción para verla y elige la que signa «{sign.translation}».</p>

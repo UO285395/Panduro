@@ -150,13 +150,24 @@ en desarrollo) y, si no, de la web del DILSE (los enlaces están en
 
 ## Diseño y mascota
 
-La interfaz usa la paleta **Mandarina y petróleo** (en `tailwind.config.ts`): mandarina para la
-marca y las acciones, petróleo para el progreso y los aciertos, coral (`ko`) para los fallos y
-dorado (`accent`) para rachas y XP, sobre neutros cálidos que sustituyen a `slate`. Sigue el
-modo claro u oscuro del sistema. Tipografías: **Baloo 2** en los títulos y **Lexend** en el
-texto. Las piezas comunes (`.btn-primary`, `.btn-secondary`, `.btn-ok`/`.btn-ko`, `.card`,
-`.chip`, `.input`, `.choice` con `data-state`) están en `app/globals.css`; los iconos, en
-`components/ui/Icon.tsx`.
+La app tiene **dos estilos**, que elige quien la usa con el selector de la cabecera (portada y
+panel), como quien elige claro u oscuro; se guarda en el navegador:
+
+- **Juego** (por defecto): bloques de color mandarina, formas gordas, botones con relieve y
+  titulares en **Baloo 2**. El avatar va sobre un bloque naranja con un círculo detrás.
+- **Cuaderno**: papel y tinta, titulares en la serif **Fraunces**, un solo acento teja, sin
+  relieve y casi sin redondeo; las opciones de un ejercicio son renglones. El avatar va sobre
+  papel entre dos filetes.
+
+El texto va en **Lexend** en los dos. No hay modo oscuro. Cómo está hecho: el estilo es el
+atributo `data-estilo` de `<html>` (`components/ui/StyleSwitch.tsx`; un script en `<head>` lo
+pone antes de pintar, `lib/ui/estilo.ts`). Los colores de marca (`brand`), de acierto (`petrol`)
+y los neutros (`slate`) son variables CSS que cada estilo define en `app/globals.css`, así que
+las clases de Tailwind de toda la app cambian solas; coral (`ko`) para los fallos y dorado
+(`accent`) para rachas y XP son comunes. Las piezas comunes (`.btn-primary`, `.btn-secondary`,
+`.btn-ok`/`.btn-ko`, `.card`, `.chip`, `.input`, `.choice` con `data-state`) y el escenario del
+avatar (`.avatar-host`, y `.stage` cuando ocupa toda una tarjeta) tienen su forma para cada
+estilo en ese mismo archivo. Los iconos, en `components/ui/Icon.tsx`.
 
 La mascota es una **mano 3D** de dibujo que flota con su puño de sudadera
 (`components/mascot/HandMascot.tsx`; el modelo es «generic-hand» de WebXR Input Profiles, MIT,

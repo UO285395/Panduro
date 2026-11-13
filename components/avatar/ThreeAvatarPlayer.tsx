@@ -104,7 +104,7 @@ export function ThreeAvatarPlayer({ clip, size = 320, onReady, onFailed }: Props
     <div
       ref={hostRef}
       aria-hidden
-      className="avatar-host overflow-hidden rounded-xl"
+      className="avatar-host overflow-hidden"
       style={{ width: size, height: size }}
     />
   );
@@ -315,7 +315,8 @@ async function buildStage(): Promise<Stage> {
     vrmScene.updateMatrixWorld(true);
 
     // Escena limpia estilo referencia (fondo blanco, softbox frontal)
-    scene.background = new THREE.Color(0xffffff);
+    // Sin fondo: el escenario lo pone la página (.avatar-host en globals.css), según el estilo.
+    scene.background = null;
     const softbox = new THREE.DirectionalLight(0xffffff, 0.85);
     softbox.position.set(0, 1.5, 2.0);
     scene.add(softbox);

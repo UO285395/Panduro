@@ -16,14 +16,14 @@ export function SignCard({
       className={
         compact
           ? "card flex items-center gap-3 rounded-2xl p-3"
-          : "card flex flex-col items-center gap-4 p-4 sm:p-6"
+          : "card flex flex-col items-center gap-4 overflow-hidden pb-4 sm:pb-6"
       }
     >
       <div
         className={
           compact
             ? "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-lg font-bold text-brand-700"
-            : "flex min-h-[200px] min-w-[200px] flex-col items-center justify-center overflow-hidden rounded-2xl bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-100"
+            : "stage flex min-h-[200px] w-full flex-col items-center justify-center text-brand-900"
         }
         aria-hidden
       >
@@ -39,7 +39,7 @@ export function SignCard({
           <AvatarPlayer
             clip={sign.avatarClip}
             label={hideAnswer ? undefined : sign.gloss}
-            size={280}
+            size={400}
           />
         ) : (
           <span className={compact ? "text-xs" : "text-4xl font-bold"}>
@@ -49,7 +49,7 @@ export function SignCard({
       </div>
       {!hideAnswer && (
         <figcaption
-          className={compact ? "text-sm" : "space-y-1 text-center"}
+          className={compact ? "text-sm" : "space-y-1 px-4 text-center sm:px-6"}
         >
           <span className="block font-display text-2xl font-extrabold">{sign.translation}</span>
           {!compact && sign.description && (

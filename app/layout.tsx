@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ESTILO_SCRIPT } from "@/lib/ui/estilo";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -17,10 +18,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fff8f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c1a1e" },
-  ],
+  themeColor: "#fff3e6",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -32,7 +30,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ESTILO_SCRIPT }} />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

@@ -1,3 +1,4 @@
+import { StyleSwitch } from "@/components/ui/StyleSwitch";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
@@ -58,6 +59,7 @@ export default function HomePage() {
           <Logo />
           <span className="font-display text-2xl font-extrabold text-brand-600 dark:text-brand-400">Panduro</span>
         </Link>
+        <StyleSwitch className="ml-auto" />
         {!DEMO_MODE && (
           <nav className="flex items-center gap-2 sm:gap-4">
             <Link href="/login" className="font-display text-lg font-bold text-slate-600 hover:text-brand-600 dark:text-slate-300">

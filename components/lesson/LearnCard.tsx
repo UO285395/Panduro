@@ -28,8 +28,8 @@ export function LearnCard({ sign, onContinue }: { sign: Sign; onContinue: () => 
     <section className="space-y-6">
       <p className="eyebrow">Signo nuevo</p>
       <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
-        <div className="mx-auto overflow-hidden rounded-3xl bg-brand-100 dark:bg-brand-900/40">
-          <AvatarPlayer clip={clip} label={sign.gloss} size={280} />
+        <div className="stage mx-auto w-full overflow-hidden rounded-3xl sm:w-80">
+          <AvatarPlayer clip={clip} label={sign.gloss} size={400} />
         </div>
         <div className="space-y-3">
           <h2 className="text-4xl font-extrabold leading-none">{sign.translation}</h2>

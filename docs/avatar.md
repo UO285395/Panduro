@@ -149,6 +149,14 @@ encuadre el tronco vuelve al reposo (`resetLife`). Los ojos del modelo solo gira
 mirada muy desviada; ahora giran lo que se les pide (hasta 14° de lado y 6° en vertical, que
 más esconde el iris bajo el párpado). Con «movimiento reducido» en el sistema, solo la mirada.
 
+## Dedos de punta a la cámara
+
+Con los dedos apuntando a la cámara se ven acortados y MediaPipe los da doblados, igual que con
+la palma de frente: las palmas hacia arriba de AYUDAR o COMPARAR salían como garras.
+`unbendFingers` endereza ahora lo poco doblado también en ese caso (desde 0,7 de la dirección
+de la mano hacia la cámara, del todo a 0,88); un puño se queda como está (COCHE). Afecta a
+unos 90 signos, entre ellos alguno de los que se habían dado por buenos (MÉDICO, LLUVIA).
+
 ## Correcciones a mano
 
 Donde MediaPipe mide mal el vídeo —la mano de canto o con los dedos hacia la cámara, que da

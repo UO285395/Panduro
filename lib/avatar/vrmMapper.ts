@@ -1656,11 +1656,18 @@ function resolveClipNow(rig: VrmRig, input: AvatarClip): LoopingClip {
  * poco doblado (el nudillo y las falanges) se queda en un tercio; lo muy doblado, un puño, igual.
  * `yaw`: el cuerpo girado respecto a la cámara (AvatarClip.bodyYaw).
  */
-export function unbendFingers(fingers: Fingers, palmDir: Vec3 | undefined, yaw = 0): Fingers {
+export function unbendFingers(fingers: Fingers, palmDir: Vec3 | undefined, yaw = 0, pointDir?: Vec3): Fingers {
   if (!palmDir) return fingers;
-  const len = Math.hypot(palmDir[0], palmDir[1], palmDir[2]) || 1;
-  const facing = Math.abs(-Math.sin(yaw) * palmDir[0] + Math.cos(yaw) * palmDir[2]) / len;
-  const w = THREE.MathUtils.clamp((facing - UNBEND_FROM) / (UNBEND_FULL - UNBEND_FROM), 0, 1);
+  // Cuánto mira hacia la cámara (o de espaldas a ella) una dirección de la mano.
+  const toCamera = (d: Vec3) => (-Math.sin(yaw) * d[0] + Math.cos(yaw) * d[2]) / (Math.hypot(d[0], d[1], d[2]) || 1);
+  const facing = Math.abs(toCamera(palmDir));
+  // Con los dedos de punta a la cámara pasa lo mismo: se ven acortados y MediaPipe los da
+  // doblados (las palmas hacia arriba de AYUDAR o COMPARAR salían como garras).
+  const pointing = pointDir ? toCamera(pointDir) : 0;
+  const w = Math.max(
+    THREE.MathUtils.clamp((facing - UNBEND_FROM) / (UNBEND_FULL - UNBEND_FROM), 0, 1),
+    THREE.MathUtils.clamp((pointing - POINTING_FROM) / (POINTING_FULL - POINTING_FROM), 0, 1),
+  );
   if (w <= 0) return fingers;
   const keep = (x: number) => {
     if (x <= 0) return x;
@@ -1673,6 +1680,9 @@ export function unbendFingers(fingers: Fingers, palmDir: Vec3 | undefined, yaw =
 /** Desde cuánto de frente a la cámara (|palma · cámara|) se enderezan los dedos, y desde cuánto del todo. */
 const UNBEND_FROM = 0.85;
 const UNBEND_FULL = 0.95;
+/** Lo mismo con los dedos apuntando a la cámara (dirección de la mano · cámara). */
+const POINTING_FROM = 0.7;
+const POINTING_FULL = 0.88;
 /** Lo que queda de lo poco doblado, y entre qué flexiones (rad) pasa a quedarse entero. */
 const UNBEND_KEEP = 0.3;
 const UNBEND_OPEN = 0.4;
@@ -1770,8 +1780,8 @@ function unbentTowardCamera(clip: AvatarClip): AvatarClip {
     ...clip,
     keyframes: clip.keyframes.map((kf) => ({
       ...kf,
-      fingers: unbendFingers(kf.fingers, kf.hand.palmDir, yaw),
-      ...(kf.fingers2 && kf.hand2 ? { fingers2: unbendFingers(kf.fingers2, kf.hand2.palmDir, yaw) } : {}),
+      fingers: unbendFingers(kf.fingers, kf.hand.palmDir, yaw, kf.hand.pointDir),
+      ...(kf.fingers2 && kf.hand2 ? { fingers2: unbendFingers(kf.fingers2, kf.hand2.palmDir, yaw, kf.hand2.pointDir) } : {}),
     })),
   };
 }

@@ -150,6 +150,15 @@ describe("unbendFingers: dedos con la palma de frente a la cámara", () => {
     expect((fist[2] as number[])[2]).toBeCloseTo(1.6, 6);
   });
 
+  it("con los dedos de punta a la cámara también, aunque la palma mire hacia arriba", () => {
+    const open = unbendFingers(hand(0.45, 0.55), [0, 1, 0], 0, [0, 0, 1]);
+    expect((open[2] as number[])[1]).toBeLessThan(0.2);
+    // Apuntando a un lado o hacia atrás, no; y el puño, tampoco.
+    expect(unbendFingers(hand(0.45, 0.55), [0, 1, 0], 0, [1, 0, 0])).toEqual(hand(0.45, 0.55));
+    expect(unbendFingers(hand(0.45, 0.55), [0, 1, 0], 0, [0, 0, -1])).toEqual(hand(0.45, 0.55));
+    expect((unbendFingers(hand(1.5, 1.6), [0, 1, 0], 0, [0, 0, 1])[2] as number[])[1]).toBeCloseTo(1.5, 6);
+  });
+
   it("con la palma de lado no cambia nada, y el pulgar nunca", () => {
     const side = hand(0.45, 0.55);
     expect(unbendFingers(side, [1, 0, 0])).toEqual(side);
